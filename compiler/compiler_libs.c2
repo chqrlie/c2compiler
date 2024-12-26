@@ -28,6 +28,7 @@ import module_sorter;
 import string_buffer;
 import string_list;
 //import string_pool;
+import target_info;
 
 import c_errno local;
 import libc_dirent local;
