@@ -1,4 +1,4 @@
-/* Copyright 2022-2024 Bas van den Berg
+/* Copyright 2022-2025 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,6 +209,7 @@ fn QualType getStringType(u32 len) {
 
 public fn const char* idx2name(u32 idx) {
     // TODO just keep pointer to string_pool. That way it can resize!
+    // FIXME: this may break if globals.names_start get reallocated
     if (idx) return globals.names_start + idx;
     return nil;
 }

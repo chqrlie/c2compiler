@@ -1,4 +1,4 @@
-/* Copyright 2022-2024 Bas van den Berg
+/* Copyright 2022-2025 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,10 @@ public fn u64 now() {
 public type PathInfo struct {
     char[constants.Max_path] orig2root; // subdir/subdir/
     char[constants.Max_path] root2orig; // ../../
+}
+
+public fn bool PathInfo.hasSubdir(const PathInfo* pi) {
+    return pi.orig2root[0] != 0;
 }
 
 // info may be nil

@@ -1,4 +1,4 @@
-/* Copyright 2022-2024 Bas van den Berg
+/* Copyright 2022-2025 Bas van den Berg
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,10 +150,10 @@ fn void usage(const char* me) {
     console.log("\t-A                print Library ASTs");
     console.log("\t-b [file]         use specified build file");
     console.log("\t-d [dir]          change to [dir] first");
-    console.log("\t-f [file]         only parse single file");
+    console.log("\t-f [file]         only parse+build single file (in output/dummy/)");
     console.log("\t-h                print this help");
     console.log("\t-m                print modules");
-    console.log("\t-q                use QBE backend (only in combination with -f)");
+    console.log("\t-q                use QBE backend (EXPERIMENTAL, only in combination with -f)");
     console.log("\t-Q                equal to -q and print generated QBE code)");
     console.log("\t-r                print reports");
     console.log("\t-s                print symbols");
@@ -202,6 +202,12 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* opts, Opti
         other.show_targets = true;
     case "test":
         opts.test_mode = true;
+    case "asan":
+        opts.asan = true;
+    case "msan":
+        opts.msan = true;
+    case "ubsan":
+        opts.ubsan = true;
     case "version":
         print_version();
         exit(EXIT_SUCCESS);
@@ -332,16 +338,17 @@ public fn i32 main(i32 argc, char** argv) {
         }
     }
 
+    utils.PathInfo path_info = {}
+
     // note: auxPool is used by recipe, build-file and manifests
     string_pool.Pool* auxPool = string_pool.create(32*1024, 64);
 
     source_mgr.SourceMgr* sm = source_mgr.create(auxPool, constants.Max_open_files);
-    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd);
+    diagnostics.Diags* diags = diagnostics.create(sm, color.useColor(), parser_utils.getTokenEnd, &path_info);
 
     c2recipe.Recipe* recipe = c2recipe.create(sm, auxPool);
 
     i32 recipe_id = -1;
-
     bool hasError = false;
 
     if (opts.single_file) {
@@ -349,7 +356,7 @@ public fn i32 main(i32 argc, char** argv) {
         if (opts.use_qbe_backend) backend = build_target.BackEndKind.QBE;
         recipe.addDummyTarget(opts.single_file, backend);
     } else {
-        if (!utils.findProjectDir(nil)) {
+        if (!utils.findProjectDir(&path_info)) {
             console.error("c2c: error: cannot find C2 root dir");
             console.error("c2c requires a %s file in the project root", constants.recipe_name);
             console.error("Use argument -h for a list of available opts and usage of c2c");
