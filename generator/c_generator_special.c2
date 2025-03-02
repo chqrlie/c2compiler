@@ -81,18 +81,18 @@ fn void Generator.createMakefile(Generator* gen,
     out.print("LDFLAGS2=%s\n", ldflags2 ? ldflags2 : "");
     out.newline();
 
-#if __ASAN__
-    out.add("CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=address\n");
-#endif
-#if __MSAN__
-    out.add("CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=memory\n");
-#endif
-#if __UBSAN__
-    out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
-    out.add("LDFLAGS+=-fsanitize=undefined\n");
-#endif
+    if (gen.asan) {
+        out.add("CFLAGS+=-fsanitize=address -D__ASAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=address\n");
+    }
+    if (gen.msan) {
+        out.add("CFLAGS+=-fsanitize=memory -D__MSAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=memory\n");
+    }
+    if (gen.ubsan) {
+        out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
+        out.add("LDFLAGS+=-fsanitize=undefined\n");
+    }
 
     char[128] target_name;
 

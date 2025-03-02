@@ -73,6 +73,9 @@ type Generator struct {
     const target_info.Info* targetInfo;
     bool enable_asserts;
     bool fast_build;
+    bool asan;
+    bool msan;
+    bool ubsan;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -1185,7 +1188,7 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
-                        bool fast_build)
+                        bool fast_build, bool asan, bool msan, bool ubsan)
 {
     char[constants.Max_path] dir;
     stdio.sprintf(dir, "%s/%s", output_dir, Dir);
@@ -1199,6 +1202,9 @@ public fn void generate(string_pool.Pool* astPool,
     gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
+    gen.asan = asan;
+    gen.msan = msan;
+    gen.ubsan = ubsan;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
     string_buffer.Buf* out = gen.out;
