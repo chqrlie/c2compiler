@@ -21,11 +21,15 @@ import stdarg local;
 import stdio local;
 
 public type Config struct @(opaque) {
-    // TODO: add color customisation
     bool use_color;
     bool quiet_mode;
     bool show_debug;
     bool show_timing;
+    Color col_normal;
+    Color col_error;
+    Color col_warning;
+    Color col_debug;
+    Color col_timing;
 }
 
 Config config;
@@ -37,6 +41,16 @@ public fn void init(const Config* c = nil) {
         setConfig(c);
     } else {
         config.use_color = color.useColor();
+        config.col_normal  = color.Normal;
+        config.col_error   = color.Red;
+        config.col_warning = color.Yellow;
+        config.col_debug   = color.Blue;
+        config.col_timing  = color.Blue;
+        config.col_normal  = color.getConfigColor("normal",  color.Normal);
+        config.col_error   = color.getConfigColor("error",   color.Red);
+        config.col_warning = color.getConfigColor("warning", color.Yellow);
+        config.col_debug   = color.getConfigColor("debug",   color.Blue);
+        config.col_timing  = color.getConfigColor("timing",  color.Blue);
     }
 }
 
@@ -69,7 +83,7 @@ public fn void debug(const char* format @(printf_format), ...) {
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        printf("%s%s%s\n", color.Blue.str(), buf, color.Normal.str());
+        printf("%s%s%s\n", config.col_debug.str(), buf, config.col_normal.str());
     } else {
         printf("%s\n", buf);
     }
@@ -93,7 +107,7 @@ public fn void warn(const char* format @(printf_format), ...) {
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        fprintf(stderr, "%swarning: %s%s\n", color.Yellow.str(), buf, color.Normal.str());
+        fprintf(stderr, "%swarning: %s%s\n", config.col_warning.str(), buf, config.col_normal.str());
     } else {
         fprintf(stderr, "warning: %s\n", buf);
     }
@@ -106,22 +120,30 @@ public fn void error(const char* format @(printf_format), ...) {
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        fprintf(stderr, "%serror: %s%s\n", color.Red.str(), buf, color.Normal.str());
+        fprintf(stderr, "%serror: %s%s\n", config.col_error.str(), buf, config.col_normal.str());
     } else {
         fprintf(stderr, "error: %s\n", buf);
     }
 }
 
-public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
+public fn void diag(bool err, const char* loc, const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
-    if (config.use_color) {
-        fprintf(stderr, "%s%s: error: %s%s\n", color.Red.str(), loc, buf, color.Normal.str());
+    if (err) {
+        if (config.use_color) {
+            fprintf(stderr, "%s%s: error: %s%s\n", config.col_error.str(), loc, buf, config.col_normal.str());
+        } else {
+            fprintf(stderr, "%s: error: %s\n", loc, buf);
+        }
     } else {
-        fprintf(stderr, "%s: error: %s\n", loc, buf);
+        if (config.use_color) {
+            fprintf(stderr, "%s%s: warning: %s%s\n", config.col_warning.str(), loc, buf, config.col_normal.str());
+        } else {
+            fprintf(stderr, "%s: warning: %s\n", loc, buf);
+        }
     }
 }
 
@@ -129,7 +151,7 @@ public fn void log_time(const char* item, u64 duration) {
     if (!config.show_timing) return;
 
     if (config.use_color) {
-        printf("%s%s took %d usec%s\n", color.Blue.str(), item, duration, color.Normal.str());
+        printf("%s%s took %d usec%s\n", config.col_timing.str(), item, duration, config.col_normal.str());
     } else {
         printf("%s took %d usec\n", item, duration);
     }
