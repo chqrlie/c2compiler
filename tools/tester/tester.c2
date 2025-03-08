@@ -25,12 +25,11 @@ import sys_stat { * }
 import sys_time { Timeval, gettimeofday }
 import unistd { sysconf, _SC_NPROCESSORS_ONLN, getcwd }
 
-import color;
+import file_utils;
 import test_utils { * }
 import test_db { TestKind }
 import string_buffer { Buf }
 import string_utils { endsWith }
-import file_utils;
 
 /*
     Syntax:
@@ -306,7 +305,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(argv[0], color.useColor());
+    set_color_output(argv[0]);
 
     for (i32 i = 1; i < argc; i++) {
         char* arg = argv[i];
