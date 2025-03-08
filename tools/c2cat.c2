@@ -130,9 +130,8 @@ fn bool C2cat.init_colors(C2cat* ctx) {
         ctx.token_style[k] = style;
     }
     for (Style s = Style.min; s <= Style.max; s++) {
-        ctx.style_color[s] = s.default_color;
+        ctx.style_color[s] = color.getConfigColor(s.name, s.default_color);
     }
-    // TODO: customize colors from environment variable, config file or command line argument
     return true;
 }
 
@@ -369,6 +368,7 @@ public fn i32 main(i32 argc, const char** argv)
     // parse all command line options and count files
     u32 nfiles = 0;
     bool done_options = false;
+
     for (i32 i = 1; i < argc; i++) {
         const char* arg = argv[i];
         if (*arg == '-' && !done_options) {
