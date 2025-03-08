@@ -996,12 +996,12 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         out.color(col_Keyword);
     out.print("%12s", tok.kind.name);
     if (tok.kind.isKeyword())
-        out.color(Normal);
+        out.color(col_Normal);
     char[256] locstr;
     p.sm.loc2str(tok.loc, locstr, countof(locstr));
     out.print("  %6d %s  ", tok.loc, locstr);
 
-    out.color(col_Token);
+    out.color(col_Literal);
     switch (tok.kind) {
     case Identifier:
         out.add(p.pool.idx2str(tok.name_idx));
@@ -1050,14 +1050,16 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     case StringLiteral:
         out.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
-        out.color(Normal);
+        out.color(col_Normal);
         out.print(" (len %d)", tok.text_len);
         break;
     case LineComment:
+        out.color(col_Comment);
         out.add("//");
         out.add(p.pool.idx2str(tok.text_idx));
         break;
     case BlockComment:
+        out.color(col_Comment);
         out.add("/*");
         out.add(p.pool.idx2str(tok.text_idx));
         out.add("*/");
@@ -1070,7 +1072,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
         break;
     }
     // TODO use callback
-    out.color(Normal);
+    out.color(col_Normal);
     out.newline();
     fputs(out.data(), stdout);
 }
