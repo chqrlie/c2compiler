@@ -16,7 +16,7 @@
 module c2recipe;
 
 import build_target { Target }
-import color;
+import console;
 import ctype { isspace, isalnum }
 import file_list { FileList, File }
 import source_mgr { SourceMgr }
@@ -26,7 +26,7 @@ import string_pool { Pool }
 import warning_flags { Flags }
 
 import csetjmp { JmpBufTag, setjmp, longjmp }
-import stdio { vsnprintf, fprintf, stderr }
+import stdio { vsnprintf }
 import stdlib { calloc, free }
 import string { memset, memcpy, strncmp, strlen }
 
@@ -159,12 +159,8 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, countof(locstr));
+    console.diag(true, locstr, "%s", msg);
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
-    } else {
-        fprintf(stderr, "%s: error: %s\n", locstr, msg);
-    }
     longjmp(&p.jmpbuf, 1);
 }
 
@@ -177,12 +173,7 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, countof(locstr));
-
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
-    } else {
-        fprintf(stderr, "%s: warning: %s\n", locstr, msg);
-    }
+    console.diag(false, locstr, "%s", msg);
 }
 
 fn void Parser.consumeToken(Parser* p) {

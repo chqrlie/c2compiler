@@ -15,7 +15,7 @@
 
 module source_mgr;
 
-import color { Red, Normal, useColor }
+import console;
 import file_utils;
 import src_loc { SrcLoc }
 import string_pool { Pool }
@@ -175,20 +175,12 @@ public fn i32 SourceMgr.addResource(SourceMgr* sm, const char* name, const void*
 public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc sloc) {
     file_utils.File file.init(filename);
     if (!file.load()) {
-        char[256] tmp;
-        *tmp = '\0';
         if (sloc) {
-            Location loc = sm.locate(sloc);
-            if (loc.line_start) {
-                snprintf(tmp, countof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
-            }
-        }
-        // Cannot use console since we need source loc first
-        if (useColor()) {
-            fprintf(stderr, "%s%serror:%s cannot open %s: %s\n",
-                          tmp, Red.str(), Normal.str(), filename, file.getError());
+            char[256] locstr;
+            sm.loc2str(sloc, locstr, countof(locstr));
+            console.diag(true, locstr, "cannot open %s: %s", filename, file.getError());
         } else {
-            fprintf(stderr, "%serror: cannot open %s: %s\n", tmp, filename, file.getError());
+            console.error("cannot open %s: %s", filename, file.getError());
         }
         return -1;
     }
