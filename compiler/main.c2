@@ -603,7 +603,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
                     Location loc = c.sm.locate(p.loc);
                     char[256] loc_str;
                     snprintf(loc_str, countof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
-                    console.error_diag(loc_str, "%s", c.plugins.getError());
+                    console.diag(true, loc_str, "%s", c.plugins.getError());
                     exit(EXIT_FAILURE);
                 }
             }
@@ -642,7 +642,7 @@ fn void Context.handle_plugins(Context* c) {
             Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
             snprintf(loc_str, countof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
-            console.error_diag(loc_str, "%s", c.plugins.getError());
+            console.diag(true, loc_str, "%s", c.plugins.getError());
             exit(EXIT_FAILURE);
         }
     }
@@ -688,7 +688,7 @@ fn bool Context.build_target(Context* c,
             Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
             snprintf(loc_str, countof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
-            console.error_diag(loc_str, "%s", c.plugins.getError());
+            console.diag(true, loc_str, "%s", c.plugins.getError());
             continue;
         }
     }
