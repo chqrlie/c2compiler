@@ -15,9 +15,11 @@
 
 module color;
 
+import stdlib { getenv }
+import string { strcmp, pstrcpy }
 import unistd { isatty }
 
-public type Color enum u8 (const char* defStr) {
+public type Color enum u8 (const char* standardColor) {
     None     : { "" },
     Black    : { "\033[0;30m" },
     Red      : { "\033[0;31m" },
@@ -36,12 +38,51 @@ public type Color enum u8 (const char* defStr) {
     Bcyan    : { "\033[1;36m" },
     White    : { "\033[1;37m" },
     Normal   : { "\033[0m" },
+
+    Custom1  : { nil },
+    Custom2  : { nil },
+    Custom3  : { nil },
+    Custom4  : { nil },
+    Custom5  : { nil },
+    Custom6  : { nil },
+    Custom7  : { nil },
+    Custom8  : { nil },
+    Custom9  : { nil },
+    Custom10 : { nil },
+    Custom11 : { nil },
+    Custom12 : { nil },
+    Custom13 : { nil },
+    Custom14 : { nil },
+    Custom15 : { nil },
+    Custom16 : { nil },
 }
 
+const Color CustomStart = Custom1;
+const Color CustomEnd = Custom16;
+
+i8 use_color = -1;
+const char* c2_colors;
+char[Color][32] defaultColors;
+
 public fn bool useColor() {
-    return isatty(1);
+    if (use_color < 0) {
+        use_color = isatty(1) != 0;
+        if (use_color) {
+            c2_colors = getenv("C2_COLORS");
+            if (c2_colors && !strcmp(c2_colors, "none")) {
+                use_color = 0;
+                c2_colors = nil;
+            } else {
+                for (Color col = (Color)0; col < Custom1; col++) {
+                    pstrcpy(defaultColors[col], countof(defaultColors[col]), col.standardColor);
+                }
+                if (c2_colors) customizeStandardColors(c2_colors);
+            }
+        }
+    }
+    return use_color;
 }
 
 public fn const char* Color.str(Color col) {
-    return col.defStr;
+    return defaultColors[col];
 }
