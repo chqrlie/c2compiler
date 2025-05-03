@@ -48,7 +48,7 @@ public type ExprKind enum u8 (const char* const name) {
 
 /*
     An LValue may be on the left/right side of an assignment
-    An RValue may only be on the left side
+    An RValue may only be on the right side
     An NValue is an abstract object (cannot be used on either side)
 
     Lvalue:
@@ -208,6 +208,10 @@ public fn bool Expr.isUnaryOp(const Expr* e) {
 
 public fn bool Expr.isImplicitCast(const Expr* e) {
     return e.getKind() == ImplicitCast;
+}
+
+public fn bool Expr.isCompoundLiteral(const Expr* e) {
+    return e.getKind() == ExplicitCast  && ((ExplicitCastExpr*)e).getInner().isInitList();
 }
 
 public fn bool Expr.isType(const Expr* e) {

@@ -474,6 +474,9 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
             need_semi = false;
         } else {
             ret = p.parseExpr();
+            // XXX This hack works for the `return (xxx){ xxx }` statement
+            // but not for `return &(xxx){ xxx }`
+            if (ret.isCompoundLiteral()) need_semi = false;
         }
     }
 
