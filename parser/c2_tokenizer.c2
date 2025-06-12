@@ -275,6 +275,7 @@ public type Tokenizer struct {
     const string_list.List* features;
     bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
+    u8 c_mode;      // inside an extern "C" {} block
 
     char[256] error_msg;
 }
@@ -348,7 +349,8 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             if (result.name_idx <= t.kwinfo.max_index) {
                 Kind k = t.kwinfo.indexes[result.name_idx];
                 assert(k != Kind.None);
-                if (k == Kind.Error) {
+                if (k == Kind.Error
+                ||  (k >= Kind.KW_int && k <= Kind.KW_typedef && !t.c_mode)) {
                     result.reserved = true;
                     return;
                 }
