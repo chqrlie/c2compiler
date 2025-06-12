@@ -75,6 +75,12 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_interface = comp.isExternal();
 }
 
+public fn bool Builder.setExternal(Builder* b, bool is_interface) {
+    bool was_interface = b.is_interface;
+    b.is_interface = is_interface;
+    return was_interface;
+}
+
 /*
 public fn void Builder.reserve(Builder* b, u32 size) {
     b.context.reserve(size);
