@@ -64,6 +64,7 @@ public type Parser struct @(opaque) {
     u32 va_list_idx;
     u32 varargs_idx;
     u32 stdarg_idx;
+    u32 main_idx;
 
     stmt_list.List* stmt_lists;
     u32 stmt_list_count;
@@ -89,6 +90,7 @@ public fn Parser* create(SourceMgr* sm,
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
+    p.main_idx = pool.addStr("main", true);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
     p.stmt_lists = malloc(NumStmtLists * sizeof(stmt_list.List));
@@ -331,6 +333,9 @@ fn void Parser.parseTopLevel(Parser* p) {
         case KW_assert:
             p.error("assert can only be used inside a function");
             break;
+        case KW_extern:
+            p.parseExternDecl();
+            break;
         case KW_fn:
             p.parseFuncDecl(is_public);
             break;
@@ -465,6 +470,12 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     SrcLoc func_loc = p.tok.loc;
     p.consumeToken();
 
+    p.parseFunctionDecl2(func_name, func_loc, is_public, &rtype);
+}
+
+fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
+                                  bool is_public, TypeRefHolder* rtype)
+{
     Ref prefix_ref;
     Ref* prefix = nil;
     if (p.tok.kind == Kind.Dot) {
@@ -501,7 +512,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         f = p.builder.actOnTemplateFunctionDecl(func_name,
                                                 func_loc,
                                                 is_public,
-                                                &rtype,
+                                                rtype,
                                                 template_name,
                                                 template_loc,
                                                 (VarDecl**)params.getDecls(),
@@ -511,7 +522,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         f = p.builder.actOnFunctionDecl(func_name,
                                         func_loc,
                                         is_public,
-                                        &rtype,
+                                        rtype,
                                         prefix,
                                         (VarDecl**)params.getDecls(),
                                         params.size(),
@@ -530,8 +541,10 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
             return;
         }
 
-        // mark functions with bodies in interface files as 'inline'
-        f.setAttrInline();
+        if (func_name != p.main_idx) {
+            // mark functions with bodies in interface files as 'inline'
+            f.setAttrInline();
+        }
     }
 
     p.stmt_list_count = 0;
@@ -544,6 +557,13 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, 
 
     // fast path for ()
     if (p.tok.kind == Kind.RParen) {
+        p.consumeToken();
+        return false;
+    }
+
+    // Accept (void) argument list in c_mode
+    if (p.tokenizer.c_mode && p.tok.kind == Kind.KW_void && p.peekToken(1) == Kind.RParen) {
+        p.consumeToken();
         p.consumeToken();
         return false;
     }
@@ -672,6 +692,27 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         }
         p.consumeToken();
 
+        if (p.tok.kind == Kind.LParen) {
+            if (!p.tokenizer.c_mode) {
+                p.error("function definitions require the 'fn' keyword");
+            }
+            p.parseFunctionDecl2(name, loc, is_public, &ref);
+            return;
+        }
+        if (p.tok.kind == Kind.Dot) {
+            if (p.peekToken(1) == Kind.Identifier) {
+                if (p.peekToken(2) == Kind.LParen) {
+                    // Either a function definition or an init call
+                    if (!p.tokenizer.c_mode)
+                        p.error("global variables cannot have an init call");
+                    p.parseFunctionDecl2(name, loc, is_public, &ref);
+                    return;
+                }
+                p.error("global type variables not supported");
+            }
+            p.error("expected '=' or ';'");
+        }
+
         need_semi = true;
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
@@ -770,11 +811,105 @@ fn BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
     return Tok2builtin[kind - Kind.KW_bool];
 }
 
+fn Kind Parser.convertCType(Parser* p) {
+    Kind kind = KW_i32;
+    u8 has_long = 0;
+    u8 has_short = 0;
+    u8 has_signed = 0;
+    u8 has_unsigned = 0;
+    u32 skip = 0;
+    for (;; skip++) {
+        Kind tok_kind = p.tok.kind;
+        if (skip) tok_kind = p.peekToken(skip);
+        switch (tok_kind) {
+        case KW_char:
+            if (has_signed == 1) {
+                has_signed = 0;
+                kind = Kind.KW_i8;
+            } else
+            if (has_unsigned == 1) {
+                has_unsigned = 0;
+                kind = Kind.KW_u8;
+            } else {
+                kind = Kind.KW_char;
+            }
+            break;
+        case KW_int:
+            break;
+        case KW_ssize_t:
+            kind = Kind.KW_isize;
+            break;
+        case KW_size_t:
+            kind = Kind.KW_usize;
+            break;
+        case KW_float:
+            kind = Kind.KW_f32;
+            break;
+        case KW_double:
+            if (has_long == 1) {
+                // long double -> double
+                has_long = 0;
+            }
+            kind = Kind.KW_f64;
+            break;
+        case KW_short:
+            has_short++;
+            continue;
+        case KW_long:
+            has_long++;
+            continue;
+        case KW_signed:
+            has_signed++;
+            continue;
+        case KW_unsigned:
+            has_unsigned++;
+            continue;
+        default:
+            skip--;  // no C type, keep last qualifier
+            break;
+        }
+        if (kind == Kind.KW_i32) {
+            if (has_short == 1) {
+                kind = Kind.KW_i16;
+                has_short = 0;
+            } else
+            if (has_long == 2) {
+                kind = Kind.KW_i64;
+                has_long = 0;
+            } else
+            if (has_long == 1) {
+                if (getWordSize() == 8)
+                    kind = Kind.KW_i64;
+                has_long = 0;
+            }
+            if (has_signed == 1) {
+                has_signed = 0;
+            } else
+            if (has_unsigned == 1) {
+                kind += Kind.KW_u32 - Kind.KW_i32;
+                has_unsigned = 0;
+            }
+        }
+        if (has_short + has_long + has_signed + has_unsigned)
+            p.error("invalid combination of type qualifiers");
+        while (skip-- > 0)
+            p.consumeToken();
+        break;
+    }
+    return p.tok.kind = kind;
+}
+
 fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
     u32 type_qualifier = p.parseOptionalTypeQualifier();
     ref.setQualifiers(type_qualifier);
 
     Kind kind = p.tok.kind;
+    if (kind >= Kind.KW_int && kind <= Kind.KW_unsigned) {
+        if (p.tokenizer.c_mode)
+            kind = p.convertCType();
+        else
+            p.error("invalid keyword");
+    }
 
     if (kind.isBuiltinType()) {
         ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
@@ -924,5 +1059,83 @@ fn stmt_list.List* Parser.getStmtList(Parser* p) {
 
 fn void Parser.putStmtList(Parser* p) {
     p.stmt_list_count--;
+}
+
+fn void Parser.parseExternTopLevel(Parser* p) {
+    p.builder.clearAttributes();
+
+    bool was_external = p.builder.setExternal(true);
+    bool was_interface = p.is_interface;
+    p.is_interface = true;
+
+    bool is_public = true;
+    switch (p.tok.kind) {
+    case KW_assert:
+    case KW_extern:
+    case KW_import:
+    case KW_public:
+    invalid:
+        p.error("invalid keyword in extern declaration");
+        //noreturn;
+    case KW_fn:
+        if (p.tokenizer.c_mode) goto invalid;
+        p.parseFuncDecl(is_public);
+        break;
+    case KW_enum:
+        p.parseCEnum(is_public);
+        break;
+    case KW_static_assert:
+        p.parseStaticAssert();
+        break;
+    case KW_struct:
+        p.parseCStruct(true, is_public);
+        break;
+    case KW_type:
+        // TODO: handle function typedefs
+        //if (p.tokenizer.c_mode) goto invalid;
+        p.parseTypeDecl(is_public);
+        break;
+    case KW_typedef:
+        p.parseTypedef(is_public);
+        break;
+    case KW_union:
+        p.parseCStruct(false, is_public);
+        break;
+    case Eof:
+        p.error("expected type specifier");
+        break;
+    case Identifier:
+        if (p.peekToken(1) == Kind.PlusEqual) {
+            p.error("incremental array entries cannot be external");
+            break;
+        }
+        fallthrough;
+    default:
+        p.parseVarDecl(is_public);
+        break;
+    }
+    p.is_interface = was_interface;
+    p.builder.setExternal(was_external);
+}
+
+fn void Parser.parseExternDecl(Parser* p) {
+    p.consumeToken();
+    if (p.tok.kind == Kind.StringLiteral) {
+        if (p.tok.text_len != 1 || *p.pool.idx2str(p.tok.text_idx) != 'C') {
+            p.error("extern must be followed by \"C\" and a block");
+        }
+        p.consumeToken();
+        p.tokenizer.c_mode++;   // must set before consuming the token
+        p.expectAndConsume(Kind.LBrace);
+        while (p.tok.kind != Kind.RBrace) {
+            if (p.tok.kind == Kind.Eof)
+                p.error("unterminated extern \"C\" block");
+            p.parseExternTopLevel();
+        }
+        p.tokenizer.c_mode++;   // must set before consuming the token
+        p.consumeToken();
+    } else {
+        p.parseExternTopLevel();
+    }
 }
 
