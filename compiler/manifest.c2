@@ -70,6 +70,8 @@ fn bool getYamlInfo(yaml.Parser* parser,
 
     comp.setKind(kind_static, kind_dynamic);
 
+    comp.setLanguage(parser.getScalarValue("info.language"));
+
     iter = parser.getNodeChildIter(modulesNode);
     while (!iter.done()) {
         // Note: module names need to be put in normal pool, NOT auxPool!

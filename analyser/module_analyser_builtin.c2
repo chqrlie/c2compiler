@@ -95,6 +95,10 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
 
     const ArrayType* at = qt.getArrayTypeOrNil();
     if (at) {
+        if (!at.hasSize()) {
+            ma.error(inner.getLoc(), "elemsof cannot be used on arrays of unknown length");
+            return QualType_Invalid;
+        }
         b.setUValue(at.getSize());
         return builtins[BuiltinKind.UInt32];
     }
