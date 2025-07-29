@@ -65,41 +65,42 @@ const u8[TypeKind][TypeKind] Conversions = {
 //  1 = ok, but needs conversion
 //  2 = incompatible
 //  3 = sign-conversion
-//  4 = loss of integer-precision
-//  5 = float -> integer
-//  6 = loss of FP-precision
-//  7 = ok, no conversion needed (eg. char -> u8, isize -> i64, i32 -> bool)
+//  4 = both sign-conversion and loss of integer-precision
+//  5 = loss of integer-precision
+//  6 = float -> integer
+//  7 = loss of FP-precision
+//  8 = ok, no conversion needed (eg. char -> u8, isize -> i64, i32 -> bool)
 // No need to adjust for 32-bit as ISize and USize are converted before the lookup
 const u8[BuiltinKind][BuiltinKind] BuiltinConversions = {
     //  Bool   Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32  Flt64  ISize  USize
     // Bool ->
-    {   0,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1  },
+    {   0,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,     0,     0  },
     // Char ->
-    {   7,     0,     3,     1,     1,     1,     7,     1,     1,     1,     1,     1,     1,     1  },
+    {   8,     0,     3,     1,     1,     1,     8,     1,     1,     1,     1,     1,     0,     0  },
     // Int8 ->
-    {   7,     3,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3  },
+    {   8,     3,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     0,     0  },
     // Int16 ->
-    {   7,     4,     4,     0,     1,     1,     4,     3,     3,     3,     1,     1,     1,     3  },
+    {   8,     4,     4,     0,     1,     1,     4,     3,     3,     3,     1,     1,     0,     0  },
     // Int32 ->
-    {   7,     4,     4,     4,     7,     1,     4,     4,     3,     3,     1,     1,     1,     3  },
+    {   8,     4,     4,     4,     8,     1,     4,     4,     3,     3,     1,     1,     0,     0  },
     // Int64 ->
-    {   7,     4,     4,     4,     4,     7,     4,     4,     4,     3,     1,     1,     7,     3  },
+    {   8,     4,     4,     4,     4,     8,     4,     4,     4,     3,     1,     1,     0,     0  },
     // UInt8 ->
-    {   7,     1,     3,     1,     1,     1,     0,     1,     1,     1,     1,     1,     3,     1  },
+    {   8,     1,     3,     1,     1,     1,     0,     1,     1,     1,     1,     1,     0,     0  },
     // UInt16 ->
-    {   7,     4,     4,     3,     1,     1,     4,     0,     1,     1,     1,     1,     3,     1  },
+    {   8,     5,     4,     3,     1,     1,     5,     0,     1,     1,     1,     1,     0,     0  },
     // UInt32 ->
-    {   7,     4,     4,     4,     3,     1,     4,     4,     7,     1,     1,     1,     3,     1  },
+    {   8,     5,     4,     4,     3,     1,     5,     5,     8,     1,     1,     1,     0,     0  },
     // UInt64 ->
-    {   7,     4,     4,     4,     4,     3,     4,     4,     4,     7,     1,     1,     3,     7  },
+    {   8,     5,     4,     4,     4,     3,     5,     5,     5,     8,     1,     1,     0,     0  },
     // Flt32 ->
-    {   2,     5,     5,     5,     5,     5,     5,     5,     5,     5,     0,     1,     5,     5  },
+    {   2,     6,     6,     6,     6,     6,     6,     6,     6,     6,     0,     1,     0,     0  },
     // Flt64 ->
-    {   2,     5,     5,     5,     5,     5,     5,     5,     5,     5,     6,     0,     5,     5  },
+    {   2,     6,     6,     6,     6,     6,     6,     6,     6,     6,     7,     0,     0,     0  },
     // ISize ->
-    {   7,     4,     4,     4,     4,     7,     4,     4,     4,     3,     1,     1,     0,     3  },
+    {   0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0  },
     // USize ->
-    {   7,     4,     4,     4,     4,     3,     4,     4,     4,     7,     1,     1,     3,     0  },
+    {   0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0  },
 }
 
 public type Checker struct {
@@ -236,7 +237,8 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
             c.conversionError("implicit conversion changes signedness:");
         }
         return true;
-    case 4:     // loss of integer-precision
+    case 4:     // sign to unsigned conversion to a smaller type
+    case 5:     // loss of integer-precision
         if (c.checkIntConversion(lbuiltin)) {
             c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
@@ -244,11 +246,11 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
             c.conversionError("implicit conversion loses integer precision:");
         }
         return true;
-    case 5:     // float -> integer
+    case 6:     // float -> integer
         // TODO: is this just a warning?
         c.conversionError("implicit conversion turns floating-point number into integer:");
         return true;
-    case 6:     // loss of FP-precision
+    case 7:     // loss of FP-precision
         if ((*c.expr_ptr).isCtv()) {
             c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
@@ -256,7 +258,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
             c.conversionError("implicit conversion loses floating-point precision:");
         }
         return true;
-    case 7:     // ok, no conversion needed
+    case 8:     // ok, no conversion needed
         return true;
     default:
         break;
