@@ -59,10 +59,12 @@ public type PluginHandler struct {
 }
 
 public type Options struct {
+    bool bootstrap;
     bool check_only;
     bool print_ast;
     bool print_ast_early;
     bool fast_build;
+    bool no_build;
     bool test_mode;
     bool print_lib_ast;
     bool print_modules;
@@ -180,6 +182,18 @@ fn void Compiler.build(Compiler* c,
     c.target = target;
     c.opts = opts;
     c.pluginHandler = pluginHandler;
+
+    if (opts.bootstrap) {
+        c.target.setBackEnd(C);
+        c.target.disableWarnings();
+        c.target.disableAsserts();
+        c.removeFeature("AstStatistics");
+        c.addFeature("BOOTSTRAP", "1");
+    }
+
+    if (opts.no_build) {
+        c.target.setNoBuild();
+    }
 
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
@@ -467,6 +481,10 @@ fn void Compiler.findTopModule(void* arg, ast.Module* m) {
 fn void Compiler.addFeature(Compiler* c, const char* str, const char* value) {
     // TODO: handle value
     c.target.addFeature(c.auxPool.addStr(str, true));
+}
+
+fn void Compiler.removeFeature(Compiler* c, const char* str) {
+    c.target.removeFeature(c.auxPool.addStr(str, true));
 }
 
 fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {

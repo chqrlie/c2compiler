@@ -108,6 +108,7 @@ public type Target struct @(opaque) {
     BackEndKind backend;
     bool backend_no_build;
     bool backend_fast;
+    bool optional;
 
     string_list.List features;
     List libs;
@@ -157,6 +158,10 @@ public fn const string_list.List* Target.getFeatures(const Target* t) { return &
 
 public fn void Target.addFeature(Target* t, u32 feature) {
     t.features.add(feature);
+}
+
+public fn void Target.removeFeature(Target* t, u32 feature) {
+    t.features.del(feature);
 }
 
 public fn void Target.addPlugin(Target* t, u32 name, u32 options, SrcLoc loc) {
@@ -295,5 +300,13 @@ public fn void Target.setFastBuild(Target* t) {
 
 public fn bool Target.getFastBuild(const Target* t) {
     return t.backend_fast;
+}
+
+public fn void Target.setOptional(Target* t) {
+    t.optional = true;
+}
+
+public fn bool Target.getOptional(const Target* t) {
+    return t.optional;
 }
 
