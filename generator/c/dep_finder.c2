@@ -204,6 +204,12 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
             break;
         }
         break;
+    case ArraySelection:
+        ArraySelectionExpr* a = (ArraySelectionExpr*)e;
+        s.handleExpr(a.getBase());
+        if (Expr* index = a.getIndex()) s.handleExpr(index);
+        if (Expr* count = a.getCount()) s.handleExpr(count);
+        break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         s.handleExpr(a.getBase());
@@ -215,8 +221,6 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
         s.handleExpr(p.getInner());
-        break;
-    case BitOffset:
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
