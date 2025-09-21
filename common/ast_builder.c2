@@ -1171,8 +1171,8 @@ public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, u32 src_len, const
     return (Expr*)TypeExpr.create(b.context, loc, src_len, ref);
 }
 
-public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    return (Expr*)BitOffsetExpr.create(b.context, loc, lhs, rhs);
+public fn Expr* Builder.actOnArraySelectionExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx, Expr* count) {
+    return (Expr*)ArraySelectionExpr.create(b.context, loc, src_len, base, idx, count);
 }
 
 public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx) {

@@ -360,17 +360,20 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
         case LSquare:
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
-            Expr* idx = p.parseExpr();
+            Expr* idx = (p.tok.kind == Colon) ? nil : p.parseExpr();
             if (p.tok.kind == Colon) {
-                // BitOffset <expr> : <expr>
+                // ArraySelection <expr>? : <expr>?
                 SrcLoc colon_loc = p.tok.loc;
                 p.consumeToken();
-                Expr* rhs = p.parseExpr();
-                idx = p.builder.actOnBitOffsetExpr(colon_loc, idx, rhs);
+                Expr* count = (p.tok.kind == RSquare) ? nil : p.parseExpr();
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySelectionExpr(loc, src_len, lhs, idx, count);
+            } else {
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             }
-            u32 src_len = p.tok.loc + 1 - loc;
-            p.expectAndConsume(RSquare);
-            lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             break;
         case Dot:
             lhs = p.parseImpureMemberExpr(lhs);

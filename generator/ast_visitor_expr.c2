@@ -80,6 +80,12 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     case Builtin:
         v.handleBuiltinExpr((BuiltinExpr*)e);
         break;
+    case ArraySelection:
+        ArraySelectionExpr* a = (ArraySelectionExpr*)e;
+        v.handleExpr(a.getBase());
+        if (Expr* index = a.getIndex()) v.handleExpr(index);
+        if (Expr* count = a.getCount()) v.handleExpr(count);
+        break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         v.handleExpr(a.getBase());
@@ -91,11 +97,6 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
         v.handleExpr(p.getInner());
-        break;
-    case BitOffset:
-        BitOffsetExpr* bi = (BitOffsetExpr*)e;
-        v.handleExpr(bi.getLHS());
-        v.handleExpr(bi.getRHS());
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
