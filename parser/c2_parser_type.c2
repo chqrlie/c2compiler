@@ -105,7 +105,7 @@ fn void Parser.checkMemberName(Parser* p) {
     if (!p.checkName(name, p.is_interface)) {
         p.error("a struct/union member name must start with a lower case character");
     }
-    if (p.tok.reserved) {
+    if (p.tok.alt) {
         p.diags.error(p.tok.loc, "reserved word '%s' cannot be used as struct/union member name",
                       p.pool.idx2str(name));
     }
@@ -419,7 +419,7 @@ fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
     if (!p.checkName(name, p.is_interface)) {
         p.error("an enum-associated value name must start with a lower case character");
     }
-    if (p.tok.reserved) {
+    if (p.tok.alt) {
         p.diags.error(loc, "reserved word '%s' cannot be used as enum-associated value name", p.pool.idx2str(name));
     }
     p.consumeToken();
@@ -519,7 +519,7 @@ fn void Parser.parseTypedef(Parser* p, bool is_public) {
         }
         const char* name = p.pool.idx2str(type_name);
         if (!isupper(name[0]) && !p.is_interface) p.diags.error(loc, "a type name must start with an upper case character");
-        if (p.tok.reserved) {
+        if (p.tok.alt) {
             p.diags.error(loc, "reserved word '%s' cannot be used as local variable name",
                           p.pool.idx2str(type_name));
         }
