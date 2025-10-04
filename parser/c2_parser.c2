@@ -731,7 +731,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
         if (!p.checkName(name, p.is_interface)) {
             p.error("a parameter name must start with a lower case character");
         }
-        if (p.tok.reserved) {
+        if (p.tok.alt) {
             p.diags.error(loc, "reserved word '%s' cannot be used as parameter name",
                           p.pool.idx2str(name));
         }
@@ -811,7 +811,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
         u32 name = p.tok.name_idx;
         SrcLoc loc = p.tok.loc;
-        if (p.tok.reserved) {
+        if (p.tok.alt) {
             p.diags.error(loc, "reserved word '%s' cannot be used as variable name",
                           p.pool.idx2str(name));
         }
@@ -1033,7 +1033,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
             out.add(ftoa(buf, countof(buf), tok.float_value));
             break;
         }
-        if (tok.suffix_F) out.add1('F');
+        if (tok.radix & 2) out.add1('F');
         break;
     case CharLiteral:
         switch (tok.getRadix()) {
