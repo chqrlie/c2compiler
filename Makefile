@@ -80,6 +80,15 @@ testv: output/tester/tester
 	@echo "---- running verbose tests ----"
 	@output/tester/tester -v test
 
+output/tester/c2cat: tools/c2cat.c2 $(C2C_DEPS) $(C2C)
+	@$(C2C) c2cat
+
+test-c2cat: output/c2cat/c2cat
+	output/c2cat/c2cat --normalize `find . -name "*.c2*" | sort` > output/c2cat/all-norm
+	output/c2cat/c2cat             `find . -name "*.c2*" | sort` > output/c2cat/all
+	output/c2cat/c2cat --color     `find . -name "*.c2*" | sort` > output/c2cat/all-color
+	head -10000                    `find . -name "*.c2*" | sort` > output/c2cat/all-head
+
 output/c2c_trace/c2c_trace: $(C2C_DEPS)
 	$(C2C) c2c --trace-calls -o c2c_trace --fast --quiet
 

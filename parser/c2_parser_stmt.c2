@@ -549,7 +549,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         u32 name = p.tok.name_idx;
         u32 name_len = p.tok.len;
         SrcLoc loc = p.tok.loc;
-        if (p.tok.reserved) {
+        if (p.tok.alt) {
             p.diags.error(loc, "reserved word '%s' cannot be used as variable name",
                           p.pool.idx2str(name));
         }

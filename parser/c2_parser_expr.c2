@@ -262,7 +262,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.consumeToken();
         break;
     case 3: // FloatLiteral
-        BuiltinKind kind = p.tok.suffix_F ? Float32 : Float64;
+        BuiltinKind kind = (p.tok.radix & 2) ? Float32 : Float64;
         res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value, p.tok.getRadix(), kind);
         p.consumeToken();
         break;
