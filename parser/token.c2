@@ -185,13 +185,12 @@ public fn bool Kind.isCType(Kind kind) {
 public type Token struct {
     SrcLoc loc;
     u16 len : 16;
-    Kind kind : 8;
+    Kind kind : 8;  // 7 bits would suffice
     bool done : 1;
     // TODO: fix QualType.getBitFieldWidth() to return actual number of bits instead of implementation type
     Radix radix : 2;   // for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
-    u8 raw : 1;     // for StringLiteral
-    bool reserved : 1;
-    bool suffix_F : 1;
+    bool alt : 1;   // used for strings(raw), numbers(upper), identifiers(reserved)
+    u8 places : 4;
     union {
         const char* error_msg;  // ERROR
         struct {           // StringLiteral, LineComment, BlockComment

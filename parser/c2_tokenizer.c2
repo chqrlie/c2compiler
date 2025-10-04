@@ -17,6 +17,7 @@ module c2_tokenizer;
 
 import constants;
 import keywords { Info }
+import number_radix { Radix }
 import src_loc { SrcLoc }
 import string_buffer { Buf }
 import string_map { Map }
@@ -25,7 +26,7 @@ import token { Token, Kind }
 import utf8;
 import value_type { Value }
 
-import ctype { isdigit, isalnum, isalpha, isxdigit, isblank }
+import ctype { * }
 import stdio { vsnprintf }
 import stdlib { strtol, strtod }
 import string { memset, memcpy, memcmp, strcmp, strncmp, strlen }
@@ -33,13 +34,14 @@ import string { memset, memcpy, memcmp, strcmp, strncmp, strlen }
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
     TABSPACE,
+    CR,
+    NEWLINE,
     IDENT,
     DIGIT,
     LPAREN,
     RPAREN,
     LSQUARE,
     RSQUARE,
-    NEWLINE,
     EXCLAIM,
     BQUOTE,
     DQUOTE,
@@ -65,7 +67,6 @@ type Action enum u8 {
     RBRACE,
     PIPE,
     TILDE,
-    CR,
     EOF,
 }
 
@@ -340,13 +341,33 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             while (*t.cur == ' ')
                 t.cur++;
             continue;
+        case CR:
+            t.cur++;
+            if (*t.cur != '\n') {
+                if (t.raw_mode)
+                    continue;
+                result.kind = Invalid;
+                result.invalid[0] = '\r';
+                t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
+                return;
+            }
+            fallthrough;
+        case NEWLINE:
+            if (t.stop_at_eol) {
+                result.kind = Eof;
+                result.len = 0;
+                return;
+            }
+            t.cur++;
+            t.line_start = t.cur;
+            continue;
         case IDENT:
             t.lex_identifier(result);
             if (result.name_idx <= t.kwinfo.max_index) {
                 Kind k = t.kwinfo.indexes[result.name_idx];
                 assert(k != None);
                 if (k == Error || (k >= KW_int && k <= KW_typedef && !t.c_mode)) {
-                    result.reserved = true;
+                    result.alt = true;
                     return;
                 }
                 result.kind = k;    // turn into keyword
@@ -371,15 +392,6 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = RSquare;
             t.cur++;
             return;
-        case NEWLINE:
-            if (t.stop_at_eol) {
-                result.kind = Eof;
-                result.len = 0;
-                return;
-            }
-            t.cur++;
-            t.line_start = t.cur;
-            continue;
         case EXCLAIM:
             t.cur++;
             if (*t.cur == '=') {
@@ -627,22 +639,6 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = Tilde;
             t.cur++;
             return;
-        case CR:
-            t.cur++;
-            if (*t.cur != '\n') {
-                if (t.raw_mode)
-                    continue;
-                t.error(result, "unexpected character 0x%02X after CR", *t.cur & 0xFF);
-                return;
-            }
-            if (t.stop_at_eol) {
-                result.kind = Eof;
-                result.len = 0;
-                return;
-            }
-            t.cur++;
-            t.line_start = t.cur;
-            continue;
         case EOF:
             if (t.feature_count) {
                 Feature* top = &t.feature_stack[t.feature_count];
@@ -656,7 +652,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         }
         // should not come here without goto
-invalid_char:
+    invalid_char:
         if (t.raw_mode) {
             result.kind = Invalid;
             result.invalid[0] = *t.cur;
@@ -724,8 +720,8 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += len;
-    result.name_idx = t.pool.add(start, len, true);
     result.len = (u16)len;
+    result.name_idx = t.pool.add(start, len, true);
 }
 
 fn u8 hex2val(char c) {
@@ -766,11 +762,19 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     bool overflow = false;
 
     if (p[0] == '0') {
+        // special case 0
+        if (!isalnum(p[1]) && p[1] != '_' && (p[1] != '.' || p[2] == '.')) {
+            t.cur++;
+            // value is 0, radix = Default, places = 0, len = 1
+            return;
+        }
+        i32 places = -1;
         if (p[1] == 'x' || p[1] == 'X') {  // hexadecimal
             result.radix = Hex;
             p += 2;
             if (isxdigit(*p)) {
                 while (isxdigit(*p)) {
+                    if (isupper(*p)) result.alt = true;
                     if (value > u64.max >> 4) {
                         value = u64.max;
                         overflow = true;
@@ -778,6 +782,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                         value = (value << 4) + hex2val(*p);
                     }
                     p++;
+                    places++;
                     if (*p == '_' && isxdigit(p[1]))
                         p++;
                 }
@@ -785,6 +790,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                     t.lex_floating_point_hex(result, start);
                     return;
                 }
+                result.places = places > 15 ? 15 : (u8)places;
+                result.int_value = value;
             } else {
                 if (*p == '.' && p[1] != '.' && isxdigit(p[1])) {
                     t.lex_floating_point_hex(result, start);
@@ -798,7 +805,6 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             goto check_overflow;
         }
         if (p[1] == 'b' || p[1] == 'B') {   // binary
-            result.radix = Binary;
             p += 2;
             while (is_binary(*p)) {
                 if (value > u64.max >> 1) {
@@ -808,9 +814,14 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                     value = (value << 1) + (*p - '0');
                 }
                 p++;
+                places++;
                 if (*p == '_' && is_binary(p[1]))
                     p++;
             }
+            if (places < 0) places = 0;
+            result.places = places > 15 ? 15 : (u8)places;
+            result.radix = Binary;
+            result.int_value = value;
             if (*p == '_' || isalnum(*p) || p == start + 2) {
                 t.lex_number_error(result, p, "binary");
                 return;
@@ -827,6 +838,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 value = (value << 3) + (*p - '0');
             }
             p++;
+            places++;
             if (*p == '_' && isdigit(p[1]))
                 p++;
         }
@@ -847,10 +859,13 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         }
         t.cur = p;
         if (p == start + 1) {
-            // value is 0, radix = Default, len = 1
+            // value is 0, radix = Default, places = 0, len = 1
             return;
         }
+        // places is one less than the number of digits after the initial 0
+        result.places = places > 16 ? 15 : (u8)(places - 1);
         result.radix = Octal;
+        result.int_value = value;
         goto check_overflow;
     }
 
@@ -866,6 +881,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         if (*p == '_' && isdigit(p[1]))
             p++;
     }
+    result.int_value = value;
     if (*p == 'e' || *p == 'E' || (*p == '.' && p[1] != '.')) {
         t.lex_floating_point(result, start);
         return;
@@ -876,7 +892,6 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     }
 check_overflow:
     t.cur = p;
-    result.int_value = value;
     result.len = (u16)(p - start);
     if (overflow) {
         t.num_error(result, p, "integer literal is too large to be represented in any integer type");
@@ -891,6 +906,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     u8 seen_dot = 0;
     result.kind = FloatLiteral;
     result.float_value = 0;
+    usize dotpos = 0;
     for (;;) {
         if (!isdigit(*p)) {
             if (*p == '_' && isdigit(p[1]))
@@ -898,12 +914,20 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
             else
             if (*p != '.' || seen_dot++)
                 break;
+            dotpos = pos + 1;
         }
         buf[pos++] = *p++;
         if (pos == countof(buf))
             goto too_large;
     }
+    if (seen_dot) {
+        u32 places = (u32)(pos - dotpos);
+        result.places = places > 15 ? 0 : (u8)places;
+    }
     if (*p == 'e' || *p == 'E') {
+        u32 places = (u32)(pos - seen_dot - (buf[0] > '0'));
+        result.alt = true;
+        result.places = places > 15 ? 0 : (u8)places;
         if (pos >= countof(buf) - 2)
             goto too_large;
         buf[pos++] = *p++;
@@ -922,7 +946,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
         }
     }
     if (*p == 'f' || *p == 'F') {
-        result.suffix_F = true;
+        result.radix = (Radix)2;
         p++;
     }
     if (*p == '_' || isalpha(*p)) {
@@ -952,6 +976,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     }
     for (;;) {
         if (!isxdigit(*p)) {
+            if (isupper(*p)) result.alt = true;
             if (*p == '_' && isxdigit(p[1]))
                 p++;
             else
@@ -984,7 +1009,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
         return;
     }
     if (*p == 'f' || *p == 'F') {
-        result.suffix_F = true;
+        result.radix = (Radix)3;
         p++;
     }
     if (*p == '_' || isalpha(*p)) {
@@ -1166,13 +1191,14 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 
 fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
     result.kind = StringLiteral;
-    result.raw = 1;
+    result.alt = 1;
     const char* start = t.cur;
 
     t.buf.clear();
     // count the number of backticks that serve as the rawstring delimiter
     u32 count = 1;
     while (*++t.cur == '`') count++;
+    result.places = (u8)count;
 
     const char* p = t.cur;
     const char* bol = p;
@@ -1188,6 +1214,9 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
         }
         if (*p == '\n') {
             // is multi-line: skip tag line, contents starts here
+            // TODO: store tag line and indentation in the string pool
+            if (t.cur[0] == 'c') result.radix = (Radix)1;
+            if (t.cur[1] == '2') result.radix = (Radix)2;
             p++;
             t.cur = p;
             at_bol = true;
@@ -1301,10 +1330,10 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             return;
         case '"':
             t.cur++; // skip string terminator
+            result.len = (u16)(t.cur - start);
             u32 len = t.buf.size();
             result.text_len = len;
             result.text_idx = t.pool.add(t.buf.data(), len, true);
-            result.len = (u16)(t.cur - start);
             return;
         case '\\':
             t.cur++;
@@ -1348,8 +1377,8 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
 
     if (t.raw_mode) {
         result.kind = LineComment;
-        result.text_len = len;
         result.len = (u16)(len + 2);
+        result.text_len = len;
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1374,10 +1403,11 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
             if (t.cur[1] == '/') {
                 t.cur += 2;
                 if (t.raw_mode) {
-                    usize len = (usize)(t.cur - start - 2);
+                    // length of the text between /* and */
+                    u32 len = (u32)(t.cur - start - 2);
                     result.kind = BlockComment;
                     result.len = (u16)(len + 4);
-                    result.text_len = (u32)len;
+                    result.text_len = len;
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }

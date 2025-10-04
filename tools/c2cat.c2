@@ -56,6 +56,7 @@ fn void usage(const char* me) {
            "    -c  --check  only check token syntax, no content output\n"
            "    --color      force colorized output\n"
            "    --nocolor    disable colorized output\n"
+           "    --normalize  normalize output tokens\n"
            , me);
 }
 
@@ -72,6 +73,7 @@ type C2cat struct {
     u8 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
     bool check_only;
     bool has_error;
+    bool normalize;
     ErrorLevel error_level;
     Style[Kind] token_style;
     Color[Style] style_color;
@@ -192,7 +194,11 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
 
     if (!ctx.check_only) {
         if (s && ctx.style_color[s]) out.color(ctx.style_color[s]);
-        out.add2(ctx.input + ctx.offset, tok_len);
+        if (ctx.normalize) {
+            ctx.normalize_token(tok, tok_len, out);
+        } else {
+            out.add2(ctx.input + ctx.offset, tok_len);
+        }
         if (s && ctx.style_color[s]) out.color(ctx.style_color[Normal]);
     }
     ctx.offset += tok_len;
@@ -279,7 +285,177 @@ fn void C2cat.on_tokenizer_error(void* arg, ErrorLevel level, SrcLoc loc, const 
     ctx.print_error(level, loc, "%s", msg);
 }
 
-fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool check_only)
+fn void C2cat.normalize_token(C2cat* ctx, const Token* tok, u32 tok_len, string_buffer.Buf* out) {
+    switch (tok.kind) {
+    case Identifier:
+        out.add(ctx.pool.idx2str(tok.name_idx));
+        break;
+    case IntegerLiteral:
+        switch (tok.getRadix()) {
+        case Hex:
+            if (tok.alt) {
+                out.print("0x%0*X", tok.places + 1, tok.int_value);
+            } else {
+                out.print("0x%0*x", tok.places + 1, tok.int_value);
+            }
+            break;
+        case Octal:
+            out.print("0%0*o", tok.places + 1, tok.int_value);
+            break;
+        case Binary:
+            // Do not use %b because '%lb' generates a warning on macOS
+            char[68] buf;
+            char *p = buf + countof(buf);
+            i32 places = tok.places + 1;
+            *--p = '\0';
+            for (u64 val = tok.int_value;;) {
+                *--p = (char)('0' + (val & 1));
+                val >>= 1;
+                if (--places <= 0 && !val) break;
+            }
+            out.print("0b%s", p);
+            break;
+        default:
+            out.print("%d", tok.int_value);
+            break;
+        }
+        break;
+    case FloatLiteral:
+        if (tok.getRadix() & 1) {
+            if (tok.alt) {
+                out.print("%A", tok.float_value);
+            } else {
+                out.print("%a", tok.float_value);
+            }
+        } else {
+            char[1024] buf;
+            if (tok.places) {
+                if (tok.alt)
+                    snprintf(buf, sizeof(buf), "%#.*e", tok.places, tok.float_value);
+                else
+                    snprintf(buf, sizeof(buf), "%#.*f", tok.places, tok.float_value);
+            } else {
+                i32 len;
+                if (tok.alt) {
+                    len = snprintf(buf, sizeof(buf), "%#.16e", tok.float_value);
+                } else {
+                    len = snprintf(buf, sizeof(buf), "%#.16g", tok.float_value);
+                }
+                // strip trailing zeroes because %#.16g does not
+                i32 nz = 0;
+                i32 i;
+                for (i = 0; i < len && buf[i] != 'e'; i++) {
+                    //if (buf[i] == '.')
+                    //    nz = i + 2;
+                    //else
+                    if (buf[i] != '0')
+                        nz = i + 1;
+                }
+                while (i <= len)
+                    buf[nz++] = buf[i++];
+            }
+            out.add(buf);
+        }
+        if (tok.getRadix() & 2) {
+            out.add1('F');
+        }
+        break;
+    case CharLiteral:
+        switch (tok.getRadix()) {
+        case Hex:
+            out.print("'\\x%02X'", tok.char_value);
+            break;
+        case Octal:
+            out.print("'\\%o'", tok.char_value);
+            break;
+        default:
+            out.add1('\'');
+            char cc = tok.char_value;
+            out.encodeBytes(&cc, 1, '\'');
+            out.add1('\'');
+            break;
+        }
+        break;
+    case StringLiteral:
+        if (tok.alt) {
+            ctx.output_raw_string(tok);
+        } else {
+            // TODO: handle radix
+            out.add1('"');
+            out.encodeBytes(ctx.pool.idx2str(tok.text_idx), tok.text_len, '"');
+            out.add1('"');
+        }
+        break;
+    case LineComment:
+        out.add("//");
+        out.add2(ctx.pool.idx2str(tok.text_idx), tok.text_len);
+        break;
+    case BlockComment:
+        out.add("/*");
+        out.add2(ctx.pool.idx2str(tok.text_idx), tok.text_len);
+        out.add("*/");
+        break;
+    case Invalid:
+        out.add2(tok.invalid, tok_len);
+        break;
+    case Eof:
+    case Error:
+        out.add2(ctx.input + ctx.offset, tok_len);
+        break;
+    default:
+        out.add(tok.kind.name);
+        break;
+    }
+}
+
+fn void C2cat.output_raw_string(C2cat* ctx, const Token* tok) {
+    string_buffer.Buf* out = ctx.out;
+
+    // determine line prefix
+    // TODO: should not use source code for this
+    const char* src = ctx.input + ctx.offset;
+    const char* pref = ctx.tokenizer.line_start;
+    u32 preflen = (u32)(src - pref);
+    if (preflen && src[-1] != '(') {
+        u32 i = 0;
+        while (ctype.isspace(pref[i])) i++;
+        i += 4;
+        if (i < preflen) preflen = i;
+    }
+
+    // scan raw string for newlines and backticks
+    const char* p = ctx.pool.idx2str(tok.text_idx);
+    bool has_newline = string.memchr(p, '\n', tok.text_len);
+    // output the raw string
+    for (u32 i = 0; i < tok.places; i++) out.add1('`');
+    bool need_prefix = false;
+    if (tok.places >= 3 && (has_newline || *p == '`' || tok.radix)) {
+        if (tok.radix == 1) out.add("c");
+        if (tok.radix == 2) out.add("c2");
+        out.add1('\n');
+        if (*p != '\n') need_prefix = true;
+    }
+    u32 i0 = 0;
+    for (u32 i = 0;; i++) {
+        if (need_prefix) {
+            for (u32 j = 0; j < preflen; j++)
+                out.add1(pref[j] == '\t' ? '\t' : ' ');
+            need_prefix = false;
+        }
+        if (i >= tok.text_len) {
+            out.add2(p + i0, i - i0);
+            break;
+        }
+        if (p[i] == '\n') {
+            out.add2(p + i0, i - i0 + 1);
+            i0 = i + 1;
+            if (p[i + 1] != '\n') need_prefix = true;
+        }
+    }
+    for (u32 i = 0; i < tok.places; i++) out.add1('`');
+}
+
+fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool check_only, bool normalize)
 {
     file_utils.File file.init(filename);
     if (!file.load()) {
@@ -306,6 +482,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
         .length = file_size,
         .in_attributes = 0,
         .check_only = check_only,
+        .normalize = normalize,
     }
 
     ctx.init_colors();
@@ -363,6 +540,7 @@ public fn i32 main(i32 argc, const char** argv)
     bool use_color = color.useColor();
     bool use_color2 = isatty(2);
     bool check_only = false;
+    bool normalize = false;
     i32 status = 0;
 
     // parse all command line options and count files
@@ -385,6 +563,9 @@ public fn i32 main(i32 argc, const char** argv)
             case "--nocolor":
                 use_color = false;
                 use_color2 = false;
+                break;
+            case "--normalize":
+                normalize = true;
                 break;
             case "-?":
             case "-h":
@@ -417,7 +598,7 @@ public fn i32 main(i32 argc, const char** argv)
             if (filenum++) printf("\n");
             printf("==> %s <==\n", arg);
         }
-        if (c2cat_file(arg, use_color, use_color2, check_only))
+        if (c2cat_file(arg, use_color, use_color2, check_only, normalize))
             status = EXIT_FAILURE;
     }
     return status;
