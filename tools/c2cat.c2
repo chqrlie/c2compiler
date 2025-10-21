@@ -311,7 +311,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
 
     ctx.init_colors();
 
-    c2_tokenizer.Tokenizer tokenizer.init(pool, buf, input, 1, &kwinfo, &features,
+    c2_tokenizer.Tokenizer tokenizer.init(pool, buf, input, 1, &kwinfo, &features, nil,
                                           C2cat.on_tokenizer_error, &ctx, true);
     ctx.tokenizer = &tokenizer;
     ctx.attr_registry.init(ctx.pool);
