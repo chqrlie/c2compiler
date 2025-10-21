@@ -35,6 +35,7 @@ import value_type { ftoa }
 #if DumpTokens
 import utils;
 #endif
+import warning_flags { WarningFlags }
 
 import csetjmp { JmpBufTag, setjmp, longjmp }
 import ctype { islower }
@@ -60,6 +61,7 @@ public type Parser struct @(opaque) {
     Builder* builder;
     const Map* features;
     const keywords.Info* kwinfo;
+    const WarningFlags* warnings;
     bool is_interface;
     bool is_generated;
     bool has_asserts;
@@ -85,6 +87,7 @@ public fn Parser* create(SourceMgr* sm,
                          ast_builder.Builder* builder,
                          const keywords.Info* kwinfo,
                          const Map* features,
+                         const WarningFlags* warnings,
                          bool has_asserts)
 {
     Parser* p = calloc(1, sizeof(Parser));
@@ -94,6 +97,7 @@ public fn Parser* create(SourceMgr* sm,
     p.builder = builder;
     p.features = features;
     p.kwinfo = kwinfo;
+    p.warnings = warnings;
     p.has_asserts = has_asserts;
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
@@ -134,6 +138,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                      p.sm.get_offset(p.file_id),
                      p.kwinfo,
                      p.features,
+                     p.warnings,
                      nil,
                      nil,
                      nil,
@@ -156,6 +161,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.sm.get_offset(p.file_id),
                          p.kwinfo,
                          p.features,
+                         p.warnings,
                          Parser.on_tokenizer_error,
                          p,
                          false);
