@@ -40,6 +40,7 @@ import string_pool { Pool }
 import string_utils;
 import target_info;
 import utils;
+import warning_flags { WarningFlags }
 
 import c_errno { errno }
 import ctype { toupper }
@@ -125,6 +126,7 @@ type Compiler struct {
     const Options* opts;         // no ownership
     target_info.Info targetInfo;
     PluginHandler* pluginHandler; // no ownership
+    const WarningFlags* warnings;  // no ownership
 
     Context* context;
     Pool* astPool;
@@ -190,6 +192,7 @@ fn void Compiler.build(Compiler* c,
     c.target = target;
     c.opts = opts;
     c.pluginHandler = pluginHandler;
+    c.warnings = target.getWarnings();
 
     if (opts.bootstrap) {
         c.target.setBackEnd(C);
@@ -207,7 +210,8 @@ fn void Compiler.build(Compiler* c,
         c.target.disableAsserts();
     }
 
-    diags.setWarningAsError(target.getWarnings().are_errors);
+    diags.setWarningAsError(c.warnings.are_errors);
+
     c.diags.clear();
 
     c.astPool = string_pool.create(128*1024, 8192);
@@ -310,6 +314,7 @@ fn void Compiler.build(Compiler* c,
                                 c.builder,
                                 &c.kwinfo,
                                 c.target.getFeatures(),
+                                c.warnings,
                                 c.target.hasAsserts());
 
     c.analyser = module_analyser.create(c.diags,
@@ -317,7 +322,7 @@ fn void Compiler.build(Compiler* c,
                                         c.astPool,
                                         c.builder,
                                         &c.allmodules,
-                                        c.target.getWarnings(),
+                                        c.warnings,
                                         c.target.hasAsserts(),
                                         c.opts.check_only);
 

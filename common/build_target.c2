@@ -20,7 +20,7 @@ import src_loc { SrcLoc }
 import string_list;
 import string_map { Map }
 import string_pool { Pool }
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 
 import stdlib { calloc, malloc, free }
 import string { memset, memcpy }
@@ -101,7 +101,7 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
 public type Target struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
-    Flags warnings;
+    WarningFlags warnings;
     Kind kind;
 
     bool disable_asserts;
@@ -205,6 +205,7 @@ public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_unreachable_code = true;
     t.warnings.no_unknown_attribute = true;
     t.warnings.no_deprecated = true;
+    t.warnings.no_max_identifier_length = true;
 }
 
 public fn void Target.enableWarnings(Target* t) {
@@ -223,13 +224,14 @@ public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_unreachable_code = false;
     t.warnings.no_unknown_attribute = false;
     t.warnings.no_deprecated = false;
+    t.warnings.no_max_identifier_length = false;
 }
 
-public fn const Flags* Target.getWarnings(const Target* t) {
+public fn const WarningFlags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
 
-public fn Flags* Target.getWarnings2(Target* t) {
+public fn WarningFlags* Target.getWarnings2(Target* t) {
     return &t.warnings;
 }
 
