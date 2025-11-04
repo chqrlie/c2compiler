@@ -216,6 +216,7 @@ const u8[Kind] CastExprTokenLookup = {
     [KW_f32] = 14,
     [KW_f64] = 14,
     [KW_va_arg] = 15,
+    [KW_fn] = 16,
 }
 
 // Note: tried lookup table, was slower..
@@ -346,6 +347,9 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         break;
     case 15: // KW_va_arg
         res = p.parseVaArgExpr();
+        break;
+    case 16: // KW_fn
+        res = p.parseLocalFuncExpr();
         break;
     }
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
