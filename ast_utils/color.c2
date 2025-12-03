@@ -36,6 +36,9 @@ public type Color enum u8 {
     Bcyan,
     White,
     Normal,
+
+    CustomStart,
+    CustomEnd = Color.CustomStart + 15,
 }
 
 public const Color Black    = Black;
@@ -56,7 +59,7 @@ public const Color Bcyan    = Bcyan;
 public const Color White    = White;
 public const Color Normal   = Normal;
 
-const char*[Color] defaultColors = {
+const char*[Color.max + 1] defaultColors = {
     [Color.None]     = "",
     [Color.Black]    = "\033[0;30m",
     [Color.Red]      = "\033[0;31m",
