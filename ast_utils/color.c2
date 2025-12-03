@@ -36,7 +36,27 @@ public type Color enum u8 (const char* defStr) {
     Bcyan    : { "\033[1;36m" },
     White    : { "\033[1;37m" },
     Normal   : { "\033[0m" },
+
+    Custom1  : { nil },
+    Custom2  : { nil },
+    Custom3  : { nil },
+    Custom4  : { nil },
+    Custom5  : { nil },
+    Custom6  : { nil },
+    Custom7  : { nil },
+    Custom8  : { nil },
+    Custom9  : { nil },
+    Custom10 : { nil },
+    Custom11 : { nil },
+    Custom12 : { nil },
+    Custom13 : { nil },
+    Custom14 : { nil },
+    Custom15 : { nil },
+    Custom16 : { nil },
 }
+
+const Color CustomStart = Custom1;
+const Color CustomEnd = Custom16;
 
 public fn bool useColor() {
     return isatty(1);
