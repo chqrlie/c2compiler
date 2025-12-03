@@ -1,0 +1,233 @@
+/* Copyright 2022-2025 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module color;
+
+import ctype { tolower, isspace }
+import stdio { sscanf, snprintf }
+import stdlib { atoi, getenv }
+import string { strcasecmp, strcmp, strdup, strncmp }
+
+const char*[] standardColorNames = {
+    [Color.Black]    = "black",
+    [Color.Red]      = "red",
+    [Color.Green]    = "green",
+    [Color.Yellow]   = "yellow",
+    [Color.Blue]     = "blue",
+    [Color.Magenta]  = "magenta",
+    [Color.Cyan]     = "cyan",
+    [Color.Grey]     = "grey",
+    [Color.Darkgrey] = "darkgrey",
+    [Color.Bred]     = "bred",
+    [Color.Bgreen]   = "bgreen",
+    [Color.Byellow]  = "byellow",
+    [Color.Bblue]    = "bblue",
+    [Color.Bmagenta] = "bmagenta",
+    [Color.Bcyan]    = "bcyan",
+    [Color.White]    = "white",
+    [Color.Normal]   = "normal",
+}
+
+fn Color findStandardColor(const char* name, bool use_custom = false) {
+    for (u32 i = 0; i < countof(standardColorNames); i++) {
+        if (matchColorName(name, standardColorNames[i]))
+            return (Color)i;
+    }
+    if (use_custom && !strncmp(name, "custom", 6)) {
+        i32 n = atoi(name + 6);
+        if (n > 0 && n <= Color.CustomEnd - Color.CustomStart + 1)
+            return (Color)(Color.CustomStart + n - 1);
+    }
+    return Color.None;
+}
+
+fn const char* makeColorString(const char *val) {
+    if (!val || *val == '\0' || !strcasecmp(val, "default"))
+        return nil;
+
+    if (Color col1 = findStandardColor(val)) {
+        return defaultColors[col1];
+    }
+    u32 pal;
+    if (sscanf(val, "%*1[pP]%u", &pal) == 1) {
+        char[32] buf;
+        snprintf(buf, countof(buf), "\033[38;5;%dm", pal);
+        return strdup(buf);
+    }
+    u32 r, g, b;
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        char[32] buf;
+        snprintf(buf, countof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+        return strdup(buf);
+    }
+    // TODO: complain about unknown color
+    return nil;
+}
+
+fn char* str_tolower(char *s) {
+    for (char *p = s; *p; p++) {
+        *p = (char)tolower(*p);
+    }
+    return s;
+}
+
+fn bool getStyleDef(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    for (;;) {
+        while (isspace(*p))
+            p++;
+        if (*p == '\0' || *p == '[')
+            return false;
+        if (*p != '#')
+            break;
+        while (*p && *p++ != '\n')
+            continue;
+    }
+    u32 i = 0;
+    u32 j = 0;
+    while (*p && *p != '=' && *p != ':' && *p != ';' && !isspace(*p)) {
+        char c = *p++;
+        if (i + 1 < size1)
+            buf1[i++] = c;
+        if (j + 1 < size2)
+            buf2[j++] = c;
+    }
+    if (size1) buf1[i] = '\0';
+    if (size2) buf2[j] = '\0';
+    while (*p == ' ') p++;
+    if (*p == '=' || *p == ':') {
+        p++;
+        while (*p == ' ') p++;
+        j = 0;
+        while (*p && *p != ';' && *p != '\n') {
+            char c = *p++;
+            if (j + 1 < size2) buf2[j++] = c;
+        }
+        if (size2) buf2[j] = '\0';
+    }
+    while (*p) {
+        char c = *p++;
+        if (c == '\n' || c == ';')
+            break;
+    }
+    *pp = p;
+    return true;
+}
+
+fn bool matchColorName(const char *p, const char *name) {
+    if (!name) return false;
+    for (;;) {
+        char c = *p++;
+        if (c == '-' || c == '_') c = *p++;
+        if (c == 'b' && !strncmp(p, "right", 5)) p += 5;
+        char c1 = *name++;
+        if (c1 == '-' || c1 == '_') c1 = *name++;
+        if (c != c1) return false;
+        if (c == '\0') return true;
+    }
+}
+
+fn Color convertColor(const char *val, Color def) {
+    if (!val || *val == '\0')
+        return None;
+
+    if (Color col1 = findStandardColor(val))
+        return col1;
+
+    //if (!strcmp(val, "default"))
+    //    return def;
+
+    char[32] buf;
+    u32 pal, r, g, b;
+    if (sscanf(val, "%*1[pP]%u", &pal) == 1) {
+        snprintf(buf, countof(buf), "\033[38;5;%dm", pal);
+    } else
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        snprintf(buf, countof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+    } else {
+        // TODO: complain about unknown color
+        return def;
+    }
+
+    for (u32 i = Color.CustomStart; i <= Color.CustomEnd; i++) {
+        if (!defaultColors[i]) {
+            defaultColors[i] = strdup(buf);
+            return (Color)i;
+        }
+    }
+
+    // TODO: complain about out of custom colors
+    return def;
+}
+
+public fn Color getConfigColor(const char* varname, const char* cat, Color def) {
+    const char *c2_colors = getenv(varname);
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] style;
+        char[16] val;
+        if (!strcmp(p, "none"))
+            return None;
+        while (getStyleDef(style, countof(style), val, countof(val), &p)) {
+            if (!strcmp(str_tolower(style), cat))
+                return convertColor(str_tolower(val), def);
+        }
+    }
+    return def;
+}
+
+public fn void getConfigColors(const char *p, Color* styles, const char* const* names, u32 n) {
+    if (!p) return;
+
+    char[16] name;
+    char[16] definition;
+    if (!strcmp(p, "none")) {
+        for (u32 i = 0; i < n; i++) styles[i] = None;
+        return;
+    }
+    while (getStyleDef(name, countof(name), definition, countof(definition), &p)) {
+        str_tolower(name);
+        str_tolower(definition);
+        // check for standard color customisation
+        if (Color col = findStandardColor(name)) {
+            const char* s = makeColorString(definition);
+            if (s) defaultColors[col] = s;
+            continue;
+        }
+        // check for style definition
+        for (u32 i = 0; i < n; i++) {
+            if (matchColorName(name, names[i])) {
+                styles[i] = convertColor(definition, styles[i]);
+                break;
+            }
+        }
+    }
+}
+
+public fn void freeCustomColors(Color start, Color end) {
+#if 0
+    if (start < Color.CustomStart)
+        start = Color.CustomStart;
+    if (end > Color.CustomEnd)
+        end = Color.CustomEnd;
+    for (u32 i = start; i <= end; i++) {
+        if (standardColorNames[i]) {
+            free((char *)standardColorNames[i]);
+            standardColorNames[i] = nil;
+        }
+    }
+#endif
+}
+

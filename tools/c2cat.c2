@@ -28,7 +28,7 @@ import token { Kind, Token }
 
 import ctype { isspace }
 import stdio { * }
-import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS }
+import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS, getenv }
 import string { strcmp }
 import unistd { isatty }
 
@@ -131,7 +131,13 @@ fn bool C2cat.init_colors(C2cat* ctx) {
     for (Style s = Style.min; s <= Style.max; s++) {
         ctx.style_color[s] = s.default_color;
     }
-    // TODO: customize colors from environment variable, config file or command line argument
+#if 0
+    for (Style s = Style.min; s <= Style.max; s++) {
+        ctx.style_color[s] = color.getConfigColor("C2_COLORS", s.name, s.default_color);
+    }
+#else
+    getConfigColors(getenv("C2_COLORS"), ctx.style_color, Style.name, countof(Style));
+#endif
     return true;
 }
 
@@ -181,7 +187,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     }
 
     Style s = ctx.token_style[tok.kind];
-    if (tok.kind == Kind.Identifier) {
+    if (tok.kind == Identifier) {
         if (ctx.in_attributes) {
             s = ctx.is_attribute(tok.name_idx) ? Attr : Invalid;
         } else
