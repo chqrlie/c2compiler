@@ -258,7 +258,7 @@ public fn void AST.storeAttr(AST* a, Decl* d, const Attr* at)
     a.attrs.add(d, at);
 }
 
-public fn const Attr* AST.getAttr(const AST* a, const Decl* d, AttrKind kind)
+fn const Attr* AST.getAttr(const AST* a, const Decl* d, AttrKind kind)
 {
     if (a.attrs) return a.attrs.find(d, kind);
     return nil;

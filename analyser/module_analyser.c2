@@ -477,15 +477,14 @@ fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
     ma.analyseGlobalDecl(d);
 }
 
-fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
+fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     Analyser* ma = arg;
 
-    StaticAssert* sa = (StaticAssert*)d;
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 
     // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
-    if (!ma.pushCheck(nil, d.getAST().getPtr(), nil)) return;
+    if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
     QualType t1 = ma.analyseExpr(&lhs, false, RHS);
     QualType t2 = ma.analyseExpr(&rhs, false, RHS);
     ma.popCheck();
@@ -556,8 +555,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         return;
     }
 
-    const AST* a = d.getAST();
-    const Attr* embed = a.getAttr(d, Embed);
+    const Attr* embed = d.getAttr(Embed);
 
     if (canon.isArray() && !ref.isIncrArray()) {
         const ArrayType* at = canon.getArrayType();
@@ -639,14 +637,12 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
         }
         if (!d.hasAttr()) return;
 
-        const AST* a = d.getAST();
-
-        const Attr* section = a.getAttr(d, Section);
+        const Attr* section = d.getAttr(Section);
         if (section) {
             ma.error(section.loc, "attribute 'section' cannot be applied to constants");
         }
 
-        const Attr* aligned = a.getAttr(d, Aligned);
+        const Attr* aligned = d.getAttr(Aligned);
         if (aligned) {
             ma.error(aligned.loc, "attribute 'aligned' cannot be applied to constants");
         }

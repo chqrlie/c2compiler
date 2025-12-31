@@ -74,8 +74,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     if (fd.hasAttrDeprecated() && !ma.warnings.no_deprecated) {
-        const AST* a = ((Decl*)fd).getAST();
-        const Attr* deprecated = a.getAttr(((Decl*)fd), Deprecated);
+        const Attr* deprecated = ((Decl*)fd).getAttr(Deprecated);
         const char* msg = ma.astPool.idx2str(deprecated.value.text);
         ma.warn(origFn.getLoc(), "function %s is deprecated: %s", fd.asDecl().getFullName(), msg);
         //return QualType_Invalid;
