@@ -36,7 +36,7 @@ fn void color_print(const char* color, const char* text) {
 }
 
 fn void run_group(const Group* g, Stats* stats) {
-  u8[256] fixture;
+  u8[4096] fixture;
   for (u32 i=0; i<g.num_tests; i++) {
     const C2Test* t = &g.tests[i];
 
