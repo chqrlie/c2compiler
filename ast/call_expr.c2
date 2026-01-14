@@ -25,7 +25,6 @@ type CallExprBits struct {
     u32 : NumExprBits;
     u32 calls_type_func : 1;
     u32 calls_static_sf : 1;
-    u32 is_template_call : 1;
     u32 is_noreturn : 1;
     u32 num_args : 8;
 }
@@ -33,11 +32,8 @@ type CallExprBits struct {
 public type CallExpr struct @(opaque) {
     Expr base;
     SrcLoc endLoc;
-    u16 template_idx;   // instance number
-    u16 instance_ast_idx; // for template function calls
     Expr* func;
     Expr*[0] args; // tail-allocated
-    //TypeRef template_arg; // tail-allocated, variable size
 }
 
 public fn CallExpr* CallExpr.create(Context* c,
@@ -52,8 +48,6 @@ public fn CallExpr* CallExpr.create(Context* c,
     e.base.init(Call, loc, 0, 0, 1, RValue);
     e.base.base.callExprBits.num_args = (u8)num_args;
     e.endLoc = endLoc;
-    e.template_idx = 0;
-    e.instance_ast_idx = 0;
     e.func = func;
     memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
@@ -62,6 +56,7 @@ public fn CallExpr* CallExpr.create(Context* c,
     return e;
 }
 
+#if 0
 public fn CallExpr* CallExpr.createTemplate(Context* c,
                                               SrcLoc loc,
                                               SrcLoc endLoc,
@@ -89,16 +84,14 @@ public fn CallExpr* CallExpr.createTemplate(Context* c,
 #endif
     return e;
 }
+#endif
 
 fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
-    assert(!e.isTemplateCall());
     u32 num_args = e.base.base.callExprBits.num_args;
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;
     e2.endLoc = e.endLoc;
-    e2.template_idx = 0;
-    e2.instance_ast_idx = e.instance_ast_idx;
     e2.func = e.func.instantiate(inst);
     for (u32 i = 0; i < num_args; i++) {
         e2.args[i] = e.args[i].instantiate(inst);
@@ -119,27 +112,6 @@ public fn bool CallExpr.isTypeFunc(const CallExpr* e) {
 
 public fn void CallExpr.setCallsStaticTypeFunc(CallExpr* e) {
     e.base.base.callExprBits.calls_static_sf = 1;
-}
-
-public fn bool CallExpr.isTemplateCall(const CallExpr* e) {
-    return e.base.base.callExprBits.is_template_call;
-}
-
-public fn TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
-    if (e.isTemplateCall()) return (TypeRef*)&e.args[e.base.base.callExprBits.num_args];
-    return nil;
-}
-
-public fn void CallExpr.setTemplateIdx(CallExpr* e, u32 idx) {
-    e.template_idx = (u16)idx;
-}
-
-public fn u32 CallExpr.getTemplateIdx(const CallExpr* e) {
-    return e.template_idx;
-}
-
-public fn u16 CallExpr.getInstanceASTIdx(const CallExpr* e) {
-    return e.instance_ast_idx;
 }
 
 public fn void CallExpr.setNoreturn(CallExpr* e) {
@@ -190,14 +162,6 @@ fn void CallExpr.print(const CallExpr* e, Buf* out, u32 indent) {
     if (e.base.base.callExprBits.calls_static_sf) out.add(" STF");
     if (e.base.base.callExprBits.is_noreturn) out.add(" noreturn");
     out.newline();
-    if (e.base.base.callExprBits.is_template_call) {
-        out.indent(indent + 1);
-        out.color(col_Template);
-        out.add("template ");
-        TypeRef* ref = (TypeRef*)&e.args[e.base.base.callExprBits.num_args];
-        ref.print(out, true);
-        out.newline();
-    }
     e.func.print(out, indent + 1);
     for (u32 i=0; i<e.getNumArgs(); i++) {
         e.args[i].print(out, indent + 1);
