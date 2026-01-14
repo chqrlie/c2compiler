@@ -27,6 +27,7 @@ public type ExprKind enum u8 (const char* const name) {
     Nil                   : { "Nil" },
     Identifier            : { "Identifier" },
     Type                  : { "TypeExpr" },
+    Template              : { "Template" },
     Call                  : { "Call" },
     InitList              : { "InitList" },
     FieldDesignatedInit   : { "FieldDesignatedInit" },
@@ -121,6 +122,8 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
         return IdentifierExpr.instantiate((IdentifierExpr*)e, inst);
     case Type:
         return TypeExpr.instantiate((TypeExpr*)e, inst);
+    case Template:
+        return TemplateExpr.instantiate((TemplateExpr*)e, inst);
     case Call:
         return CallExpr.instantiate((CallExpr*)e, inst);
     case InitList:
@@ -215,6 +218,10 @@ public fn bool Expr.isImplicitCast(const Expr* e) {
 
 public fn bool Expr.isType(const Expr* e) {
     return e.getKind() == Type;
+}
+
+public fn bool Expr.isTemplate(const Expr* e) @(unused) {
+    return e.getKind() == Template;
 }
 
 public fn bool Expr.isInitList(const Expr* e) {
@@ -369,6 +376,7 @@ public fn bool Expr.isPositiveOrUB(const Expr* e) {
     case Nil:
     case Identifier:
     case Type:
+    case Template:
     case Call:
     case InitList:
     case FieldDesignatedInit:
@@ -462,6 +470,8 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case Identifier:
     case Type:
         break;
+    case Template:
+        return ((TemplateExpr*)e).getStartLoc();
     case Call:
         return ((CallExpr*)e).getStartLoc();
     case InitList:
@@ -516,6 +526,8 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
         return ((IdentifierExpr*)e).getEndLoc();
     case Type:
         return ((TypeExpr*)e).getEndLoc();
+    case Template:
+        return ((TemplateExpr*)e).getEndLoc();
     case Call:
         return ((CallExpr*)e).getEndLoc();
     case InitList:
@@ -594,6 +606,9 @@ fn void Expr.print(const Expr* e, StringBuf* out, u32 indent) {
         break;
     case Type:
         TypeExpr.print((TypeExpr*)e, out, indent);
+        break;
+    case Template:
+        TemplateExpr.print((TemplateExpr*)e, out, indent);
         break;
     case Call:
         CallExpr.print((CallExpr*)e, out, indent);
@@ -675,6 +690,9 @@ public fn void Expr.printLiteral(const Expr* e, StringBuf* out) {
         return;
     case Type:
         TypeExpr.printLiteral((TypeExpr*)e, out);
+        return;
+    case Template:
+        TemplateExpr.printLiteral((TemplateExpr*)e, out);
         return;
     case Call:
         CallExpr.printLiteral((CallExpr*)e, out);
