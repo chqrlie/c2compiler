@@ -142,7 +142,7 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
                                                     e.container[0].member.instantiate(inst),
                                                     e.container[0].pointer.instantiate(inst));
     case VaArg:
-        bool matches = e.va_arg_data[0].dest.matchesTemplate(inst.template_name);
+        bool matches = e.va_arg_data[0].dest.matchesTemplate(inst);
         u32 extra = matches ? inst.ref.getExtraSize() : e.va_arg_data[0].dest.getExtraSize();
         u32 size = sizeof(BuiltinExpr) + sizeof(VaArgData) + extra;
         BuiltinExpr* e2 = inst.c.alloc(size);
