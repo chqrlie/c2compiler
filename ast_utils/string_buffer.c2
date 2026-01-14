@@ -149,6 +149,19 @@ public fn void StringBuf.add(StringBuf* buf, const char* text) {
     buf.add2(text, len);
 }
 
+// append a possibly qualified name or number as part of a mangled name
+public fn void StringBuf.addMangledName(StringBuf* buf, const char* text, bool member) {
+    //buf.print("%d", (u32)strlen(text));
+    if (member) buf.add1('$');
+    char first = *text;
+    if (first == '-') text++;
+    while (char c = *text++) {
+        if (c == '.') c = '_';
+        buf.add1(c);
+    }
+    if (first == '-') buf.add1('n');
+}
+
 public fn void StringBuf.add2(StringBuf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
         // truncate if resize fails.
