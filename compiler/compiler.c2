@@ -15,9 +15,8 @@
 
 module compiler;
 
-import ast;
+import ast { AstContext }
 import ast_builder { Builder }
-import ast_context { Context }
 import attr_handler { AttrHandler }
 import build_file;
 import build_target { BuildTarget, TargetKind }
@@ -38,6 +37,7 @@ import string_list { StringList }
 import string_pool { StringPool }
 import string_utils;
 import target_info { TargetInfo }
+import tail_allocator { * }
 import utils;
 
 import c_errno { errno }
@@ -105,14 +105,14 @@ public fn void build(StringPool* auxPool,
         c.auxPool.report("auxPool");
     }
     if (opts.print_ast_stats) {
-        ast.report();
+        c.context.report_stats();
     }
 
     diags.printStatus();
 
     pluginHandler.end_target(pluginHandler.arg);
 
-    ast.deinit();
+    c.context.free();
     c.free();
 }
 
@@ -126,7 +126,8 @@ type Compiler struct {
     TargetInfo targetInfo;
     PluginHandler* pluginHandler; // no ownership
 
-    Context* context;
+    TailAllocator* arena;
+    AstContext* context;
     StringPool* astPool;
     Builder* builder;
     AttrHandler* attr_handler;
@@ -290,10 +291,8 @@ fn void Compiler.build(Compiler* c,
     c.addFeature("EXPERIMENTAL");
 #endif
 
-    // TODO: reorganize these objects:
-    //  ast.AstContext should the global object
-    c.context = Context.create(16*1024, c.targetInfo.ptrWidth / 8);
-    ast.initialize(c.context, c.astPool, c.opts.use_color);
+    c.arena = TailAllocator.create(16*1024);
+    c.context = AstContext.create(c.arena, c.astPool, c.targetInfo.ptrWidth / 8, c.opts.use_color);
 
     c.attr_handler = AttrHandler.create(diags, c.astPool, target.getWarnings());
     c.builder = Builder.create(c.context,
@@ -353,10 +352,10 @@ fn void Compiler.build(Compiler* c,
     info.diags = diags;
     info.target = target;
     info.components = &c.components;
-    info.ast_globals = ast.getGlobals();
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;
+    info.arena = c.arena;
     info.builder = c.builder;
     info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
@@ -422,7 +421,7 @@ fn void Compiler.free(Compiler* c) {
     c.builder.free();
     c.attr_handler.free();
     c.astPool.free();
-    c.context.free();
+    c.arena.free();
     c.libdirs.free();
     c.libdirs_bin.free();
 }

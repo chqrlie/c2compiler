@@ -25,6 +25,7 @@ import string_list { StringList }
 import string_pool { StringPool }
 
 type Generator struct {
+    AstContext* context;
     StringPool* astPool;
     StringBuf* out;
     const char* output_dir;
@@ -39,11 +40,12 @@ fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
     return gen.astPool.idx2str(name_idx);
 }
 
-public fn void generate(StringPool* astPool, const char* output_dir, ComponentList* comps)
+public fn void generate(AstContext* context, StringPool* astPool, const char* output_dir, ComponentList* comps)
 {
     Generator gen = {}
+    gen.context = context;
     gen.astPool = astPool;
-    gen.out = StringBuf.create(64*1024, false, 3);
+    gen.out = StringBuf.create(64*1024, false, 3, context);
     gen.output_dir = output_dir;
 
     Component* mainComp = comps.getLast();
