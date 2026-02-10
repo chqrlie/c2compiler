@@ -15,36 +15,32 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
 public type StaticAssert struct @(opaque) {
-    u32 ast_idx;    // into globals.ast_list, 0 means nil
+    u32 ast_idx;    // into context.ast_list, 0 means nil
     u32 loc;
     Expr* lhs;
     Expr* rhs;
 }
 
-public fn StaticAssert* StaticAssert.create(ast_context.Context* c,
+public fn StaticAssert* StaticAssert.create(AstContext* c,
                                                       u32 ast_idx,
                                                       SrcLoc loc,
                                                       Expr* lhs,
                                                       Expr* rhs)
 {
-    StaticAssert* d = c.alloc(sizeof(StaticAssert));
+    StaticAssert* d = c.alloc(sizeof(StaticAssert), StaticAssert);
     d.ast_idx = ast_idx;
     d.loc = loc;
     d.lhs = lhs;
     d.rhs = rhs;
-#if AstStatistics
-    Stats.addStaticAssert(sizeof(StaticAssert));
-#endif
     return d;
 }
 
-public fn AST* StaticAssert.getAST(const StaticAssert* d) {
-    return globals.idx2ast(d.ast_idx);
+public fn AST* StaticAssert.getAST(const StaticAssert* d, const AstContext* g) {
+    return g.getAST(d.ast_idx);
 }
 
 public fn Expr* StaticAssert.getLHS(const StaticAssert* d) {

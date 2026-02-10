@@ -16,7 +16,6 @@
 module module_analyser;
 
 import ast local;
-import ast_context;
 import ast_builder;
 import attr local;
 import conversion_checker as conv;
@@ -45,11 +44,12 @@ const u32 MaxDepth = 8;
 public type Analyser struct @(opaque) {
     diagnostics.Diags* diags;
     conv.Checker conv_checker;
-    ast_context.Context* context;
+    AstContext* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
     module_list.List* allmodules;
     const warning_flags.Flags* warnings;
+    QualType* builtins;
 
     // variables below differs per run
     Module* mod;
@@ -89,7 +89,7 @@ public type Analyser struct @(opaque) {
 }
 
 public fn Analyser* create(diagnostics.Diags* diags,
-                             ast_context.Context* context,
+                             AstContext *context,
                              string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
                              module_list.List* allmodules,
@@ -98,13 +98,14 @@ public fn Analyser* create(diagnostics.Diags* diags,
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
-    ma.conv_checker.init(diags, builder);
+    ma.conv_checker.init(context, diags, builder);
     ma.context = context;
     ma.astPool = astPool;
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
     ma.has_asserts = has_asserts;
+    ma.builtins = context.getBuiltins();
     ma.check_only = check_only;
     /* zero initialization is OK for ma.labels and ma.init_checkers */
     ma.min_idx = astPool.addStr("min", true);
@@ -117,13 +118,14 @@ public fn Analyser* create(diagnostics.Diags* diags,
 fn Analyser* Analyser.clone(Analyser* org) {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = org.diags;
-    ma.conv_checker.init(org.diags, org.builder);
+    ma.conv_checker.init(org.context, org.diags, org.builder);
     ma.context = org.context;
     ma.astPool = org.astPool;
     ma.builder = org.builder;
     ma.allmodules = org.allmodules;
     ma.warnings = org.warnings;
     ma.has_asserts = org.has_asserts;
+    ma.builtins = org.builtins;
     ma.check_only = org.check_only;
     ma.min_idx = org.min_idx;
     ma.max_idx = org.max_idx;
@@ -151,7 +153,11 @@ fn const char* Analyser.getName(const Analyser* ma, const Decl* d) {
 
 fn const char* Analyser.getFullName(const Analyser* ma, const Decl* d) {
     // TODO pass astPool and buffer to d.getFullName()
-    return d.getFullName();
+    return d.getFullName(ma.context);
+}
+
+fn QualType Analyser.getBuiltinQT(Analyser* ma, BuiltinKind kind) {
+    return ma.builtins[kind];
 }
 
 public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
@@ -372,7 +378,8 @@ fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char
 
 fn void Analyser.createGlobalScope(void* arg, AST* a) {
     Analyser* ma = arg;
-    scope.Scope* s = scope.create(ma.allmodules,
+    scope.Scope* s = scope.create(ma.context,
+                                  ma.allmodules,
                                   ma.diags,
                                   ma.astPool,
                                   a.getImports(),
@@ -461,10 +468,10 @@ fn void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
     ma.analyseGlobalDecl((Decl*)d);
 }
 
-fn void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
+fn void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* fd) {
     Analyser* ma = arg;
 
-    ma.analyseFunctionBody(d, d.asDecl().getAST().getPtr());
+    ma.analyseFunctionBody(fd, fd.asDecl().getAST(ma.context).getPtr());
 }
 
 fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
@@ -477,7 +484,7 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         if (top.decl == d) return true;
     }
 
-    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return false;
+    if (!ma.pushCheck(d, d.getAST(ma.context).getPtr(), nil)) return false;
 
     if (d.isExported() && !d.isPublic()) {
         ma.error(d.getLoc(), "attribute 'export' can only be applied to public declarations");
@@ -530,7 +537,7 @@ fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
     if (!d.isEnum()) return;
     EnumTypeDecl* etd = (EnumTypeDecl*)d;
     if (!etd.hasAssocValues()) return;
-    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return;
+    if (!ma.pushCheck(d, d.getAST(ma.context).getPtr(), nil)) return;
     ma.analyseEnumAssocValues(etd);
     ma.popCheck();
 }
@@ -575,7 +582,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     }
 
     // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
-    if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
+    if (!ma.pushCheck(nil, sa.getAST(ma.context).getPtr(), nil)) return;
     QualType t1 = ma.analyseConstExpr(&lhs, true);
     QualType t2 = t1;
     if (!t1.isInvalid() && rhs) t2 = ma.analyseConstExpr(&rhs, true);
@@ -602,10 +609,10 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
         if (rhs.isImplicitCast()) rhs = ((ImplicitCastExpr*)rhs).getInner();
     }
 
-    Value val1 = ast.evalExpr(lhs);
+    Value val1 = ast.evalExpr(lhs, ma.context);
     Value val2 = {}
     if (rhs) {
-        val2 = ast.evalExpr(rhs);
+        val2 = ast.evalExpr(rhs, ma.context);
         if (val1.is_equal(&val2)) return;
     } else {
         if (!val1.isZero()) return;
@@ -613,6 +620,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
 
     char[256] tmp;
     string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+    buf.setOpaque(ma.context);
 
     if (rhs) {
         if (opcode == Equal) {
@@ -693,7 +701,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         return;
     }
 
-    const Attr* embed = d.getAttr(Embed);
+    const Attr* embed = d.getAttr(Embed, ma.context);
 
     if (canon.isArray() && !ref.isIncrArray()) {
         const ArrayType* at = canon.getArrayType();
@@ -746,7 +754,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         reader.close();
     }
 
-    if (!d.getAST().isInterface())
+    if (!d.getAST(ma.context).isInterface())
         ma.checkName(d, res.isConstant());
 
     if (d.isPublic()) res.setTypeUsedPublic();
@@ -777,12 +785,12 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
         }
         if (!d.hasAttr()) return;
 
-        const Attr* section = d.getAttr(Section);
+        const Attr* section = d.getAttr(Section, ma.context);
         if (section) {
             ma.error(section.loc, "attribute 'section' cannot be applied to constants");
         }
 
-        const Attr* aligned = d.getAttr(Aligned);
+        const Attr* aligned = d.getAttr(Aligned, ma.context);
         if (aligned) {
             ma.error(aligned.loc, "attribute 'aligned' cannot be applied to constants");
         }

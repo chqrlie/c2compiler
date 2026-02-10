@@ -17,9 +17,9 @@ module ast;
 
 import attr local;
 import color local;
-import ast_context local;
 import string_buffer;
 import string_pool;
+import tail_allocator local;
 
 import stdio;
 import stdlib;
@@ -95,16 +95,19 @@ static_assert(8, sizeof(TypeRef));
 
 #endif
 
+// TODO: allow this to be inlined
 public const QualType QualType_Invalid = { }
 
-public type Globals struct @(opaque) {
+public type AstContext struct @(opaque) {
     QualType[BuiltinKind] builtins;
     QualType void_type;
     QualType void_ptr_type;
+    TailAllocator* arena;
 
     string_pool.Pool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
+    u32 wordsize;
     bool use_color;
     // TODO just use AST vector (also in modules, but modules has ownership)
     u32 ast_count;      // Note: first index used to indicate nil
@@ -117,57 +120,50 @@ public type Globals struct @(opaque) {
 }
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
-Globals* globals;
+AstContext* ast_context;
 
-// for plugins
-public fn Globals* getGlobals() { return globals; }
-
-// only used by plugins
-public fn void setGlobals(Globals* g) @(unused) { globals = g; }
+// only used public by plugins for debugging
+public fn void setGlobals(AstContext* g) @(unused) {
+    ast_context = g;
+}
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color) {
-    Globals* g = stdlib.calloc(sizeof(Globals), 1);
-    g.pointers.init(c);
-    g.string_types.init(c);
+public fn AstContext* initialize(TailAllocator* arena, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
+    AstContext* g = stdlib.calloc(sizeof(AstContext), 1);
+
+    g.arena = arena;
+    g.pointers.init(g);
+    g.wordsize = wordsize;
     g.use_color = use_color;
     g.names_pool = astPool;
     g.ast_count = 0;
     g.ast_capacity = 0;
     g.ast_list = nil;
     g.dump_buf = string_buffer.create(4096, use_color, 2);
-#if AstStatistics
-    g.stats.reset();
-#endif
-    globals = g;  // must be set here because BuiltinType.create calls Stats.addType
+    g.dump_buf.setOpaque(g);
+
+    // must be set globals here because BuiltinType.create calls c.addType
+    setGlobals(g);
 
     g.addAST(nil);  // ensure idx2ast(0) is nil
 
     // create all Qualtypes for builtin-types
     for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
-        g.builtins[kind].set((Type*)BuiltinType.create(c, kind));
+        g.builtins[kind].set((Type*)BuiltinType.create(g, kind));
     }
 
     // create void type and void-ptr type
-    g.void_type.set((Type*)VoidType.create(c));
-    Type* void_ptr = g.pointers.getPointer(g.void_type);
+    g.void_type.set((Type*)VoidType.create(g));
+    Type* void_ptr = g.getPointerType(g.void_type);
     g.void_ptr_type.set(void_ptr);
     void_ptr.setCanonicalType(g.void_ptr_type);
+
+    g.string_types.init(g);
+    return g;
 }
 
-public fn void report() {
-    Globals* g = globals;
-    stdio.printf("ast_list: %d/%d, %d bytes\n",
-                 g.ast_count, g.ast_capacity, g.ast_capacity * sizeof(*g.ast_list));
-    g.string_types.report();
-    g.pointers.report();
-#if AstStatistics
-    g.stats.report();
-#endif
-}
-
-public fn void deinit() {
-    Globals* g = globals;
+public fn void AstContext.free(AstContext* g) {
+    if (!g) return;
     g.names_pool = nil;
     g.ast_count = 0;
     g.ast_capacity = 0;
@@ -177,47 +173,72 @@ public fn void deinit() {
     g.string_types.clear();
     g.dump_buf.free();
     stdlib.free(g);
-    globals = nil;
+    setGlobals(nil);
 }
 
-public fn bool useColor() @(unused) {
-    return globals.use_color;
+public fn QualType* AstContext.getBuiltins(AstContext *g) { return g.builtins; }
+
+fn void* AstContext.alloc(AstContext* g, u32 size, StatKind kind = Other) {
+#if AstStatistics
+    g.stats.add(kind, size);
+#endif
+    return g.arena.alloc(size);
 }
 
-fn QualType getStringType(u32 len) {
-    return globals.string_types.get(len);
+public fn void AstContext.report(AstContext* g) { g.arena.report(); }
+
+public fn void AstContext.report_stats(AstContext* g) {
+    stdio.printf("ast_list: %d/%d, %d bytes\n",
+                 g.ast_count, g.ast_capacity, g.ast_capacity * sizeof(*g.ast_list));
+    g.string_types.report();
+    g.pointers.report();
+#if AstStatistics
+    g.stats.report();
+#endif
+}
+
+public fn u32 AstContext.getWordSize(const AstContext* g) @(unused) {
+    return g.wordsize;
+}
+
+public fn BuiltinKind AstContext.getNativeKind(AstContext* g) {
+    return g.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
+}
+
+fn QualType AstContext.getStringType(AstContext* g, u32 len) @(unused) {
+    return g.string_types.get(len);
+}
+
+public fn Type* AstContext.getPointerType(AstContext* g, QualType inner) {
+    return g.pointers.getPointer(inner);
+}
+
+fn QualType AstContext.getVoidPtr(const AstContext* g) {
+    return g.void_ptr_type;
 }
 
 // only used by ref_generator and ast module
-public fn const char* idx2name(u32 idx) @(unused) {
-    if (idx) return globals.names_pool.idx2str(idx);
+public fn const char* AstContext.idx2name(const AstContext* g, u32 idx) @(unused) {
+    if (idx) return g.names_pool.idx2str(idx);
     return nil;
 }
 
-fn QualType getVoidPtr() {
-    return globals.void_ptr_type;
+public fn QualType AstContext.getVoidQT(const AstContext* g) {
+    return g.void_type;
 }
 
-public fn Type* getPointerType(QualType inner) {
-    return globals.pointers.getPointer(inner);
+public fn QualType AstContext.getBuiltinQT(AstContext* g, BuiltinKind kind) {
+    return g.builtins[kind];
 }
 
-public fn QualType getVoidQT() {
-    return globals.void_type;
-}
-
-public fn QualType getBuiltinQT(BuiltinKind kind) {
-    return globals.builtins[kind];
-}
-
-fn u32 Globals.addAST(Globals* g, AST* a) {
+fn u32 AstContext.addAST(AstContext* g, AST* a) {
     if (g.ast_count >= g.ast_capacity) {
         if (g.ast_capacity == 0) g.ast_capacity = 16;
         else g.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(g.ast_capacity * sizeof(AST*));
-        if (g.ast_list) {
-            void* old = g.ast_list;
+        AST** buf = stdlib.malloc(g.ast_capacity * sizeof(AST*));
+        void* old = g.ast_list;
+        if (old) {
             string.memcpy(buf, old, g.ast_count * sizeof(AST*));
             stdlib.free(old);
         }
@@ -230,18 +251,22 @@ fn u32 Globals.addAST(Globals* g, AST* a) {
     return idx;
 }
 
-fn AST* Globals.idx2ast(Globals* g, u32 idx) {
-    return g.ast_list[idx];
+fn AST* AstContext.getAST(const AstContext* g, u32 ast_idx) {
+    return g.ast_list[ast_idx];
 }
 
-fn string_buffer.Buf* getDumpBuf() {
-    return globals.dump_buf;
+fn string_buffer.Buf* AstContext.getDumpBuf(const AstContext* g) {
+    return g.dump_buf;
 }
 
-fn void flushDumpBuf(string_buffer.Buf* out) {
+fn void AstContext.flushDumpBuf(const AstContext* g, string_buffer.Buf* out) {
     out.color(col_Normal);
     stdio.puts(out.data());
     out.clear();
+}
+
+public fn bool AstContext.useColor(const AstContext* g) {
+    return g.use_color;
 }
 
 Color col_Stmt = Color.Bmagenta;

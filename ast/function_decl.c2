@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import attr local;
 import src_loc local;
 import string_buffer;
@@ -84,7 +83,7 @@ public type FunctionDecl struct @(opaque) {
     //VarDecl*[0] params; // tail-allocated;
 }
 
-public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.create(AstContext* c,
                                             u32 name,
                                             SrcLoc loc,
                                             bool is_public,
@@ -97,7 +96,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                             DefKind def_kind)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
-    FunctionDecl* d = c.alloc(size);
+    FunctionDecl* d = c.alloc(size, FunctionDecl);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.create(ftype.asType());
     d.base.init(Function, name, loc, is_public, qt, ast_idx);
@@ -122,14 +121,10 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
         VarDecl** tail = d.rtype.getPointerAfter();
         string.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
-
-#if AstStatistics
-    Stats.addDecl(Function, size);
-#endif
     return d;
 }
 
-public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.createTemplate(AstContext* c,
                                                     u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
@@ -142,7 +137,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
                                                     bool is_variadic)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
-    FunctionDecl* d = c.alloc(size);
+    FunctionDecl* d = c.alloc(size, FunctionDecl);
     FunctionType* ftype = FunctionType.create(c, d);
     QualType qt = QualType.create(ftype.asType());
     d.base.init(Function, name, loc, is_public, qt, ast_idx);
@@ -163,10 +158,6 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
         VarDecl** tail = d.rtype.getPointerAfter();
         string.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
-
-#if AstStatistics
-    Stats.addDecl(Function, size);
-#endif
     return d;
 }
 
@@ -181,7 +172,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     u32 extra = rtype_matches ? inst.ref.getExtraSize() : fd.rtype.getExtraSize();
     u32 num_params = fd.num_params;
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + extra;
-    FunctionDecl* fd2 = inst.c.alloc(size);
+    FunctionDecl* fd2 = inst.c.alloc(size, FunctionDecl);
     // copy members
     fd2.base = fd.base;
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
@@ -208,10 +199,6 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     for (u32 i = 0; i < num_params; i++) {
         dst[i] = src[i].instantiate(inst);
     }
-
-#if AstStatistics
-    Stats.addDecl(Function, size);
-#endif
     return fd2;
 }
 
@@ -334,8 +321,8 @@ public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
     d.base.name_idx = name_idx;
 }
 
-public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d) {
-    if (d.flags.instance_ast_idx) return globals.idx2ast(d.flags.instance_ast_idx).getMod();
+public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d, const AstContext* g) {
+    if (d.flags.instance_ast_idx) return g.getAST(d.flags.instance_ast_idx).getMod();
     return nil;
 }
 
@@ -344,8 +331,8 @@ public fn Ref* FunctionDecl.getPrefix(FunctionDecl* d) {
     return nil;
 }
 
-fn u32 FunctionDecl.getCName(const FunctionDecl* d) {
-    u32 cname = d.base.getCName();
+fn u32 FunctionDecl.getCName(const FunctionDecl* d, const AstContext* g) {
+    u32 cname = d.base.getCName(g);
     if (cname) return cname;
     return d.base.getNameIdx();
 }
@@ -476,6 +463,7 @@ public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
 }
 
 fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -505,8 +493,8 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     if (d.hasAttrDestructor()) out.add(" destructor");
     if (d.hasAttrPure()) out.add(" pure");
     if (d.hasAttrDeprecated()) {
-        const Attr* deprecated = d.base.getAttr(Deprecated);
-        const char* msg = ast.idx2name(deprecated.value.text);
+        const Attr* deprecated = d.base.getAttr(Deprecated, g);
+        const char* msg = g.idx2name(deprecated.value.text);
         out.print(" deprecated=\"%s\"", msg);
     }
 
@@ -514,10 +502,10 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     out.color(col_Value);
 
     if (d.hasPrefix()) {
-        out.add(ast.idx2name(d.prefix.getNameIdx()));
+        out.add(g.idx2name(d.prefix.getNameIdx()));
         out.add1('.');
     }
-    const char* name = d.base.getName();
+    const char* name = d.base.getName(g);
     if (name) out.add(name);
     else out.add("<unnamed>");
     out.newline();
@@ -525,7 +513,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     if (d.getDefKind() == Template) {
         out.indent(indent + 1);
         out.color(col_Template);
-        out.print("template %s\n", ast.idx2name(d.template_name));
+        out.print("template %s\n", g.idx2name(d.template_name));
     }
 
     //d.rtype.print(out, true,);
@@ -540,8 +528,9 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
 }
 
 fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
+    AstContext* g = out.getOpaque();
     if (d.isType()) {
-        out.add(d.base.getName());
+        out.add(d.base.getName(g));
         return;
     }
     if (d.rt.isValid()) {

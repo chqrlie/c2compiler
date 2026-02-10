@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -34,14 +33,11 @@ public type LabelStmt struct @(opaque) {
     Stmt *stmt;
 }
 
-public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt *stmt) {
-    LabelStmt* s = c.alloc(sizeof(LabelStmt));
+public fn LabelStmt* LabelStmt.create(AstContext* c, u32 name, SrcLoc loc, Stmt *stmt) {
+    LabelStmt* s = c.alloc(sizeof(LabelStmt), LabelStmt);
     s.base.init(Label, loc);
     s.name = name;
     s.stmt = stmt;
-#if AstStatistics
-    Stats.addStmt(Label, sizeof(LabelStmt));
-#endif
     return s;
 }
 
@@ -97,10 +93,11 @@ public fn Stmt** LabelStmt.getStmt2(LabelStmt* s) {
 }
 
 fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     s.base.printKind(out, indent);
     out.color(col_Value);
     out.space();
-    out.add(idx2name(s.name));
+    out.add(g.idx2name(s.name));
     out.color(col_Attr);
     if (!s.isUsed()) out.add(" unused");
     if (s.hasGoto()) out.add(" has_goto");

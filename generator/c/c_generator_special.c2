@@ -246,7 +246,7 @@ fn void Generator.createExportsFile(Generator* gen, const char* output_dir, comp
             if (!d.isExported()) continue;
             if (!d.isFunction() && !d.isVariable()) continue;
             out.add("\t\t");
-            gen.emitCNameMod(out, d, d.getModule());
+            gen.emitCNameMod(out, d, d.getModule(gen.context));
             out.add(";\n");
         }
     }

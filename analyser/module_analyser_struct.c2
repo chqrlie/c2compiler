@@ -37,7 +37,7 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 
     if (!ma.has_error && d.getSize() == 0 && !d.isOpaque() && !ma.mod.isExternal()) {
         Decl* dd = (Decl*)d;
-        dd.dump();
+        dd.dump(ma.context);
         ma.error(dd.getLoc(), "empty structs are only allowed in interface files");
     }
 }
@@ -91,7 +91,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                     ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field size is not a compile-time value");
                     return;
                 }
-                Value value = ast.evalExpr(bitfield);
+                Value value = ast.evalExpr(bitfield, ma.context);
                 if (value.isZero()) {
                     if (name_idx)
                         ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for %s", ma.bitfieldDesc(name_idx));
@@ -110,7 +110,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 u32 minimum_type_width = qt.getBitFieldWidth(true);
                 if (qt.isEnum() && field_width < minimum_type_width) {
                     ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "%s has insufficient bits for enum '%s' (need %d bits)",
-                                  ma.bitfieldDesc(name_idx), qt.diagName(), minimum_type_width);
+                                  ma.bitfieldDesc(name_idx), qt.diagName(ma.context), minimum_type_width);
                     return;
                 }
 

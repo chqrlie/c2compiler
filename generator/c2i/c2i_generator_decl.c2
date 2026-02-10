@@ -107,7 +107,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
 fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) {
     if (!d.isVariable()) {
-        Module* mod = d.getModule();
+        Module* mod = d.getModule(gen.context);
         if (mod != gen.mod) {
             // TODO potentially needed if ambigous
             out.add(mod.getName());

@@ -17,8 +17,89 @@ module ast;
 
 #if AstStatistics
 import stdio local;
-import string;
+#endif
 
+type StatGroup enum u8 (const char* const name @(unused)) {
+    Other : { "Other" },
+    Type  : { "Types" },
+    Expr  : { "Expressions" },
+    Stmt  : { "Statements" },
+    Decl  : { "Decls" },
+}
+
+type StatKind enum u8 (const StatGroup group @(unused), const char* const name @(unused)) {
+    Other               : { Other, "Other" },
+
+    BuiltinType         : { Type, "Builtin" },
+    PointerType         : { Type, "Pointer" },
+    ArrayType           : { Type, "Array" },
+    StructType          : { Type, "Struct" },
+    EnumType            : { Type, "Enum" },
+    FunctionType        : { Type, "Function" },
+    VoidType            : { Type, "Void" },
+    AliasType           : { Type, "Alias" },
+    ModuleType          : { Type, "Module" },
+
+    IntegerLiteral      : { Expr, "IntegerLiteral" },
+    FloatLiteral        : { Expr, "FloatLiteral" },
+    BooleanLiteral      : { Expr, "BooleanLiteral" },
+    CharLiteral         : { Expr, "CharLiteral" },
+    StringLiteral       : { Expr, "StringLiteral" },
+    NilExpr             : { Expr, "Nil" },
+    IdentifierExpr      : { Expr, "Identifier" },
+    TypeExpr            : { Expr, "TypeExpr" },
+    CallExpr            : { Expr, "Call" },
+    InitListExpr        : { Expr, "InitList" },
+    FieldDesignatedInitExpr : { Expr, "FieldDesignatedInit" },
+    ArrayDesignatedInitExpr : { Expr, "ArrayDesignatedInit" },
+    BinaryOperator      : { Expr, "BinaryOperator" },
+    UnaryOperator       : { Expr, "UnaryOperator" },
+    ConditionalOperator : { Expr, "ConditionalOp" },
+    BuiltinExpr         : { Expr, "Builtin" },
+    ArraySubscriptExpr  : { Expr, "ArraySubscript" },
+    MemberExpr          : { Expr, "Member" },
+    ParenExpr           : { Expr, "Paren" },
+    BitOffsetExpr       : { Expr, "BitOffset" },
+    ExplicitCastExpr    : { Expr, "ExplicitCast" },
+    ImplicitCastExpr    : { Expr, "ImplicitCast" },
+    RangeExpr           : { Expr, "RangeExpr" },
+    NamedArgument       : { Expr, "NamedArgument" },
+    AlternateExpr       : { Expr, "Alternate" },
+
+    ReturnStmt          : { Stmt, "ReturnStmt" },
+    IfStmt              : { Stmt, "IfStmt" },
+    WhileStmt           : { Stmt, "WhileStmt" },
+    ForStmt             : { Stmt, "ForStmt" },
+    SwitchStmt          : { Stmt, "SwitchStmt" },
+    BreakStmt           : { Stmt, "BreakStmt" },
+    ContinueStmt        : { Stmt, "ContinueStmt" },
+    FallthroughStmt     : { Stmt, "FallthroughStmt" },
+    LabelStmt           : { Stmt, "LabelStmt" },
+    GotoStmt            : { Stmt, "GotoStmt" },
+    CompoundStmt        : { Stmt, "CompoundStmt" },
+    DeclStmt            : { Stmt, "DeclStmt" },
+    AsmStmt             : { Stmt, "AsmStmt" },
+    AssertStmt          : { Stmt, "AssertStmt" },
+
+    FunctionDecl        : { Decl, "FunctionDecl" },
+    ImportDecl          : { Decl, "ImportDecl" },
+    StructTypeDecl      : { Decl, "StructTypeDecl" },
+    EnumTypeDecl        : { Decl, "EnumTypeDecl" },
+    EnumConstantDecl    : { Decl, "EnumConstantDecl" },
+    FunctionTypeDecl    : { Decl, "FunctionTypeDecl" },
+    AliasTypeDecl       : { Decl, "AliasTypeDecl" },
+    VarDecl             : { Decl, "VarDecl" },
+    AssocDecl           : { Decl, "AssocDecl" },
+
+    ArrayValue          : { Other, "ArrayValue" },
+    StaticAssert        : { Other, "StaticAssert" },
+    SwitchCase          : { Other, "SwitchCase" },
+    AssocValue          : { Other, "AssocValue" },
+    FunctionDeclArray   : { Other, "FunctionDeclArray" },
+    FieldInitInfo       : { Other, "FieldInitInfo" },
+}
+
+#if AstStatistics
 const u32 NCat = 1;             // 32 for fine grained analysis
 const u32 BucketWidth = 8;      // 4 or less for slack analysis
 
@@ -28,15 +109,7 @@ type Stat struct {
 }
 
 type Stats struct {
-    Stat[elemsof(TypeKind)] types;
-    Stat[elemsof(ExprKind)] exprs;
-    Stat[elemsof(StmtKind)] stmts;
-    Stat[elemsof(DeclKind)] decls;
-    Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
-}
-
-fn void Stats.reset(Stats* s) {
-    string.memset(s, 0, sizeof(Stats));
+    Stat[elemsof(StatKind)] all;
 }
 
 fn void Stat.add(Stat* ss, u32 size) {
@@ -51,34 +124,8 @@ fn void Stat.add(Stat* ss, u32 size) {
     }
 }
 
-fn void Stats.addType(TypeKind kind, u32 size) {
-    globals.stats.types[kind].add(size);
-}
-
-fn void Stats.addExpr(ExprKind kind, u32 size) {
-    globals.stats.exprs[kind].add(size);
-}
-
-fn void Stats.addStmt(StmtKind kind, u32 size) {
-    globals.stats.stmts[kind].add(size);
-}
-
-fn void Stats.addDecl(DeclKind kind, u32 size) {
-    globals.stats.decls[kind].add(size);
-}
-
-const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
-
-fn void Stats.addArrayValue(u32 size) {
-    globals.stats.others[0].add(size);
-}
-
-fn void Stats.addStaticAssert(u32 size) {
-    globals.stats.others[1].add(size);
-}
-
-fn void Stats.addSwitchCase(u32 size) {
-    globals.stats.others[2].add(size);
+fn void Stats.add(Stats* stats, StatKind kind, u32 size) {
+    stats.all[kind].add(size);
 }
 
 type StatPack struct {
@@ -145,32 +192,14 @@ fn void Stats.report(const Stats* s) {
     StatPack pack = {}
 
     printf("---------------------------------------\n");
-
-    printf("--- Types ---\n");
-    for (TypeKind kind = TypeKind.min; kind <= TypeKind.max; kind++)
-        s.types[kind].dump(kind.name, &pack);
-    pack.total();
-
-    printf("--- Expressions ---\n");
-    for (ExprKind i = ExprKind.min; i <= ExprKind.max; i++)
-        s.exprs[i].dump(i.name, &pack);
-    pack.total();
-
-    printf("--- Statements ---\n");
-    for (StmtKind i = StmtKind.min; i <= StmtKind.max; i++)
-        s.stmts[i].dump(i.name, &pack);
-    pack.total();
-
-    printf("--- Decls ---\n");
-    for (DeclKind i = DeclKind.min; i <= DeclKind.max; i++)
-        s.decls[i].dump(i.name, &pack);
-    pack.total();
-
-    printf("--- Other ---\n");
-    for (u32 i = 0; i < 3; i++)
-        s.others[i].dump(other_names[i], &pack);
-    pack.total();
-
+    for (StatGroup group = StatGroup.min; group <= StatGroup.max; group++) {
+        printf("--- %s ---\n", group.name);
+        for (StatKind kind = StatKind.min; kind <= StatKind.max; kind++) {
+            if (kind.group == group)
+                s.all[kind].dump(kind.name, &pack);
+        }
+        pack.total();
+    }
     printf("--- Total ---\n");
     pack.grand_total("objects");
 
@@ -183,5 +212,4 @@ fn void Stats.report(const Stats* s) {
     }
     printf("---------------------------------------\n");
 }
-
 #endif

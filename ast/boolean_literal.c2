@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import value_type local;
@@ -29,14 +28,11 @@ public type BooleanLiteral struct @(opaque) {
     Expr base;
 }
 
-public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
-    BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
+public fn BooleanLiteral* BooleanLiteral.create(AstContext* c, SrcLoc loc, bool val) {
+    BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral), BooleanLiteral);
     e.base.init(BooleanLiteral, loc, 1, 1, 0, RValue);
     e.base.base.booleanLiteralBits.value = val;
-    e.base.setType(getBuiltinQT(Bool));
-#if AstStatistics
-    Stats.addExpr(BooleanLiteral, sizeof(BooleanLiteral));
-#endif
+    e.base.setType(c.getBuiltinQT(Bool));
     return e;
 }
 

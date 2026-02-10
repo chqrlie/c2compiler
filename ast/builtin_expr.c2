@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -55,38 +54,32 @@ public type BuiltinExpr struct @(opaque) {
     ToContainerData[0] container;   // tail-allocated, only for to_container
 }
 
-public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
+public fn BuiltinExpr* BuiltinExpr.create(AstContext* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
-    BuiltinExpr* e = c.alloc(size);
+    BuiltinExpr* e = c.alloc(size, BuiltinExpr);
     e.base.init(Builtin, loc, true, true, false, RValue);
     e.base.base.builtinExprBits.kind = kind;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = inner;
     e.value = 0;
-#if AstStatistics
-    Stats.addExpr(Builtin, size);
-#endif
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
+public fn BuiltinExpr* BuiltinExpr.createOffsetOf(AstContext* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(OffsetOfData);
-    BuiltinExpr* e = c.alloc(size);
+    BuiltinExpr* e = c.alloc(size, BuiltinExpr);
     e.base.init(Builtin, loc, true, true, false, RValue);
     e.base.base.builtinExprBits.kind = OffsetOf;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.value = 0;
     e.offset[0].member = member;
-#if AstStatistics
-    Stats.addExpr(Builtin, size);
-#endif
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
+public fn BuiltinExpr* BuiltinExpr.createToContainer(AstContext* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
-    BuiltinExpr* e = c.alloc(size);
+    BuiltinExpr* e = c.alloc(size, BuiltinExpr);
     e.base.init(Builtin, loc, false, false, false, RValue);
     e.base.base.builtinExprBits.kind = ToContainer;
     e.base.base.builtinExprBits.src_len = src_len;
@@ -94,9 +87,6 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
     e.value = 0;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
-#if AstStatistics
-    Stats.addExpr(Builtin, size);
-#endif
     return e;
 }
 

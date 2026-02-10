@@ -108,6 +108,7 @@ fn void LineCounter.handle(LineCounter* l, u32 size, const char* content) {
 
 
 type Generator struct {
+    AstContext* context;
     string_pool.Pool* astPool;
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
@@ -131,7 +132,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
 
     const char* name = gen.getName(d);
     if (name && global) {
-        gen.refs.add_symbol(d.getFullName(), d.getLoc());
+        gen.refs.add_symbol(d.getFullName(gen.context), d.getLoc());
     }
 
     switch (d.getKind()) {
@@ -154,7 +155,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         for (u32 i=0; i<etd.getNumConstants(); i++) {
             Decl* ecd = (Decl*)constants[i];
             // NOTE: we add the symbol here, since we have the EnumDecl here
-            gen.refs.add_symbol(ecd.getFullName(), ecd.getLoc());
+            gen.refs.add_symbol(ecd.getFullName(gen.context), ecd.getLoc());
             Generator.on_decl(arg, ecd, false);
         }
         return;
@@ -238,7 +239,8 @@ fn void Generator.on_file(void* arg, u32 start, u32 size, const char* filename, 
     gen.refs.add_file(start, size, filename, len_start, len_count);
 }
 
-fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm, string_pool.Pool* astPool) {
+fn void Generator.init(Generator* gen, AstContext* context, source_mgr.SourceMgr* sm, string_pool.Pool* astPool) {
+    gen.context = context;
     gen.astPool = astPool;
     gen.sm = sm;
     gen.refs = refs.Refs.create(sm.getNumFiles());
@@ -253,8 +255,8 @@ fn void Generator.free(Generator* gen) {
     gen.refs.free();
 }
 
-public fn void generate(source_mgr.SourceMgr* sm, string_pool.Pool* astPool, const char* output_dir, component.List* comps, const char* filename) {
-    Generator gen.init(sm, astPool);
+public fn void generate(AstContext* context, source_mgr.SourceMgr* sm, string_pool.Pool* astPool, const char* output_dir, component.List* comps, const char* filename) {
+    Generator gen.init(context, sm, astPool);
 
     // for each file, store:  start, size, filename. Store line lengths
     sm.visitFiles(&gen, Generator.on_file);

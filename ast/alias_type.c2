@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 public type AliasType struct @(opaque) {
@@ -23,27 +22,26 @@ public type AliasType struct @(opaque) {
     AliasTypeDecl* decl;
 }
 
-fn AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
-    AliasType* t = c.alloc(sizeof(AliasType));
+fn AliasType* AliasType.create(AstContext* c, AliasTypeDecl* decl) {
+    AliasType* t = c.alloc(sizeof(AliasType), AliasType);
     t.base.init(Alias);
     t.decl = decl;
-#if AstStatistics
-    Stats.addType(Alias, sizeof(AliasType));
-#endif
     return t;
 }
 
 public fn AliasTypeDecl* AliasType.getDecl(const AliasType* t) { return t.decl; }
 
 fn void AliasType.print(const AliasType* t, string_buffer.Buf* out) {
+    AstContext* g = out.getOpaque();
     out.add("(alias)");
-    out.add(t.decl.base.getModuleName());
+    out.add(t.decl.base.getModuleName(g));
     out.add1('.');
-    out.add(t.decl.base.getName());
+    out.add(t.decl.base.getName(g));
 }
 
 fn void AliasType.fullPrint(const AliasType* t, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     out.indent(indent);
-    out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName());
+    out.print("AliasType [%p] %s\n", t, t.decl.asDecl().getName(g));
 }
 
