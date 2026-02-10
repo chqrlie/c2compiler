@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context { Context }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 
@@ -26,20 +25,17 @@ public type StaticAssert struct @(opaque) {
     Expr* rhs;
 }
 
-public fn StaticAssert* StaticAssert.create(Context* c,
+public fn StaticAssert* StaticAssert.create(AstContext* c,
                                             u32 ast_idx,
                                             SrcLoc loc,
                                             Expr* lhs,
                                             Expr* rhs)
 {
-    StaticAssert* d = c.alloc(sizeof(StaticAssert));
+    StaticAssert* d = c.alloc(sizeof(StaticAssert), StaticAssert);
     d.base.init(StaticAssert, loc);
     d.ast_idx = ast_idx;
     d.lhs = lhs;
     d.rhs = rhs;
-#if AstStatistics
-    Stats.addStmt(StaticAssert, sizeof(StaticAssert));
-#endif
     return d;
 }
 
@@ -49,8 +45,8 @@ fn Stmt* StaticAssert.instantiate(StaticAssert* s, Instantiator* inst) {
                                       s.rhs ? s.rhs.instantiate(inst) : nil);
 }
 
-public fn AST* StaticAssert.getAST(const StaticAssert* d) {
-    return globals.idx2ast(d.ast_idx);
+public fn AST* StaticAssert.getAST(const StaticAssert* d, const AstContext* g) {
+    return g.getAST(d.ast_idx);
 }
 
 public fn Expr* StaticAssert.getLHS(const StaticAssert* d) {

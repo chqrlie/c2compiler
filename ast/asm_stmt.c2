@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context { Context }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 
@@ -45,7 +44,7 @@ public type AsmStmt struct @(opaque) {
     }
 }
 
-public fn AsmStmt* AsmStmt.create(Context* c,
+public fn AsmStmt* AsmStmt.create(AstContext* c,
                                   SrcLoc loc,
                                   bool is_basic,
                                   bool is_volatile,
@@ -62,7 +61,7 @@ public fn AsmStmt* AsmStmt.create(Context* c,
     size += (exprs.size() * sizeof(Expr*));
     size += (clobbers.size() * sizeof(Expr*));
     size += (num_inputs + num_outputs) * sizeof(u32);
-    AsmStmt* s = c.alloc(size);
+    AsmStmt* s = c.alloc(size, AsmStmt);
     s.base.init(Asm, loc);
     s.base.asmStmtBits.is_basic = is_basic;
     s.base.asmStmtBits.is_volatile = is_volatile;
@@ -93,10 +92,6 @@ public fn AsmStmt* AsmStmt.create(Context* c,
     if (num_names) {
         memcpy(tail, names, num_names * sizeof(u32));
     }
-
-#if AstStatistics
-    Stats.addStmt(Asm, size);
-#endif
     return s;
 }
 
@@ -159,6 +154,7 @@ public fn u32* AsmStmt.getNames(const AsmStmt* s) {
 }
 
 fn void AsmStmt.print(const AsmStmt* s, StringBuf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     s.base.printKind(out, indent);
     out.newline();
     out.indent(indent);
@@ -175,7 +171,7 @@ fn void AsmStmt.print(const AsmStmt* s, StringBuf* out, u32 indent) {
             out.indent(indent+1);
             if (names[i]) {
                 out.color(col_Value);
-                out.add(idx2name(names[i]));
+                out.add(g.idx2name(names[i]));
                 out.space();
             }
             out.color(col_Value);
@@ -198,7 +194,7 @@ fn void AsmStmt.print(const AsmStmt* s, StringBuf* out, u32 indent) {
             out.indent(indent+1);
             if (names[i + s.num_outputs]) {
                 out.color(col_Value);
-                out.add(idx2name(names[i+s.num_outputs]));
+                out.add(g.idx2name(names[i+s.num_outputs]));
                 out.space();
             }
             out.color(col_Value);
