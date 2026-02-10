@@ -16,7 +16,6 @@
 module component;
 
 import ast;
-import ast_context;
 import color;
 import file_list;
 import module_list;
@@ -53,7 +52,7 @@ public type Component struct @(opaque) {
     bool available_dynamic; // only for external
     bool available_source;  // only for external
 
-    ast_context.Context* context;   // no ownership
+    ast.AstContext* context;        // no ownership
     string_pool.Pool* auxPool;      // no ownership
 
     module_list.List mods;
@@ -61,7 +60,7 @@ public type Component struct @(opaque) {
     file_list.FileList files;   // only for (external) source libraries
 }
 
-public fn Component* create(ast_context.Context* context,
+public fn Component* create(ast.AstContext* context,
                               string_pool.Pool* auxPool,
                               u32 name_idx, // into auxPool
                               Kind kind)
@@ -188,7 +187,8 @@ public fn bool Component.hasModule(const Component* c, const ast.Module* mod) {
 }
 
 public fn void Component.print(const Component* c, bool show_funcs) {
-    string_buffer.Buf* out = string_buffer.create(128*1024, color.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(128*1024, c.context.useColor(), 1);
+    out.setOpaque(c.context);
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         mods[i].print(out, show_funcs);
@@ -199,7 +199,8 @@ public fn void Component.print(const Component* c, bool show_funcs) {
 }
 
 public fn void Component.printModules(const Component* c) {
-    string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(4096, c.context.useColor(), 1);
+    out.setOpaque(c.context);
     out.print("--- %s [%s]", c.getName(), c.kind.name);
     out.add(" ---\n");
     const ast.Module** mods = c.mods.getConst();
@@ -218,7 +219,8 @@ public fn void Component.printModules(const Component* c) {
 public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
 
-    string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
+    string_buffer.Buf* out = string_buffer.create(4096, c.context.useColor(), 1);
+    out.setOpaque(c.context);
     out.print("--- %s [%s] ---\n", c.getName(), c.kind.name);
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {

@@ -16,7 +16,6 @@
 module ast_builder;
 
 import ast local;
-import ast_context local;
 import attr_handler;
 import attr local;
 import component;
@@ -29,7 +28,7 @@ import string_pool;
 import stdlib local;
 
 public type Builder struct @(opaque) {
-    Context* context;           // no ownership
+    AstContext* context;        // no ownership
     diagnostics.Diags* diags;   // no ownership
     string_pool.Pool* astPool;  // no ownership
     string_pool.Pool* auxPool;  // no ownership
@@ -41,7 +40,6 @@ public type Builder struct @(opaque) {
     u32 main_name;      // index into astPool
     bool is_interface;
     bool is_private;
-    BuiltinKind native_kind;
 
     Attr[8] attrs;
     u32 num_attrs;
@@ -49,7 +47,7 @@ public type Builder struct @(opaque) {
     attr_handler.Handler* attr_handler; // no ownership
 }
 
-public fn Builder* create(Context* context,
+public fn Builder* create(AstContext* context,
                           diagnostics.Diags* diags,
                           string_pool.Pool* astPool,
                           string_pool.Pool* auxPool,
@@ -64,7 +62,6 @@ public fn Builder* create(Context* context,
     b.auxPool = auxPool;
     b.c2_name = c2_name;
     b.main_name = main_name;
-    b.native_kind = context.getWordSize() == 8 ? UInt64 : UInt32;
     b.attr_handler = attr_handler_;
 
     return b;
@@ -95,10 +92,6 @@ public fn bool Builder.setExternal(Builder* b, bool is_interface) {
     bool was_interface = b.is_interface;
     b.is_interface = is_interface;
     return was_interface;
-}
-
-public fn BuiltinKind Builder.getNativeKind(Builder* b) {
-    return b.native_kind;
 }
 
 public fn void Builder.actOnModule(Builder* b,
@@ -806,23 +799,23 @@ public fn void Builder.applyAttributes(Builder* b, Decl* d, u32 count) {
     b.num_attrs -= count;
 }
 
-public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
-    return getBuiltinQT(kind);
+public fn QualType Builder.actOnBuiltinType(Builder* b, BuiltinKind kind) {
+    return b.context.getBuiltinQT(kind);
 }
 
-public fn QualType Builder.actOnVoidType(Builder*) {
-    return getVoidQT();
+public fn QualType Builder.actOnVoidType(Builder* b) {
+    return b.context.getVoidQT();
 }
 
-public fn QualType Builder.actOnPointerType(Builder*, QualType inner) {
-    QualType ptr = QualType.create(ast.getPointerType(inner));
+public fn QualType Builder.actOnPointerType(Builder* b, QualType inner) {
+    QualType ptr = QualType.create(b.context.getPointerType(inner));
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = inner.getCanonicalType();
     if (inner.getTypeOrNil() == canon.getTypeOrNil()) {
         canon = ptr;
     } else {
-        canon = QualType.create(ast.getPointerType(canon));
+        canon = QualType.create(b.context.getPointerType(canon));
         canon.setCanonicalType(canon);
     }
     ptr.setCanonicalType(canon);

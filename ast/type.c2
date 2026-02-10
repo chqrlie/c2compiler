@@ -17,7 +17,7 @@ module ast;
 
 import string_buffer;
 
-public type TypeKind enum u8 (public const char* const name) {
+public type TypeKind enum u8 (public const char* const name @(unused)) {
     Builtin   : { "Builtin" },
     Pointer   : { "Pointer" },
     Array     : { "Array" },
@@ -92,15 +92,29 @@ fn bool Type.isEnumType(const Type* t) {
     return (t.getKind() == Enum);
 }
 
+#if 0
+public fn bool Type.isBoolType(const Type* t) {
+#if 1
+    if (t && t.getKind() == TypeKind.Builtin) {
+        const BuiltinType* bi = (BuiltinType*)t;
+        return bi.isBool();
+    }
+    return false;
+#else
+    return t == ast.builtins[BuiltinKind.Bool].getTypeOrNil();
+#endif
+}
+#endif
+
 public fn bool Type.isVoidType(const Type* t) {
     return (t.getKind() == Void);
 }
 
-public fn void Type.dump(const Type* t) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void Type.dump(const Type* t, AstContext* context) @(unused) {
+    string_buffer.Buf* out = context.getDumpBuf();
     t.print(out);
     out.newline();
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
 fn void Type.setAlignment(Type* t, u32 align) {

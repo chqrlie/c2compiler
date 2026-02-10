@@ -69,8 +69,8 @@ fn void unload(void* arg) {
 fn void plugin_init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
+    ast.setGlobals(info.context);
     p.decls.clear();
-    ast.setGlobals(info.ast_globals);
 
     p.attr_name = info.astPool.addStr("unittest", true);
     info.registerAttr(p.attr_name, handle_attr, p);
@@ -144,7 +144,7 @@ fn void generate_tests(void* arg) {
 
     for (u32 i=0; i<p.decls.size(); i++) {
         Decl* d = p.decls.get(i);
-        Module* m = d.getModule();
+        Module* m = d.getModule(p.info.context);
         p.cur_prefix = d.getNameIdx();
 
         p.tests.clear();
@@ -161,7 +161,7 @@ fn void generate_tests(void* arg) {
         for (u32 j=0; j<p.tests.size(); j++) {
             Decl* func = (Decl*)p.tests.get(j);
             // TODO dont use fullName since we dont need the module prefix
-            out.print("   { \"%s\", (ct.TestFn)(%s) },\n", p.getName(func), func.getFullName());
+            out.print("   { \"%s\", (ct.TestFn)(%s) },\n", p.getName(func), func.getFullName(p.info.context));
         }
         out.add("}\n\n");
 
@@ -203,7 +203,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("import c2test local;\n\n");
 
     for (u32 i=0; i<p.decls.size(); i++) {
-        Module* m = p.decls.get(i).getModule();
+        Module* m = p.decls.get(i).getModule(p.info.context);
         out.print("import %s;\n", m.getName());
     }
 
@@ -211,7 +211,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
 
     out.add("const Group*[] groups = {\n");
     for (u32 i=0; i<p.decls.size(); i++) {
-        Module* m = p.decls.get(i).getModule();
+        Module* m = p.decls.get(i).getModule(p.info.context);
         out.print("  &%s.TestGroup,\n", m.getName());
     }
     out.add("}\n\n");

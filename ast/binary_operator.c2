@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -72,15 +71,12 @@ public type BinaryOperator struct @(opaque) {
     Expr* rhs;
 }
 
-public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
-    BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
+public fn BinaryOperator* BinaryOperator.create(AstContext* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
+    BinaryOperator* e = c.alloc(sizeof(BinaryOperator), BinaryOperator);
     e.base.init(BinaryOperator, loc, 0, 0, kind >= Assign, RValue);
     e.base.base.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
-#if AstStatistics
-    Stats.addExpr(BinaryOperator, sizeof(BinaryOperator));
-#endif
     return e;
 }
 

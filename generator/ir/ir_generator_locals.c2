@@ -27,13 +27,15 @@ public type StackVar struct {
 }
 
 public type Locals struct {
+    ast.AstContext* astContext;
     StackVar* vars;
     u32 count;
     u32 capacity;
     u32 index; // first free
 }
 
-public fn void Locals.init(Locals* l) {
+public fn void Locals.init(Locals* l, ast.AstContext* astContext) {
+    l.astContext = astContext;
     l.clear();
     l.resize(128);
 }
@@ -75,7 +77,7 @@ public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 
 public fn StackVar* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     const ast.Decl* d = (ast.Decl*)vd;
     if (!d.hasGenIdx()) {
-        d.dump();
+        d.dump(l.astContext);
     }
     assert(d.hasGenIdx());
     u32 idx = d.getGenIdx();

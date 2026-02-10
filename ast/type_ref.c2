@@ -195,8 +195,8 @@ public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_id
     h.user.decl = nil;
 }
 
-public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void TypeRefHolder.dump(const TypeRefHolder* h, AstContext* context) @(unused) {
+    string_buffer.Buf* out = context.getDumpBuf();
     const TypeRef* r = (TypeRef*)&h.ref;
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
@@ -205,10 +205,8 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
         if (size) size.printLiteral(out);
         out.add1(']');
     }
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
-
-
 
 fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     const TypeRef* r = (TypeRef*)&h.ref;
@@ -455,9 +453,9 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
         Decl* d = r.refs[0].decl;
         assert(d);
         if (print_prefix) {
-            out.add(d.getFullName());
+            out.add(d.getFullName(out.getOpaque()));
         } else {
-            out.add(d.getName());
+            out.add(d.getName(out.getOpaque()));
         }
         break;
     case Function:
@@ -499,11 +497,12 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
         out.add("void");
         break;
     case User:
+        AstContext* context = out.getOpaque();
         if (r.flags.has_prefix) {
-            out.add(idx2name(r.refs[1].name_idx));
+            out.add(context.idx2name(r.refs[1].name_idx));
             out.add1('.');
         }
-        out.add(idx2name(r.refs[0].name_idx));
+        out.add(context.idx2name(r.refs[0].name_idx));
         break;
     case Function:
         out.add("fn ");
@@ -534,15 +533,15 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
 }
 
 // Note: only use on filled TypeRef
-public fn void TypeRef.dump(const TypeRef* r) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void TypeRef.dump(const TypeRef* r, AstContext* context) @(unused) {
+    string_buffer.Buf* out = context.getDumpBuf();
     r.print(out, true);
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
 // Note: only use on filled TypeRef
-public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void TypeRef.dump_full(const TypeRef* r, AstContext* context) @(unused) {
+    string_buffer.Buf* out = context.getDumpBuf();
     out.add("TypeRef:\n");
     out.indent(1);
     out.add("flags:");
@@ -561,12 +560,13 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
         const Ref* ref = &r.refs[i];
         out.print("ref[%d] loc %d  name_idx %d  decl %p\n", i, ref.loc, ref.name_idx, ref.decl);
     }
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
-public fn const char* TypeRef.diagName(const TypeRef* r) {
+public fn const char* TypeRef.diagName(const TypeRef* r, AstContext* context) {
     static char[128] result;
     string_buffer.Buf buf.init(result, elemsof(result), false, false, 0);
+    buf.setOpaque(context);
     r.print(&buf, true);
     return buf.str();  // ensure null terminator
 }

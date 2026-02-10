@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -30,16 +29,13 @@ public type StringLiteral struct @(opaque) {
     u32 len; // Note: no cost on 64-bit systems because of padding
 }
 
-public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len) {
-    StringLiteral* e = c.alloc(sizeof(StringLiteral));
+public fn StringLiteral* StringLiteral.create(AstContext* c, SrcLoc loc, u32 src_len, u32 value, u32 len) {
+    StringLiteral* e = c.alloc(sizeof(StringLiteral), StringLiteral);
     e.base.init(StringLiteral, loc, 0, 1, 0, LValue);
     e.base.base.stringLiteralBits.src_len = src_len;
     e.value = value;
     e.len = len;   // null terminator is present at the end of the string in the string pool
-#if AstStatistics
-    Stats.addExpr(StringLiteral, sizeof(StringLiteral));
-#endif
-    e.base.setType(getStringType(len + 1));
+    e.base.setType(c.getStringType(len + 1));
     return e;
 }
 
@@ -62,7 +58,8 @@ fn SrcLoc StringLiteral.getEndLoc(const StringLiteral* e) {
 }
 
 public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
-    out.encodeBytes(idx2name(e.value), e.len, '"');
+    AstContext* g = out.getOpaque();
+    out.encodeBytes(g.idx2name(e.value), e.len, '"');
 }
 
 fn void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {

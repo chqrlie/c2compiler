@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 public type PointerType struct @(opaque) {
@@ -24,14 +23,11 @@ public type PointerType struct @(opaque) {
 }
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
-fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
-    PointerType* t = c.alloc(sizeof(PointerType));
+fn PointerType* PointerType.create(AstContext* c, QualType inner) {
+    PointerType* t = c.alloc(sizeof(PointerType), PointerType);
     t.base.init(Pointer);
     t.base.setAlignment(c.getWordSize());
     t.inner = inner;
-#if AstStatistics
-    Stats.addType(Pointer, sizeof(PointerType));
-#endif
     return t;
 }
 

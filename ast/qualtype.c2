@@ -430,7 +430,7 @@ public fn bool QualType.needsCtvInit(const QualType qt) {
 
     if (!t) {
         stdio.printf("MISSING CANONICAL\n");
-        qt.dump_full();
+        qt.dump_full(ast_context);
         return false;
     }
     assert(t);
@@ -487,13 +487,14 @@ public fn void QualType.setTypeUsedPublic(QualType qt) {
     if (d) d.setUsedPublic();
 }
 
-public fn const char* QualType.diagName(const QualType qt) {
+public fn const char* QualType.diagName(const QualType qt, AstContext* context) {
     static char[4][128] msgs;
     static u32 msg_id = 0;
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
     string_buffer.Buf buf.init(msg, 128, false, false, 0);
+    buf.setOpaque(context);
     // TODO need to create another print?
 
     //buf.add1('\'');
@@ -503,29 +504,30 @@ public fn const char* QualType.diagName(const QualType qt) {
     return buf.str();  // ensure null terminator
 }
 
-public fn const char* QualType.diagNameBare(const QualType qt) {
+public fn const char* QualType.diagNameBare(const QualType qt, AstContext* context) {
     static char[4][128] msgs;
     static u32 msg_id = 0;
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
     string_buffer.Buf buf.init(msg, 128, false, false, 0);
+    buf.setOpaque(context);
 
     qt.printInner(&buf, true, false, true);
 
     return buf.str();  // ensure null terminator
 }
 
-public fn void QualType.dump(const QualType qt) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void QualType.dump(const QualType qt, AstContext* context) @(unused) {
+    string_buffer.Buf* out = context.getDumpBuf();
     qt.printInner(out, false, true, false);
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
-public fn void QualType.dump_full(const QualType qt) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void QualType.dump_full(const QualType qt, AstContext* context) {
+    string_buffer.Buf* out = context.getDumpBuf();
     qt.fullPrint(out, 0);
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
 fn void QualType.printQuoted(const QualType qt, string_buffer.Buf* out) {

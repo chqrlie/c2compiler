@@ -15,20 +15,16 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 type VoidType struct {
     Type base;
 }
 
-fn VoidType* VoidType.create(ast_context.Context* c) {
-    VoidType* b = c.alloc(sizeof(VoidType));
+fn VoidType* VoidType.create(AstContext* c) {
+    VoidType* b = c.alloc(sizeof(VoidType), VoidType);
     b.base.init(Void);
     b.base.setCanonicalType(QualType.create(&b.base));
-#if AstStatistics
-    Stats.addType(Void, sizeof(VoidType));
-#endif
     return b;
 }
 

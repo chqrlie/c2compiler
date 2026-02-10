@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import number_radix local;
@@ -32,16 +31,13 @@ public type CharLiteral struct @(opaque) {
     Expr base;
 }
 
-public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u8 val, Radix radix) {
-    CharLiteral* e = c.alloc(sizeof(CharLiteral));
+public fn CharLiteral* CharLiteral.create(AstContext* c, SrcLoc loc, u32 src_len, u8 val, Radix radix) {
+    CharLiteral* e = c.alloc(sizeof(CharLiteral), CharLiteral);
     e.base.init(CharLiteral, loc, 1, 1, 0, RValue);
     e.base.base.charLiteralBits.value = val;
     e.base.base.charLiteralBits.radix = radix;
     e.base.base.charLiteralBits.src_len = src_len;
-#if AstStatistics
-    Stats.addExpr(CharLiteral, sizeof(CharLiteral));
-#endif
-    e.base.setType(getBuiltinQT(Char));
+    e.base.setType(c.getBuiltinQT(Char));
     return e;
 }
 

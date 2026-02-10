@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -66,9 +65,9 @@ public type MemberExpr struct @(opaque) {
 }
 
 // if base == nil, MemberExpr is pure, otherwise non-pure
-public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, u32 base_name_idx, u32 base_len, SrcLoc loc, u32 member_name_idx) {
+public fn MemberExpr* MemberExpr.create(AstContext* c, Expr* base, u32 base_name_idx, u32 base_len, SrcLoc loc, u32 member_name_idx) {
     u32 size = sizeof(MemberExpr);
-    MemberExpr* e = c.alloc(size);
+    MemberExpr* e = c.alloc(size, MemberExpr);
     e.base.init(Member, loc, 0, 0, 0, NValue);
     e.base.base.memberExprBits.base_len = base_len;
     e.refs[0].bits = 0;
@@ -79,22 +78,14 @@ public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, u32 
     }
     e.refs[1].bits = 0;
     e.refs[1].name_idx = member_name_idx;
-#if AstStatistics
-    Stats.addExpr(Member, size);
-#endif
     return e;
 }
 
 fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     u32 size = sizeof(MemberExpr);
-    MemberExpr* e2 = inst.c.alloc(size);
-
+    MemberExpr* e2 = inst.c.alloc(size, MemberExpr);
     string.memcpy(e2, e, size);
     if (e2.hasExpr()) e2.refs[0].expr = e2.refs[0].expr.instantiate(inst);
-
-#if AstStatistics
-    Stats.addExpr(Member, size);
-#endif
     return (Expr*)e2;
 }
 
@@ -118,11 +109,6 @@ public fn void MemberExpr.setConversion(MemberExpr* e, MemberConversion c) {
 
 public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
     return e.base.base.memberExprBits.conversion;
-}
-
-fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
-    if (u32 name_idx = e.getNameIdx(ref_idx)) return ast.idx2name(name_idx);
-    return nil;
 }
 
 public fn u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
@@ -163,7 +149,8 @@ fn SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
 }
 
 fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
-    return e.base.getLoc() + (u32)string.strlen(e.getName(1));
+    const char* name = ast_context.idx2name(e.getNameIdx(1));
+    return e.base.getLoc() + (u32)string.strlen(name);
 }
 
 fn SrcLoc MemberExpr.getBaseEndLoc(const MemberExpr* e) {
@@ -285,8 +272,8 @@ public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {
     return qt;
 }
 
-public fn const char* MemberExpr.getMemberName(const MemberExpr* e) {
-    return e.getName(1);
+public fn const char* MemberExpr.getMemberName(const MemberExpr* e, const AstContext* g) {
+    return g.idx2name(e.getNameIdx(1));
 }
 
 fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
@@ -321,17 +308,18 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
 }
 
 fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
+    AstContext* g = out.getOpaque();
     if (e.hasExpr()) {
         e.refs[0].expr.printLiteral(out);
     } else {
-        out.add(e.getName(0));
+        out.add(g.idx2name(e.getNameIdx(0)));
     }
     out.add1('.');
-    out.add(e.getName(1));
+    out.add(g.idx2name(e.getNameIdx(1)));
 }
 
-public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void MemberExpr.dump(const MemberExpr* m, AstContext* g) @(unused) {
+    string_buffer.Buf* out = g.getDumpBuf();
     out.color(col_Expr);
     out.print("MemberExpr loc %d expr %d decl %d/2\n",
               m.base.getLoc(), m.hasExpr(), m.base.base.memberExprBits.num_decls);
@@ -356,9 +344,9 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
             out.print("[%d]\n", i);
             ref.decl.print(out, 1);
         } else {
-            out.print("[%d] %s\n", i, ast.idx2name(ref.name_idx));
+            out.print("[%d] %s\n", i, g.idx2name(ref.name_idx));
         }
     }
-    ast.flushDumpBuf(out);
+    g.flushDumpBuf(out);
 }
 

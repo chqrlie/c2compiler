@@ -83,12 +83,12 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                     ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
                     return;
                 }
-                Value ctv = ast.evalExpr(initval);
+                Value ctv = ast.evalExpr(initval, ma.context);
                 if (ctv.kind == Error) {
                     ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
                     return;
                 }
-                if (!ctv_analyser.checkTypeRange(ma.diags, implType, &ctv, 0, initval)) return;
+                if (!ctv_analyser.checkTypeRange(ma.context, ma.diags, implType, &ctv, 0, initval)) return;
 
                 if (i > 0 && ctv.is_less(&value)) {
                     value.decr(); // to get the previous value
@@ -98,7 +98,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 value = ctv;
             }
         } else {
-            if (!ctv_analyser.checkTypeRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
+            if (!ctv_analyser.checkTypeRange(ma.context, ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
         if (i == 0) {
             if (!value.isZero()) is_regular = false;
@@ -167,7 +167,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     ref.setUser(d);
 
     if (!d.isTypeDecl()) {
-        ma.error(user.loc, "'%s' is not a type", ref.diagName());
+        ma.error(user.loc, "'%s' is not a type", ref.diagName(ma.context));
         return QualType_Invalid;
     }
 
@@ -187,7 +187,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     }
 
     d.setUsed();
-    bool external = (ma.mod != d.getModule());
+    bool external = (ma.mod != d.getModule(ma.context));
     if (external || ma.usedPublic) d.setUsedPublic();
 
     return d.getType();
@@ -231,15 +231,15 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         const StructTypeDecl* std = st.getDecl();
         if (std.isOpaque()) {
             const Decl* d = (Decl*)std;
-            bool is_external = ma.mod != d.getModule();
-            if (ma.curFunction && ma.curFunction.getInstanceModule() == d.getModule()) {
+            bool is_external = ma.mod != d.getModule(ma.context);
+            if (ma.curFunction && ma.curFunction.getInstanceModule(ma.context) == d.getModule(ma.context)) {
                 // type is local in instantiation module
                 is_external = false;
             }
             if (is_external) {
-                ma.error(ref.getLoc(), "opaque type '%s' used by value", resolved.diagName());
+                ma.error(ref.getLoc(), "opaque type '%s' used by value", resolved.diagName(ma.context));
             } else if (ma.usedPublic) {
-                ma.error(ref.getLoc(), "public declaration using opaque type '%s' by value", resolved.diagName());
+                ma.error(ref.getLoc(), "public declaration using opaque type '%s' by value", resolved.diagName(ma.context));
             }
         }
     }
@@ -259,14 +259,14 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
             if (sizeExpr.isNValue()) {
                 const EnumType* et = qt.getEnumTypeOrNil();
                 if (!et) {
-                    ma.error(ref.getLoc(), "array size must be an integer or an enum type ('%s')", qt.diagName());
+                    ma.error(ref.getLoc(), "array size must be an integer or an enum type ('%s')", qt.diagName(ma.context));
                     return QualType_Invalid;
                 }
                 const EnumTypeDecl* etd = et.getDecl();
                 is_enum = true;
                 size = etd.getNumConstants();
                 if (!etd.isRegular()) {
-                    ma.error(ref.getLoc(), "%s is not a regular enum", qt.diagName());
+                    ma.error(ref.getLoc(), "%s is not a regular enum", qt.diagName(ma.context));
                     return QualType_Invalid;
                 }
             } else {
@@ -277,7 +277,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
 
                 // TODO canonical?
                 if (!qt.isInteger()) {
-                    ma.error(ref.getLoc(), "array size has non-integer type '%s'", qt.diagName());
+                    ma.error(ref.getLoc(), "array size has non-integer type '%s'", qt.diagName(ma.context));
                     return QualType_Invalid;
                 }
 
@@ -286,7 +286,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
                     return QualType_Invalid;
                 }
 
-                Value value = ast.evalExpr(sizeExpr);
+                Value value = ast.evalExpr(sizeExpr, ma.context);
                 if (value.isNegative()) {
                     ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%s'", value.str());
                     return QualType_Invalid;
@@ -349,10 +349,10 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
 fn bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
     if (std.isOpaque()) {
         Decl* d = (Decl*)std;
-        Module* other = d.getModule();
+        Module* other = d.getModule(ma.context);
         if (other != ma.mod) {
             QualType qt = d.getType(); // lazy way to get from decl -> fullname
-            ma.error(loc," cannot dereference opaque struct '%s'", qt.diagNameBare());
+            ma.error(loc," cannot dereference opaque struct '%s'", qt.diagNameBare(ma.context));
             return false;
         }
     }

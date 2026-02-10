@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ast_context;
+module tail_allocator;
 
 import stdio;
 import stdlib local;
@@ -45,7 +45,7 @@ fn Block* Block.free(Block* b) {
     return next;
 }
 
-type TailAllocator struct {
+public type TailAllocator struct @(opaque) {
     Block* blk_head;
     Block* blk_tail;
     u32 blk_size;
@@ -65,13 +65,31 @@ fn void TailAllocator.init(TailAllocator* c, u32 blk_size) {
     c.cur_allocated = 0;
 }
 
+public fn TailAllocator* TailAllocator.create(u32 blk_size) {
+    TailAllocator* c = malloc(sizeof(TailAllocator));
+    c.init(blk_size);
+    return c;
+}
+
+public fn void TailAllocator.free(TailAllocator* c) {
+    c.freeBlocks();
+    free(c);
+}
+
+#if 0
+public fn void TailAllocator.clear(TailAllocator* c) {
+    c.freeBlocks();
+    c.init();
+}
+#endif
+
 fn void TailAllocator.freeBlocks(TailAllocator* c) {
     Block* blk = c.blk_head;
     while (blk) blk = blk.free();
     c.blk_head = c.blk_tail = nil;
 }
 
-fn void* TailAllocator.alloc(TailAllocator* c, u32 len) {
+public fn void* TailAllocator.alloc(TailAllocator* c, u32 len) {
     len = (len + 7) & ~0x7; // always round to 8-byte boundaries
     c.num_allocs++;
 
@@ -106,7 +124,7 @@ public fn void TailAllocator.reserve(TailAllocator* c, u32 len) {
 }
 #endif
 
-fn void TailAllocator.report(const TailAllocator* c) {
+public fn void TailAllocator.report(const TailAllocator* c) {
     u32 blocks = 0;
     u32 total = 0;
     u32 slack = 0;
@@ -120,44 +138,7 @@ fn void TailAllocator.report(const TailAllocator* c) {
     }
     u32 avg = 0;
     if (c.num_allocs) avg = total / c.num_allocs;
-    stdio.printf("context: %d allocs, total %d (%d KB), avg %d bytes, %d blocks (%d), slack %d, avail %d\n",
+    stdio.printf("allocator: %d allocs, total %d (%d KB), avg %d bytes, %d blocks (%d), slack %d, avail %d\n",
         c.num_allocs, total, (total + 1023) / 1024, avg, blocks, c.blk_size, slack, avail);
 }
 
-// TODO: rename this AstContext and move to ast module
-
-public type Context struct @(opaque) {
-    TailAllocator allocator;
-    u32 blk_size;
-    u32 wordsize;
-}
-
-public fn Context* create(u32 blk_size, u32 wordsize) {
-    Context* c = malloc(sizeof(Context));
-    c.allocator.init(blk_size);
-    c.blk_size = blk_size;
-    c.wordsize = wordsize;
-    return c;
-}
-
-public fn void Context.free(Context* c) {
-    c.allocator.freeBlocks();
-    free(c);
-}
-
-#if 0
-public fn void Context.clear(Context* c) {
-    c.allocator.freeBlocks();
-    c.allocator.init(c.blk_size);
-}
-#endif
-
-public fn u32 Context.getWordSize(Context* c) { return c.wordsize; }
-
-public fn void* Context.alloc(Context* c, u32 len) {
-    return c.allocator.alloc(len);
-}
-
-public fn void Context.report(Context* c) {
-    c.allocator.report();
-}

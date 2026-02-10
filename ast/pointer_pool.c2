@@ -15,8 +15,6 @@
 
 module ast;
 
-import ast_context;
-
 import stdio local;
 import stdlib local;
 import string local;
@@ -34,14 +32,14 @@ type PointerPoolSlot struct {
 }
 
 type PointerPool struct {
-    ast_context.Context* context;
+    AstContext* context;
 
     u32 count;
     u32 capacity;
     PointerPoolSlot* slots;
 }
 
-fn void PointerPool.init(PointerPool* p, ast_context.Context* c) {
+fn void PointerPool.init(PointerPool* p, AstContext* c) {
     p.context = c;
     p.count = 1;    // skip first slot
     p.capacity = 0;

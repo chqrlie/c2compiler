@@ -53,14 +53,14 @@ fn void unload(void* arg) {
 fn void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
-    ast.setGlobals(info.ast_globals);
+    ast.setGlobals(info.context);
 }
 
 fn void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating refs");
     u64 t1 = utils.now();
-    refs_generator.generate(p.info.sm, p.info.astPool, p.info.output_dir, p.info.components, constants.refs_filename);
+    refs_generator.generate(p.info.context, p.info.sm, p.info.astPool, p.info.output_dir, p.info.components, constants.refs_filename);
     u64 t2 = utils.now();
     console.log_time("refs generation", t2 - t1);
 }

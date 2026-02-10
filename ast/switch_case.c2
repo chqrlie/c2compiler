@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -39,7 +38,7 @@ public type SwitchCase struct @(opaque) {
     //Stmt*[0] stmts; // tail-allocated
 }
 
-public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
+public fn SwitchCase* SwitchCase.create(AstContext* c,
                                         SrcLoc loc,
                                         bool is_default,
                                         Expr** conds, u32 num_conds,
@@ -49,7 +48,7 @@ public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
     assert(num_conds < 256);    // 2^8
 
     u32 size = sizeof(SwitchCase) + num_conds * sizeof(Expr*) + num_stmts * sizeof(Stmt*);
-    SwitchCase* s = c.alloc(size);
+    SwitchCase* s = c.alloc(size, SwitchCase);
     s.allbits = 0;
     s.bits.num_conds = num_conds;
     s.bits.num_stmts = num_stmts;
@@ -58,9 +57,6 @@ public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
     string.memcpy(s.conds, conds, num_conds * sizeof(Expr*));
     Stmt** dst_stmts = s.getStmts();
     string.memcpy(dst_stmts, stmts, num_stmts * sizeof(Stmt*));
-#if AstStatistics
-    Stats.addSwitchCase(size);
-#endif
     return s;
 }
 
@@ -68,7 +64,7 @@ fn SwitchCase* SwitchCase.instantiate(SwitchCase* src, Instantiator* inst) {
     u32 num_conds = src.bits.num_conds;
     u32 num_stmts = src.bits.num_stmts;
     u32 size = sizeof(SwitchCase) + num_conds * sizeof(Expr*) + num_stmts * sizeof(Stmt*);
-    SwitchCase* dst = inst.c.alloc(size);
+    SwitchCase* dst = inst.c.alloc(size, SwitchCase);
     dst.allbits = src.allbits;
     dst.loc = src.loc;
     // Instantiate the conditions in case constant expressions depend on template argument
@@ -80,9 +76,6 @@ fn SwitchCase* SwitchCase.instantiate(SwitchCase* src, Instantiator* inst) {
     for (u32 i = 0; i < num_stmts; i++) {
         dst_stmts[i] = src_stmts[i].instantiate(inst);
     }
-#if AstStatistics
-    Stats.addSwitchCase(size);
-#endif
     return dst;
 }
 

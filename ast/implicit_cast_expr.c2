@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -39,8 +38,8 @@ public type ImplicitCastExpr struct @(opaque) {
     Expr* inner;
 }
 
-public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
-    ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
+public fn ImplicitCastExpr* ImplicitCastExpr.create(AstContext* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
+    ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr), ImplicitCastExpr);
     e.base.init(ImplicitCast, loc, 0, 0, inner.hasEffect(), RValue);
     e.base.base.implicitCastBits.kind = kind;
     e.inner = inner;
@@ -66,9 +65,6 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
         e.base.base.exprBits.is_ctc = false;
         break;
     }
-#if AstStatistics
-    Stats.addExpr(ImplicitCast, sizeof(ImplicitCastExpr));
-#endif
     return e;
 }
 
