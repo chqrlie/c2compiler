@@ -30,9 +30,10 @@ public type StringBuf struct {
     bool truncated;
     bool colors;
     u32 indent_step;
+    void* opaque;
 }
 
-static_assert(24, sizeof(StringBuf));
+static_assert(32, sizeof(StringBuf));
 
 public fn StringBuf* StringBuf.init(StringBuf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
     assert(capacity);
@@ -44,6 +45,7 @@ public fn StringBuf* StringBuf.init(StringBuf* buf, char* data, u32 capacity, bo
     buf.grow = grow;
     buf.colors = use_colors;
     buf.indent_step = indent_step;
+    buf.opaque = nil;
     if (!data) {
         buf.data_ = malloc(capacity);
         buf.own = true;
@@ -90,6 +92,14 @@ public fn void StringBuf.setColors(StringBuf* buf, bool colors) @(unused) {
 
 public fn void StringBuf.setIndent(StringBuf* buf, u32 indent_step) @(unused) {
     buf.indent_step = indent_step;
+}
+
+public fn void StringBuf.setOpaque(StringBuf* buf, void* opaque) @(unused) {
+    buf.opaque = opaque;
+}
+
+public fn void* StringBuf.getOpaque(const StringBuf* buf) @(unused) {
+    return buf.opaque;
 }
 
 public fn u32 StringBuf.size(const StringBuf* buf) {

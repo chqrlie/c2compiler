@@ -122,7 +122,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case StaticAssert:
         return StaticAssert.instantiate((StaticAssert*)s, inst);
     }
-    s.dump();
+    s.dump(inst.c);
     assert(0);
     return nil;
 }
@@ -154,10 +154,10 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
     return s.loc;
 }
 
-public fn void Stmt.dump(const Stmt* s) {
-    StringBuf* out = ast.getDumpBuf();
+public fn void Stmt.dump(const Stmt* s, AstContext* context) {
+    StringBuf* out = context.getDumpBuf();
     s.print(out, 0);
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
 fn void Stmt.print(const Stmt* s, StringBuf* out, u32 indent) {
