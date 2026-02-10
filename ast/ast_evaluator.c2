@@ -25,6 +25,7 @@ const u32 Max_complexity = 1000000;
 
 type Evaluator struct {
     Value result;
+    AstContext* context;
     Evaluator* prev;
     FunctionDecl* fd;
     u16 depth;
@@ -32,6 +33,10 @@ type Evaluator struct {
     u32 complexity;
     // TODO: tail allocate if more than 16 arguments?
     Value[16] args;
+}
+
+fn void Evaluator.init(Evaluator* eval, AstContext* context) {
+    *eval = { .context = context }
 }
 
 fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
@@ -408,7 +413,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
 
     // Create a new stack frame and link it to the caller's
     // TODO: handle Stack frames as separate allocated objects or fragments of a stack area
-    Evaluator eval;
+    Evaluator eval.init(caller.context);
 
     if (num_args > elemsof(eval.args)) {
         return Value.error("too many arguments in pure function evaluation");
@@ -452,9 +457,9 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     // dispatch function call depending on function signature
     FunctionDispatcher fun = { .address = fd.getAddress() }
     if (!fun.address) {
-        u32 cname = fd.getCName();
+        u32 cname = fd.getCName(eval.context);
         if (!cname) return Value.error("no function name");
-        fun.address = dlsym(RTLD_DEFAULT, ast.idx2name(cname));
+        fun.address = dlsym(RTLD_DEFAULT, eval.context.idx2name(cname));
         if (!fun.address) {
             return Value.error("function not found");
         }
@@ -488,7 +493,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     case FunDDDD:
         return Value.createFloat(fun.funDDDD(args[0].toFloat(), args[1].toFloat(), args[2].toFloat()));
     default:
-        fprintf(stderr, "unsupported function prototype: %s\n", ast.idx2name(fd.getCName()));
+        fprintf(stderr, "unsupported function prototype: %s\n", eval.context.idx2name(fd.getCName(eval.context)));
         return Value.error("unsupported function prototype");
     }
 }
@@ -509,8 +514,8 @@ fn FunctionDecl* expr2function(Expr* e) {
     }
 }
 
-public fn Value evalExpr(const Expr* e) {
-    Evaluator top = {}
+public fn Value evalExpr(const Expr* e, AstContext *context) {
+    Evaluator top.init(context);
     return top.get_value(e);
 }
 

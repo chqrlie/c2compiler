@@ -90,7 +90,7 @@ fn bool Generator.emitSwitchCase(Generator* gen,
             const RangeExpr* r = (RangeExpr*)case_cond;
             case_cond = r.getLHS();
         }
-        v = ast.evalExpr(case_cond);
+        v = ast.evalExpr(case_cond, gen.astContext);
     }
     // TEMP always take u32 for now
     BlockKind kind = sc.isDefault() ? BlockKind.SwitchDefault : BlockKind.SwitchCase;

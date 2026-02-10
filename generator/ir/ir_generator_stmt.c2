@@ -91,7 +91,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         //if (gen.enable_asserts) gen.emitAssertStmt(s);
         return true;
     }
-    s.dump();
+    s.dump(gen.astContext);
     assert(0); // TODO
     return true;
 }
@@ -163,7 +163,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     const Stmt* else_stmt = if_stmt.getElse();
 
     if (!decl && cond.isCtv()) {
-        Value v = ast.evalExpr(cond);
+        Value v = ast.evalExpr(cond, gen.astContext);
         if (v.isZero()) {
             if (else_stmt) gen.emitStmt(else_stmt);
         } else {
@@ -338,7 +338,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
 
     // location string
     source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
-    const char* funcname = gen.cur_function.asDecl().getFullName();
+    const char* funcname = gen.cur_function.asDecl().getFullName(gen.astContext);
     char[512] location;
     stdio.snprintf(location, elemsof(location), "%s:%d: %s", loc.filename, loc.line, funcname);
     ExprRef loc_str;

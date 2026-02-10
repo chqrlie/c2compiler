@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context { Context }
 import src_loc { SrcLoc }
 import string_buffer { Buf }
 
@@ -23,13 +22,10 @@ public type NilExpr struct @(opaque) {
     Expr base;
 }
 
-public fn NilExpr* NilExpr.create(Context* c, SrcLoc loc) {
-    NilExpr* e = c.alloc(sizeof(NilExpr));
+public fn NilExpr* NilExpr.create(AstContext* c, SrcLoc loc) {
+    NilExpr* e = c.alloc(sizeof(NilExpr), NilExpr);
     e.base.init(Nil, loc, 1, 1, 0, RValue);
-    e.base.setType(getVoidPtr());
-#if AstStatistics
-    Stats.addExpr(Nil, sizeof(NilExpr));
-#endif
+    e.base.setType(c.getVoidPtr());
     return e;
 }
 
