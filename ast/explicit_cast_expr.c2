@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -32,22 +31,19 @@ public type ExplicitCastExpr struct @(opaque) {
     TypeRef dest;    // note: variable length!
 }
 
-public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
+public fn ExplicitCastExpr* ExplicitCastExpr.create(AstContext* c,
                                                       SrcLoc loc, u32 src_len,
                                                       const TypeRefHolder* ref,
                                                       Expr* inner, bool c_style)
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
-    ExplicitCastExpr* e = c.alloc(size);
+    ExplicitCastExpr* e = c.alloc(size, ExplicitCastExpr);
     e.base.init(ExplicitCast, loc, 0, 0, 0, NValue);
     e.base.base.explicitCastExprBits.c_style = c_style;
     e.base.base.explicitCastExprBits.src_len = src_len;
     e.inner = inner;
     e.dest_type = QualType_Invalid;
     e.dest.init(ref);
-#if AstStatistics
-    Stats.addExpr(ExplicitCast, size);
-#endif
     return e;
 }
 
@@ -56,14 +52,11 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     u32 extra = matches ? inst.ref.getExtraSize() : e.dest.getExtraSize();
     u32 size = sizeof(ExplicitCastExpr) + extra;
 
-    ExplicitCastExpr* e2 = inst.c.alloc(size);
+    ExplicitCastExpr* e2 = inst.c.alloc(size, ExplicitCastExpr);
     e2.base = e.base;
     e2.inner = e.inner.instantiate(inst);
     e2.dest_type = QualType_Invalid;
     e2.dest.instantiate(&e.dest, inst);
-#if AstStatistics
-    Stats.addExpr(ExplicitCast, size);
-#endif
     return (Expr*)e2;
 }
 

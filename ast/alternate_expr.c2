@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -25,15 +24,12 @@ public type AlternateExpr struct @(opaque) {
     Expr* generated;
 }
 
-public fn AlternateExpr* AlternateExpr.create(ast_context.Context* c, Expr* original, Expr* generated) @(unused) {
-    AlternateExpr* e = c.alloc(sizeof(AlternateExpr));
+public fn AlternateExpr* AlternateExpr.create(AstContext* c, Expr* original, Expr* generated) {
+    AlternateExpr* e = c.alloc(sizeof(AlternateExpr), AlternateExpr);
     e.base.init(Alternate, original.getLoc(), 0, 0, original.hasEffect(), NValue);
     e.original = original;
     e.generated = generated;
     e.base.setType(original.getType());
-#if AstStatistics
-    Stats.addExpr(Alternate, sizeof(AlternateExpr));
-#endif
     return e;
 }
 

@@ -77,7 +77,7 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
         ma.scope.setUnreachable();
         return FlowReturn;
     case Expr:
-        // TODO need a different set, since this one uses the Stack of Globals
+        // TODO need a different set, since this one uses the Stack of globals
         ma.analyseExpr((Expr**)s_ptr, false, 0);
         Expr* e = (Expr*)s;
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
@@ -279,7 +279,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, const char* co
     QualType qt = ma.analyseExpr((Expr**)s_ptr, true, RHS);
     Expr* e = (Expr*)*s_ptr;
     if (check_bool) {
-        if (qt.isValid()) ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, (Expr**)s_ptr, e.getLoc());
+        if (qt.isValid()) ma.conv_checker.checkAssign(ma.getBuiltinQT(Bool), qt, (Expr**)s_ptr, e.getLoc());
         e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
     }
     if (check_assign && e.isAssignment()) {
@@ -316,7 +316,7 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     if (vd) vd.asDecl().clearUsed();
 
     Expr* e = *condp;
-    bool ok = ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, condp, e.getLoc());
+    bool ok = ma.conv_checker.checkAssign(ma.getBuiltinQT(Bool), qt, condp, e.getLoc());
     e = *condp;    // re-read in case of ImplicitCast insertions
     if (e.isAssignment()) {
         ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
@@ -356,9 +356,9 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     if (cond) {
         QualType qt = ma.analyseExpr(cond, true, RHS);
         if (qt.isInvalid()) goto done;
-        ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, cond, (*cond).getLoc());
+        ma.conv_checker.checkAssign(ma.getBuiltinQT(Bool), qt, cond, (*cond).getLoc());
         if ((*cond).isCtv()) {
-            Value v = ast.evalExpr((*cond));
+            Value v = ast.evalExpr(*cond, ma.context);
             if (v.isZero()) {
                 // TODO: body is never reached
             } else {
@@ -393,7 +393,7 @@ fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
 
     Expr* cond = getCondExpr(w.getCond());
     if (cond.isCtv()) {
-        Value v = ast.evalExpr(cond);
+        Value v = ast.evalExpr(cond, ma.context);
         if (v.isZero()) {
             // TODO: body is never reached
         } else {
@@ -455,7 +455,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
         return QualType_Invalid;
     }
 
-    if (!d.getAST().isInterface())
+    if (!d.getAST(ma.context).isInterface())
         ma.checkName(d, false);
 
     Expr** initExpr = vd.getInit2();
@@ -524,7 +524,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     if (qt.isInvalid()) return;
 
     Expr* inner = a.getInner();
-    ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, a.getInner2(), inner.getLoc());
+    ma.conv_checker.checkAssign(ma.getBuiltinQT(Bool), qt, a.getInner2(), inner.getLoc());
 
     if (ma.has_asserts) {
         SrcLoc loc = s.getLoc();
@@ -536,15 +536,16 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
         Expr*[3] args;
         char[128] tmp;
         string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+        buf.setOpaque(ma.context);
         string_buffer.Buf* out = &buf;
-        encode_expression(out, inner);
+        ma.encode_expression(out, inner);
         if (inner.isComparison()) {
             BinaryOperator* b = (BinaryOperator*)inner;
             Expr* lhs = b.getLHS();
             const char* fmt1 = lhs.isLiteral() ? nil : get_type_format(lhs);
             if (fmt1) {
                 out.add(", ");
-                encode_expression(out, lhs);
+                ma.encode_expression(out, lhs);
                 out.print(": %%%s", fmt1);
                 args[num_args++] = lhs;
             }
@@ -552,7 +553,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
             const char* fmt2 = rhs.isLiteral() ? nil : get_type_format(rhs);
             if (fmt2) {
                 out.add(", ");
-                encode_expression(out, rhs);
+                ma.encode_expression(out, rhs);
                 out.print(": %%%s", fmt2);
                 args[num_args++] = rhs;
             }
@@ -573,9 +574,10 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
 }
 
 // encode expression as part of a format string
-fn void encode_expression(string_buffer.Buf* out, Expr* e) {
+fn void Analyser.encode_expression(Analyser* ma, string_buffer.Buf* out, Expr* e) {
     char[128] tmp;
     string_buffer.Buf buf.init(tmp, elemsof(tmp), false, false, 0);
+    buf.setOpaque(ma.context);
     e.printLiteral(&buf);
     const char* s = buf.data();
     for (const char* p = s; *p; p++) {

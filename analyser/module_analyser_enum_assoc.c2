@@ -148,7 +148,7 @@ fn bool Analyser.analyseEnumConstantAssocValues(Analyser* ma,
     Expr** values = ile.getValues();
     ile.setIsEnumAssoc();
     // Note: set the type to Void (not used anyway)
-    init.setType(getVoidQT());
+    init.setType(ma.context.getVoidQT());
 
     bool is_ok = true;
     for (u32 i=0; i<num_values; i++) {

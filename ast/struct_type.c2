@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 public type StructType struct @(opaque) {
@@ -25,13 +24,10 @@ public type StructType struct @(opaque) {
 
 
 // Note: not public, since only called by StructTypeDecl
-fn StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
-    StructType* t = c.alloc(sizeof(StructType));
+fn StructType* StructType.create(AstContext* c, StructTypeDecl* decl) {
+    StructType* t = c.alloc(sizeof(StructType), StructType);
     t.base.init(Struct);
     t.decl = decl;
-#if AstStatistics
-    Stats.addType(Struct, sizeof(StructType));
-#endif
     return t;
 }
 
@@ -40,17 +36,19 @@ public fn StructTypeDecl* StructType.getDecl(const StructType* t) { return t.dec
 fn Type* StructType.asType(StructType* t) { return &t.base; }
 
 fn void StructType.print(const StructType* t, string_buffer.Buf* out) {
+    AstContext* g = out.getOpaque();
     if (t.decl.isGlobal()) {
-        out.add(t.decl.base.getModuleName());
+        out.add(t.decl.base.getModuleName(g));
         out.add1('.');
     }
-    const char* name = t.decl.base.getName();
+    const char* name = t.decl.base.getName(g);
     if (name) out.add(name);
     else out.add("<anonymous>");
 }
 
 fn void StructType.fullPrint(const StructType* t, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     out.indent(indent);
-    out.print("StructType [%p] %s\n", t, t.decl.asDecl().getName());
+    out.print("StructType [%p] %s\n", t, t.decl.asDecl().getName(g));
 }
 

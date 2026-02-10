@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -29,20 +28,17 @@ public type ReturnStmt struct @(opaque) {
     Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
 }
 
-public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr* value) {
+public fn ReturnStmt* ReturnStmt.create(AstContext* c, SrcLoc loc, Expr* value) {
     u32 size = sizeof(ReturnStmt);
     if (value) size += sizeof(Expr*);
 
-    ReturnStmt* s = c.alloc(size);
+    ReturnStmt* s = c.alloc(size, ReturnStmt);
     s.base.init(Return, loc);
 
     if (value) {
         s.base.returnStmtBits.has_value = 1;
         s.value[0] = value;
     }
-#if AstStatistics
-    Stats.addStmt(Return, size);
-#endif
     return s;
 }
 

@@ -41,6 +41,7 @@ type JumpScope struct {
 }
 
 type Generator struct {
+    AstContext* astContext;
     ir_context.Context* ctx;
     const string_pool.Pool* names;
     label_map.Map labels;
@@ -65,6 +66,7 @@ type Generator struct {
 }
 
 fn void Generator.init(Generator* gen,
+                       AstContext* astContext,
                        source_mgr.SourceMgr* sm,
                        const string_pool.Pool* names,
                        const target_info.Info* targetInfo,
@@ -82,13 +84,14 @@ fn void Generator.init(Generator* gen,
         build_info.linkerflags = buildInfo.getLinkerFlags();
     }
 
+    gen.astContext = astContext;
     gen.ctx = ir_context.create(print_all, targetInfo, &build_info);
     gen.names = names;
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
     gen.string_idx = 1; // starting at 1 looks nicer
-    gen.locals.init();
+    gen.locals.init(astContext);
     gen.print = print;
     gen.enable_asserts = enable_asserts;
     gen.ptr_type = targetInfo.intWidth == 64 ? ir.Type.U64 : ir.Type.U32;
@@ -131,7 +134,7 @@ fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
     // a in function mod.func -> mod_func.a
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
-    out.add(d.getModuleName());
+    out.add(d.getModuleName(gen.astContext));
     out.add1('_');
     out.add(gen.idx2name(gen.cur_function.asDecl().getNameIdx()));
     out.add1('.');
@@ -143,13 +146,13 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
 
-    if (d.isExternal() && d.getModule().isForeign()) {
-        u32 cname = d.getCName();
+    if (d.isExternal() && d.getModule(gen.astContext).isForeign()) {
+        u32 cname = d.getCName(gen.astContext);
         if (!cname) cname = d.getNameIdx();
         out.add(gen.idx2name(cname));
     } else {
         if (d.isGlobal()) {
-            out.add(d.getModuleName());
+            out.add(d.getModuleName(gen.astContext));
             out.add1('_');
             if (d.isFunction()) {
                 FunctionDecl* fd = (FunctionDecl*)d;
@@ -260,7 +263,7 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
 
 fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     if (e.isCtv()) {
-        Value v = ast.evalExpr(e);
+        Value v = ast.evalExpr(e, gen.astContext);
         switch (size) {
         case 1:
             gen.ctx.addInitValueU8(v.as_u8());
@@ -300,7 +303,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case Type:
     case Call:
-        e.dump();
+        e.dump(gen.astContext);
         assert(0);  // should be CTV
         break;
     case InitList:
@@ -317,7 +320,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
     case BinaryOperator:
-        e.dump();
+        e.dump(gen.astContext);
         assert(0);  // should be CTV
         break;
     case UnaryOperator:
@@ -328,7 +331,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     case ConditionalOperator:
     case Builtin:
     case ArraySubscript:
-        e.dump();
+        e.dump(gen.astContext);
         assert(0);  // should be CTV
         break;
     case Member:
@@ -340,7 +343,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case Paren:
     case BitOffset:
-        e.dump();
+        e.dump(gen.astContext);
         assert(0);  // should be CTV
         break;
     case ExplicitCast:
@@ -495,8 +498,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     ir.Ref[constants.MaxCallArgs] param_refs;
     // first add all %x = param
     for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = params[i];
-        ir.Type t2 = gen.type2irtype(v.asDecl().getType());
+        VarDecl* vd = params[i];
+        ir.Type t2 = gen.type2irtype(vd.asDecl().getType());
         param_refs[i] = c.addFuncArg(t2);
         // TODO pass-by-value structs can be turned into pointer or 1-2 words
 #if 0
@@ -512,8 +515,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 #endif
     }
     for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = params[i];
-        gen.addLocalVar(v);
+        VarDecl* vd = params[i];
+        gen.addLocalVar(vd);
     }
     //if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
 
@@ -522,8 +525,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     // create stores for params
     for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = params[i];
-        StackVar* var = gen.locals.find(v);
+        VarDecl* vd = params[i];
+        StackVar* var = gen.locals.find(vd);
         c.addStoreInstr(var.ir_type, param_refs[i], var.ref);
     }
 
@@ -579,7 +582,8 @@ fn void Generator.on_module(void* arg, Module* m) {
 }
 
 // TODO only pass main component
-public fn void generate(const char* target,
+public fn void generate(AstContext* astContext,
+                        const char* target,
                         const char* output_dir,
                         component.List* comps,
                         source_mgr.SourceMgr* sm,
@@ -598,7 +602,7 @@ public fn void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
+    gen.init(astContext, sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files

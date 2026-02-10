@@ -45,7 +45,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     FunctionType* ft = qt.getFunctionTypeOrNil();
     if (!ft) {
         Expr* fn2 = call.getFunc();
-        ma.errorRange(fn2.getLoc(), fn2.getRange(), "called object type %s is not a function or function pointer", qt.diagName());
+        ma.errorRange(fn2.getLoc(), fn2.getRange(), "called object type %s is not a function or function pointer", qt.diagName(ma.context));
 
         return QualType_Invalid;
     }
@@ -68,10 +68,10 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (ma.globalScope() || ma.need_const_expr) {
         if (fd.hasAttrPure()) {
             if (ma.globalScope()) {
-                ma.analyseFunctionBody(fd, fd.asDecl().getAST().getPtr());
+                ma.analyseFunctionBody(fd, fd.asDecl().getAST(ma.context).getPtr());
             } else {
                 // if not at global scope, need explicit recursion as for template instantiation
-                ma.analyseFunctionBody2(fd, fd.asDecl().getModule());
+                ma.analyseFunctionBody2(fd, fd.asDecl().getModule(ma.context));
             }
         } else
         if (ma.global_initializer) {
@@ -98,7 +98,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     if (fd.hasAttrDeprecated() && !ma.warnings.no_deprecated) {
-        const Attr* deprecated = ((Decl*)fd).getAttr(Deprecated);
+        const Attr* deprecated = ((Decl*)fd).getAttr(Deprecated, ma.context);
         const char* msg = ma.idx2name(deprecated.value.text);
         ma.warn(origFn.getLoc(), "function %s is deprecated: %s", ma.getFullName(fd.asDecl()), msg);
         //return QualType_Invalid;
@@ -659,7 +659,7 @@ fn void Analyser.create_template_name(Analyser* ma, char* name, u32 size, u32 or
 fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
     Analyser* ma = arg;
     QualType qt = d.getType(); // lazy way to get from decl -> fullname
-    ma.error(loc," using opaque type '%s'", qt.diagName());
+    ma.error(loc," using opaque type '%s'", qt.diagName(ma.context));
 }
 
 fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
@@ -675,7 +675,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         if (st) {
             StructTypeDecl* std = st.getDecl();
             Decl* d = (Decl*)std;
-            used_opaque = (std.isOpaque() && d.getModule() != ma.mod);
+            used_opaque = (std.isOpaque() && d.getModule(ma.context) != ma.mod);
         }
         Instantiator inst = {
             .c = ma.context,
@@ -693,13 +693,14 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         d.setChecked();
 
         // Note: we need a separate scope for the body
-        Module* template_mod = fd.asDecl().getModule();
+        Module* template_mod = fd.asDecl().getModule(ma.context);
         Analyser* analyser = ma.clone();
         analyser.setMod(template_mod);
-        scope.Scope* tmpScope = scope.create(ma.allmodules,
+        scope.Scope* tmpScope = scope.create(ma.context,
+                                             ma.allmodules,
                                              ma.diags,
                                              ma.astPool,
-                                             d.getAST().getImports(),
+                                             d.getAST(ma.context).getImports(),
                                              template_mod,
                                              template_mod.getSymbols(),
                                              !ma.warnings.no_unused_variable);

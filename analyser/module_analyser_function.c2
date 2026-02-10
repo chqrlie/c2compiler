@@ -201,8 +201,8 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     }
 
     Decl* d = (Decl*)fd;
-    //printf("FUNC %s  cname %d  foreign %d  type_func %d\n", ma.getName(d), d.hasCName(), ma.mod.isForeign(), fd.isTypeFunc());
-    if (d.hasCName()) {
+    //printf("FUNC %s  cname %d  foreign %d  type_func %d\n", ma.getName(d), d.hasCName(ma.context), ma.mod.isForeign(), fd.isTypeFunc());
+    if (d.hasCName(ma.context)) {
         if (!ma.mod.isForeign()) {
             ma.error(d.getLoc(), "the cname attribute is only allowed for foreign functions");
             return;
@@ -224,10 +224,11 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 fn bool Analyser.analyseFunctionBody2(Analyser* ma, FunctionDecl* fd, Module* mod) {
     Analyser* analyser = ma.clone();
     analyser.setMod(mod);
-    scope.Scope* tmpScope = scope.create(ma.allmodules,
+    scope.Scope* tmpScope = scope.create(ma.context,
+                                         ma.allmodules,
                                          ma.diags,
                                          ma.astPool,
-                                         fd.asDecl().getAST().getImports(),
+                                         fd.asDecl().getAST(ma.context).getImports(),
                                          mod,
                                          mod.getSymbols(),
                                          !ma.warnings.no_unused_variable);

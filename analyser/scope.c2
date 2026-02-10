@@ -44,6 +44,7 @@ type Level struct {
 
 public type Scope struct @(opaque) {
     // global scope
+    const ast.AstContext* context;
     diagnostics.Diags* diags;
     string_pool.Pool* astPool;
     const module_list.List* allmodules;
@@ -71,7 +72,8 @@ public type Scope struct @(opaque) {
     u32 lvl;
 }
 
-public fn Scope* create(module_list.List* allmodules,
+public fn Scope* create(ast.AstContext* context,
+                          module_list.List* allmodules,
                           diagnostics.Diags* diags,
                           string_pool.Pool* astPool,
                           const ast.ImportDeclList* imports,
@@ -80,6 +82,7 @@ public fn Scope* create(module_list.List* allmodules,
                           bool warn_on_unused)
 {
     Scope* s = stdlib.calloc(1, sizeof(Scope));
+    s.context = context;
     s.diags = diags;
     s.astPool = astPool;
     s.allmodules = allmodules;
@@ -120,7 +123,7 @@ fn const char* Scope.getName(const Scope* s, const ast.Decl* d) {
 
 fn const char* Scope.getFullName(const Scope* s, const ast.Decl* d) {
     // TODO: pass astPool and buffer to d.getFullName()
-    return d.getFullName();
+    return d.getFullName(s.context);
 }
 
 fn void Scope.addImports(Scope* s) {
@@ -480,7 +483,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
             ast.Decl* decl = s.cache_decls[i];
             ast.ImportDecl* used_import = s.cache_imports[i];
 
-            //ast.ImportDecl* used_import = s.findImport(decl.getModule());
+            //ast.ImportDecl* used_import = s.findImport(decl.getModule(s.context));
             bool external = (used_import.getDest() != s.mod) && ((ast.Decl*)used_import) != decl;
 
             if (external || usedPublic) {
@@ -582,7 +585,7 @@ public fn void Scope.dump(const Scope* s) @(unused) {
 }
 
 public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
-    bool external = (s.mod != d.getModule());
+    bool external = (s.mod != d.getModule(s.context));
     if (external) {
         if (d.isPublic()) {
             d.setUsedPublic();

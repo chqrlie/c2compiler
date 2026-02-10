@@ -33,14 +33,15 @@ set ast
     ast_utils/attr_table.c2
     ast_utils/color.c2
     ast_utils/constants.c2
-    ast_utils/context.c2
     ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
+    ast_utils/tail_allocator.c2
     ast_utils/value_type.c2
 
     # ast declarations
+    ast/statistics.c2
     ast/decl.c2
     ast/alias_type_decl.c2
     ast/array_value.c2
@@ -118,6 +119,7 @@ set ast
     # ast utility function
 	ast/array_value_list.c2
     ast/ast.c2
+    ast/ast_context.c2
 	ast/decl_list.c2
 	ast/expr_list.c2
 	ast/function_decl_list.c2
@@ -127,10 +129,9 @@ set ast
     ast/module.c2
     ast/pointer_pool.c2
 	ast/static_assert_list.c2
-    ast/statistics.c2
+    #ast/statistics.c2
     ast/string_type_pool.c2
     ast/symbol_table.c2
-    ast/utils.c2
 
 end
 

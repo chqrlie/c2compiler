@@ -62,6 +62,7 @@ fn void Fragment.free(Fragment* f) {
 }
 
 type Generator struct {
+    AstContext* context;
     string_pool.Pool* astPool;
     string_pool.Pool* auxPool;
     string_buffer.Buf* out;
@@ -126,13 +127,15 @@ fn string_buffer.Buf* Generator.getBuf(Generator* gen, bool is_public) {
 }
 
 fn Fragment* Generator.getFragment(Generator* gen) {
+    Fragment* f;
     if (gen.free_list.isEmpty()) {
-        return Fragment.create();
+        f = Fragment.create();
+    } else {
+        linked_list.Element* e = gen.free_list.popFront();
+        f = to_container(Fragment, list, e);
+        f.clear();
     }
-
-    linked_list.Element* e = gen.free_list.popFront();
-    Fragment* f = to_container(Fragment, list, e);
-    f.clear();
+    f.buf.setOpaque(gen.context);
     return f;
 }
 
@@ -149,8 +152,8 @@ fn void Generator.freeFragment(Generator* gen, Fragment* f) {
 }
 
 
-fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
-    Value val = ast.evalExpr(e);
+fn void Generator.emitCtv(Generator* gen, string_buffer.Buf* out, const Expr* e) {
+    Value val = ast.evalExpr(e, gen.context);
     out.print("%s", val.str());
 }
 
@@ -159,13 +162,14 @@ fn void Generator.emitName(Generator* gen, string_buffer.Buf* out, const Decl* d
 }
 
 fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+    assert(gen.mod == d.getModule(out.getOpaque()));
     gen.emitCNameMod(out, d, gen.mod);
 }
 
 fn void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
     if (!d.getNameIdx()) return;
-    if (d.isExternal() && d.getModule().isForeign()) {
-        u32 cname = d.getCName();
+    if (d.isExternal() && d.getModule(gen.context).isForeign()) {
+        u32 cname = d.getCName(gen.context);
         if (cname) {
             out.add(gen.idx2name(cname));
             return;
@@ -209,7 +213,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Dec
             return;
         }
     }
-    gen.emitCNameMod(out, d, d.getModule());
+    gen.emitCNameMod(out, d, d.getModule(gen.context));
 }
 
 fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) {
@@ -325,7 +329,7 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         return;
     }
 
-    gen.emitCNameMod(out, decl, decl.getModule());
+    gen.emitCNameMod(out, decl, decl.getModule(gen.context));
 }
 
 fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -524,7 +528,7 @@ fn bool is_c_type(const char* s) {
 }
 
 fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    u32 cname = d.getCName();
+    u32 cname = d.getCName(gen.context);
     if (cname && is_c_type(gen.idx2name(cname)))
         return;
     // For now, just generate canonicalType as RHS
@@ -569,7 +573,7 @@ fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e,
 }
 
 fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    u32 cdef = d.getCDef();
+    u32 cdef = d.getCDef(gen.context);
     if (cdef) {
         out.add(gen.idx2name(cdef));
     } else {
@@ -582,7 +586,7 @@ fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out
     VarDecl* vd = (VarDecl*)d;
     if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
 
-    u32 section = d.getSection();
+    u32 section = d.getSection(gen.context);
     if (section) {
         out.space();
         gen.emitSectionAttr(out, section);
@@ -650,7 +654,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
 }
 
 fn bool Generator.emitExprValue(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    Value result = ast.evalExpr(e);
+    Value result = ast.evalExpr(e, gen.context);
     if (result.kind == Error) {
         gen.diags.errorRange(e.getLoc(), e.getRange(), "%s", result.error_msg);
         return false;
@@ -852,7 +856,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
-    u32 section = d.getSection();
+    u32 section = d.getSection(gen.context);
     if (section) {
         gen.emitSectionAttr(out, section);
         out.space();
@@ -1115,7 +1119,7 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.newline();
     m.visitASTs(Generator.create_interface_decls, gen);
 
-    gen.deps.init(m, gen, Generator.on_header_decl);
+    gen.deps.init(gen.context, m, gen, Generator.on_header_decl);
     for (u32 i=0; i<gen.decls.size(); i++) {
         Generator.on_header_decl(gen, gen.decls.get(i));
     }
@@ -1194,7 +1198,7 @@ fn void Generator.on_module(void* arg, Module* m) {
     m.visitASTs(Generator.on_ast_structs, arg);
     gen.out.newline();
 
-    gen.deps.init(m, gen, Generator.on_decl);
+    gen.deps.init(gen.context, m, gen, Generator.on_decl);
     m.visitASTs(Generator.on_ast_decl, arg);
 
     gen.out.newline();
@@ -1220,6 +1224,7 @@ fn void Generator.write_files(Generator* gen) {
 }
 
 fn void Generator.init(Generator* gen,
+                       AstContext* context,
                        string_pool.Pool* astPool,
                        const char* target,
                        build_target.Kind kind,
@@ -1231,7 +1236,9 @@ fn void Generator.init(Generator* gen,
                        Decl* mainFunc)
 {
     string.memset(gen, 0, sizeof(Generator));
+    gen.context = context;
     gen.out = string_buffer.create(256*1024, false, 3);
+    gen.out.setOpaque(context);
     gen.target = target;
     gen.target_kind = kind;
     gen.results_dir = results_dir;
@@ -1244,6 +1251,7 @@ fn void Generator.init(Generator* gen,
     gen.used_list.init();
     gen.header_fragments.init();
     gen.header = string_buffer.create(8192, false, 2);
+    gen.header.setOpaque(context);
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
     gen.decls.init();
 
@@ -1273,7 +1281,8 @@ fn void Generator.write(Generator* gen, const string_buffer.Buf* buf, const char
     }
 }
 
-public fn void generate(string_pool.Pool* astPool,
+public fn void generate(AstContext* context,
+                        string_pool.Pool* astPool,
                         string_pool.Pool* auxPool,
                         const char* target,
                         build_target.Kind kind,
@@ -1296,7 +1305,7 @@ public fn void generate(string_pool.Pool* astPool,
         return;
     }
 
-    Generator gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
+    Generator gen.init(context, astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;

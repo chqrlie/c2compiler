@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -27,22 +26,19 @@ public type ConditionalOperator struct @(opaque) {
     Expr* rhs;
 }
 
-public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
+public fn ConditionalOperator* ConditionalOperator.create(AstContext* c,
                                                             SrcLoc questionLoc,
                                                             SrcLoc colonLoc,
                                                             Expr* cond,
                                                             Expr* lhs,
                                                             Expr* rhs)
 {
-    ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
+    ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator), ConditionalOperator);
     e.base.init(ConditionalOperator, questionLoc, 0, 1, 1, RValue);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;
     e.rhs = rhs;
-#if AstStatistics
-    Stats.addExpr(ConditionalOperator, sizeof(ConditionalOperator));
-#endif
     return e;
 }
 

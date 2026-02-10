@@ -129,7 +129,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 d = (Decl*)etd;
 
                 // check if constant/enum-function (by first casing)
-                const char* name = m.getMemberName();
+                const char* name = m.getMemberName(ma.context);
                 if (ctype.isupper(name[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
                     if (valtype != NValue) {    // variable of Enum type (eg Enum a; a.x)
                         // TODO reset msg to normal invalid base
@@ -327,7 +327,7 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
 #if 1
         if (side && valtype == NValue) {
             QualType t = std.asDecl().getType();
-            ma.error(loc, "member access needs an instantiation of type '%s'", t.diagName());
+            ma.error(loc, "member access needs an instantiation of type '%s'", t.diagName(ma.context));
             return nil;
         }
 #endif

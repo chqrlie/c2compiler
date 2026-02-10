@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -31,19 +30,16 @@ public type ArraySubscriptExpr struct @(opaque) {
     Expr* idx;
 }
 
-public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
+public fn ArraySubscriptExpr* ArraySubscriptExpr.create(AstContext* c,
                                                           SrcLoc loc, u32 src_len,
                                                           Expr* lhs,
                                                           Expr* idx)
 {
-    ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
+    ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr), ArraySubscriptExpr);
     e.base.init(ArraySubscript, loc, 0, 0, 0, LValue);
     e.base.base.arraySubscriptExprBits.src_len = src_len;
     e.lhs = lhs;
     e.idx = idx;
-#if AstStatistics
-    Stats.addExpr(ArraySubscript, sizeof(ArraySubscriptExpr));
-#endif
     return e;
 }
 

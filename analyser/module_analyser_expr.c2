@@ -92,7 +92,7 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case InitList:
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
-        (*e_ptr).dump();
+        (*e_ptr).dump(ma.context);
         assert(0);
         break;
     case BinaryOperator:
@@ -122,7 +122,7 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case ImplicitCast:
         break;
     case Range:
-        (*e_ptr).dump();
+        (*e_ptr).dump(ma.context);
         assert(0);
         break;
     case NamedArgument:
@@ -308,7 +308,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     QualType qt = ma.analyseExpr(cond.getCond2(), true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
     if (!validTestType(qt)) {
-        ma.error(cond.getCond().getLoc(), "invalid condition expression (%s)", qt.diagName());
+        ma.error(cond.getCond().getLoc(), "invalid condition expression (%s)", qt.diagName(ma.context));
         return QualType_Invalid;
     }
 
@@ -332,14 +332,15 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case 1: // invalid operands
     invalid:
-        ma.error(e.getLoc(), "invalid operands to ternary operator (%s and %s)", lhs.diagName(), rhs.diagName());
+        ma.error(e.getLoc(), "invalid operands to ternary operator (%s and %s)",
+                 lhs.diagName(ma.context), rhs.diagName(ma.context));
         return QualType_Invalid;
     case 2: // builtin : builtin
     builtin:
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
         // Use modified version of usual_arithmetic_conversion
-        QualType optype = conversion_checker.get_common_arithmetic_type(bl, br);
+        QualType optype = conversion_checker.get_common_arithmetic_type(ma.builtins, bl, br);
         if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
@@ -358,7 +359,8 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         QualType t1 = pt1.getInner();
         QualType t2 = pt2.getInner();
         if (t1.getTypeOrNil() != t2.getTypeOrNil() && !t1.isVoid() && !t2.isVoid()) {
-            ma.error(e.getLoc(), "ternary operands are pointers of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            ma.error(e.getLoc(), "ternary operands are pointers of different types ('%s' and '%s')",
+                     lhs.diagName(ma.context), rhs.diagName(ma.context));
             return QualType_Invalid;
         }
         // TODO: select the non void pointer if any
@@ -370,7 +372,8 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         goto builtin;
     case 6: // enum : enum
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
-            ma.error(e.getLoc(), "ternary operands are enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            ma.error(e.getLoc(), "ternary operands are enums of different types ('%s' and '%s')",
+                     lhs.diagName(ma.context), rhs.diagName(ma.context));
             return QualType_Invalid;
         }
         return lhs;
@@ -384,14 +387,15 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         return lhs; // will be checked later
     case 10: // struct : struct
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
-            ma.error(e.getLoc(), "ternary operands are structs or unions of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            ma.error(e.getLoc(), "ternary operands are structs or unions of different types ('%s' and '%s')",
+                     lhs.diagName(ma.context), rhs.diagName(ma.context));
             return QualType_Invalid;
         }
         return lhs;
     case 11: // void : void
         return lhs;
     }
-    e.dump();
+    e.dump(ma.context);
     assert(0);
     return QualType_Invalid;
 }
@@ -403,12 +407,12 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
     }
 
     if (tleft.isArray()) {
-        ma.error(loc, "array type '%s' is not assignable", tleft.diagName());
+        ma.error(loc, "array type '%s' is not assignable", tleft.diagName(ma.context));
         return false;
     }
 
     if (tleft.isConst()) {
-        //assignee.dump();
+        //assignee.dump(ma.context);
         if (assignee.isIdentifier()) {
             IdentifierExpr* i = (IdentifierExpr*)assignee;
             ma.error(loc, "cannot assign to read-only variable '%s'", ma.getFullName(i.getDecl()));
@@ -423,7 +427,7 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
             case Module:
                 break;
             case StructMember:
-                ma.error(loc, "assignment of member '%s' in read-only object", m.getMemberName());
+                ma.error(loc, "assignment of member '%s' in read-only object", m.getMemberName(ma.context));
                 return false;
             case TypeFunc:
             case StaticTypeFunc:
@@ -436,24 +440,24 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
             }
             const Decl* d = m.getFullDecl();
             if (d.isVariable()) {
-                ma.error(loc, "cannot assign to read-only variable '%s'", m.getMemberName());
+                ma.error(loc, "cannot assign to read-only variable '%s'", m.getMemberName(ma.context));
                 return false;
             }
         }
-        ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
+        ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName(ma.context));
         return false;
     }
 
     return true;
 }
 
-fn QualType usualUnaryConversions(Expr* e) {
+fn QualType Analyser.usualUnaryConversions(Analyser* ma, Expr* e) {
     QualType qt = e.getType();
     QualType canon = qt.getCanonicalType();
 
     if (!canon.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = canon.getBuiltin();
-    if (bi.isPromotableIntegerType()) return getBuiltinQT(Int32);
+    if (bi.isPromotableIntegerType()) return ma.getBuiltinQT(Int32);
     return qt;
 }
 
@@ -473,7 +477,7 @@ fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     c.setDestType(destType);
 
     if (!destType.isScalar()) {
-        ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName());
+        ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName(ma.context));
         return QualType_Invalid;
     }
 
@@ -536,7 +540,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
         return QualType_Invalid;
     }
     if (is_enum_index && index_type.getTypeOrNil() != canon.getTypeOrNil()) {
-        ma.error(index.getLoc(), "array subscript must have enum type '%s'", index_type.diagName());
+        ma.error(index.getLoc(), "array subscript must have enum type '%s'", index_type.diagName(ma.context));
         return QualType_Invalid;
     }
 
@@ -547,7 +551,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
             // check range
             u32 size = at.getSize();
             if (size != 0) { // dont give error if arrays has size 0 (allowed for struct members)
-                Value val = ast.evalExpr(index);
+                Value val = ast.evalExpr(index, ma.context);
                 u64 idx = val.as_u64();
                 if (idx >= size) {
                     ma.error(index.getLoc(), "array out-of-bounds access [%d] in array of [%d]", idx, size);
@@ -589,13 +593,13 @@ fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* ba
         Value width = lval.minus(&rval);
         u64 w = width.as_u64() + 1;
         if (w <= 8) {
-            ltype = getBuiltinQT(UInt8);
+            ltype = ma.getBuiltinQT(UInt8);
         } else if (w <= 16) {
-            ltype = getBuiltinQT(UInt16);
+            ltype = ma.getBuiltinQT(UInt16);
         } else if (w <= 32) {
-            ltype = getBuiltinQT(UInt32);
+            ltype = ma.getBuiltinQT(UInt32);
         } else {
-            ltype = getBuiltinQT(UInt64);
+            ltype = ma.getBuiltinQT(UInt64);
         }
 
         bo.setWidth((u8)w);
@@ -618,14 +622,14 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
     QualType canon = qt.getCanonicalType();
     BuiltinType* bi = canon.getBuiltin();
     if (!canon.isBuiltin() || !bi.isInteger()) {
-        ma.error(e.getLoc(), "index of bitoffset has non-integer type '%s'", qt.diagName());
+        ma.error(e.getLoc(), "index of bitoffset has non-integer type '%s'", qt.diagName(ma.context));
         return false;
     }
 
     // TODO only allow CTV expressions
     if (!e.isCtv()) return false;
 
-    Value val = ast.evalExpr(e);
+    Value val = ast.evalExpr(e, ma.context);
     if (val.isNegative()) {
         ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
         return false;
@@ -636,7 +640,7 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
 
     // accept shifting 1 << 31
     if (val.as_u64() >= base_bi.getWidth()) {
-        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName());
+        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName(ma.context));
         return false;
     }
 
