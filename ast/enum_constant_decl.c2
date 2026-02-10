@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import value_type local;
@@ -32,7 +31,7 @@ public type EnumConstantDecl struct @(opaque) {
     Expr*[0] init;  // tail-allocated
 }
 
-public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
+public fn EnumConstantDecl* EnumConstantDecl.create(AstContext* c,
                                                       u32 name,
                                                       SrcLoc loc,
                                                       bool is_public,
@@ -41,16 +40,13 @@ public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
 {
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
-    EnumConstantDecl* d = c.alloc(size);
+    EnumConstantDecl* d = c.alloc(size, EnumConstantDecl);
     d.base.init(EnumConstant, name, loc, is_public, QualType_Invalid, ast_idx);
     d.value.setUnsigned(0);
     if (initValue) {
         d.base.enumConstantDeclBits.has_init = 1;
         d.init[0] = initValue;
     }
-#if AstStatistics
-    Stats.addDecl(EnumConstant, size);
-#endif
     return d;
 }
 

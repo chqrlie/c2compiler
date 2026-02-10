@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 type ArrayTypeBits struct {
@@ -33,7 +32,7 @@ public type ArrayType struct @(opaque) {
     QualType[0] index_type;
 }
 
-public fn ArrayType* ArrayType.create(ast_context.Context* c,
+public fn ArrayType* ArrayType.create(AstContext* c,
                                       QualType elem,
                                       bool has_size,
                                       u32 length,
@@ -41,7 +40,7 @@ public fn ArrayType* ArrayType.create(ast_context.Context* c,
                                       QualType index_type)
 {
     u32 size = sizeof(ArrayType) + is_enum_index * sizeof(QualType);
-    ArrayType* t = c.alloc(size);
+    ArrayType* t = c.alloc(size, ArrayType);
     t.base.init(Array);
     t.base.arrayTypeBits.is_incremental = false;
     t.base.arrayTypeBits.has_size = has_size;
@@ -51,24 +50,18 @@ public fn ArrayType* ArrayType.create(ast_context.Context* c,
         t.base.arrayTypeBits.is_enum_index = true;
         t.index_type[0] = index_type;
     }
-#if AstStatistics
-    Stats.addType(Array, size);
-#endif
     return t;
 }
 
-public fn ArrayType* ArrayType.createIncremental(ast_context.Context* c,
+public fn ArrayType* ArrayType.createIncremental(AstContext* c,
                                                    QualType elem)
 {
-    ArrayType* t = c.alloc(sizeof(ArrayType));
+    ArrayType* t = c.alloc(sizeof(ArrayType), ArrayType);
     t.base.init(Array);
     t.base.arrayTypeBits.is_incremental = true;
     t.base.arrayTypeBits.has_size = false;
     t.elem = elem;
     t.size = 0;
-#if AstStatistics
-    Stats.addType(Array, sizeof(ArrayType));
-#endif
     return t;
 }
 

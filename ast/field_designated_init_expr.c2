@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -26,19 +25,16 @@ public type FieldDesignatedInitExpr struct @(opaque) {
     const FieldInitField* fif; // set during analysis
 }
 
-public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
+public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(AstContext* c,
                                                                   SrcLoc loc,
                                                                   u32 field,
                                                                   Expr* initValue)
 {
-    FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
+    FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr), FieldDesignatedInitExpr);
     e.base.init(FieldDesignatedInit, loc, 0, 0, 0, RValue);
     e.field_name = field;
     e.initValue = initValue;
     e.fif = nil;
-#if AstStatistics
-    Stats.addExpr(FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
-#endif
     return e;
 }
 
@@ -50,8 +46,8 @@ public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e)
     return e.field_name;
 }
 
-public fn const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
-    return ast.idx2name(e.field_name);
+public fn const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e, const AstContext* g) {
+    return g.idx2name(e.field_name);
 }
 
 public fn Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {
@@ -83,7 +79,7 @@ fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_b
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.color(col_Value);
-    out.print(" %s", e.getFieldName());
+    out.print(" %s", e.getFieldName(out.getOpaque()));
 
     out.space();
     if (e.fif) {
@@ -99,7 +95,7 @@ fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_b
 
 fn void FieldDesignatedInitExpr.printLiteral(const FieldDesignatedInitExpr* e, string_buffer.Buf* out) {
     out.add1('.');
-    out.add(e.getFieldName());
+    out.add(e.getFieldName(out.getOpaque()));
     out.add(" = ");
     e.getInit().printLiteral(out);
 }

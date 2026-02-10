@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -25,14 +24,11 @@ public type RangeExpr struct @(opaque) {
     Expr* rhs;
 }
 
-public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    RangeExpr* e = c.alloc(sizeof(RangeExpr));
+public fn RangeExpr* RangeExpr.create(AstContext* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
+    RangeExpr* e = c.alloc(sizeof(RangeExpr), RangeExpr);
     e.base.init(Range, loc, 0, 0, false, RValue);
     e.lhs = lhs;
     e.rhs = rhs;
-#if AstStatistics
-    Stats.addExpr(Range, sizeof(RangeExpr));
-#endif
     return e;
 }
 

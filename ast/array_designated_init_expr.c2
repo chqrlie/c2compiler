@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -37,7 +36,7 @@ public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr*[0] expr;
 }
 
-public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
+public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(AstContext* c,
                                                                   SrcLoc loc,
                                                                   Expr* expr1,
                                                                   Expr* expr2,
@@ -47,7 +46,7 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
     bool has_expr1 = expr1 != nil;
     bool has_expr2 = expr2 != nil;
     u32 size = sizeof(ArrayDesignatedInitExpr) + (has_expr1 + has_expr2) * sizeof(Expr*);
-    ArrayDesignatedInitExpr* e = c.alloc(size);
+    ArrayDesignatedInitExpr* e = c.alloc(size, ArrayDesignatedInitExpr);
     e.base.init(ArrayDesignatedInit, loc, 0, 0, 0, RValue);
     e.base.base.arrayDesignatedInitExprBits.has_expr1 = has_expr1;
     e.base.base.arrayDesignatedInitExprBits.has_expr2 = has_expr2;
@@ -56,9 +55,6 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
     e.initValue = initValue;
     if (has_expr1) e.expr[0] = expr1;
     if (has_expr2) e.expr[+has_expr1] = expr2;
-#if AstStatistics
-    Stats.addExpr(ArrayDesignatedInit, size);
-#endif
     return e;
 }
 

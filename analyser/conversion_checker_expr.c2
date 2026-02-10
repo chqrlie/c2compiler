@@ -43,11 +43,11 @@ fn ExprWidth ExprWidth.mergeWider(ExprWidth w1, ExprWidth w2) {
     return result;
 }
 
-fn ExprWidth getExprWidth(const Expr* e) {
+fn ExprWidth Checker.getExprWidth(Checker* c, const Expr* e) {
     ExprWidth result = {}
 
     if (e.isCtv()) {
-        Value v = ast.evalExpr(e);
+        Value v = ast.evalExpr(e, c.context);
         result.width = v.getWidth();
         result.is_signed = v.isNegative();
         return result;
@@ -62,21 +62,21 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case Nil:
         break;
     case Identifier:
-        return getTypeWidth(e.getType());
+        return c.getTypeWidth(e.getType());
     case Type:
         break;
     case Call:
-        return getTypeWidth(e.getType());
+        return c.getTypeWidth(e.getType());
     case InitList:
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        return getBinOpWidth((BinaryOperator*)e);
+        return c.getBinOpWidth((BinaryOperator*)e);
     case UnaryOperator:
-        return getUnaryOpWidth((UnaryOperator*)e);
+        return c.getUnaryOpWidth((UnaryOperator*)e);
     case ConditionalOperator:
-        return getCondOpWidth((ConditionalOperator*)e);
+        return c.getCondOpWidth((ConditionalOperator*)e);
     case Builtin:
         // TODO ToContainer -> width = 64
         break;
@@ -84,40 +84,40 @@ fn ExprWidth getExprWidth(const Expr* e) {
         // TODO BitOffset -> specific width
         fallthrough;
     case Member:
-        return getTypeWidth(e.getType());
+        return c.getTypeWidth(e.getType());
     case Paren:
         const ParenExpr* p = (ParenExpr*)e;
-        return getExprWidth(p.getInner());
+        return c.getExprWidth(p.getInner());
     case BitOffset:
         break;
     case ExplicitCast:
         // TODO: explicit cast may reduce signed values
-        return getTypeWidth(e.getType());
+        return c.getTypeWidth(e.getType());
     case ImplicitCast:
-        const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
-        return getExprWidth(c.getInner());
+        const ImplicitCastExpr* ice = (ImplicitCastExpr*)e;
+        return c.getExprWidth(ice.getInner());
     case Range:
         break;
     case NamedArgument:
         const NamedArgument* n = (NamedArgument*)e;
-        return getExprWidth(n.getInner());
+        return c.getExprWidth(n.getInner());
     case Alternate:
         const AlternateExpr* n = (AlternateExpr*)e;
-        return getExprWidth(n.getOriginal());
+        return c.getExprWidth(n.getOriginal());
     }
 
-    e.dump();
+    e.dump(c.context);
     assert(0);
     return result;
 }
 
-fn ExprWidth getCondOpWidth(const ConditionalOperator* c) {
-    ExprWidth lhs = getExprWidth(c.getLHS());
-    ExprWidth rhs = getExprWidth(c.getRHS());
+fn ExprWidth Checker.getCondOpWidth(Checker* c, const ConditionalOperator* e) {
+    ExprWidth lhs = c.getExprWidth(e.getLHS());
+    ExprWidth rhs = c.getExprWidth(e.getRHS());
     return ExprWidth.mergeWider(lhs, rhs);
 }
 
-fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
+fn ExprWidth Checker.getUnaryOpWidth(Checker* c, const UnaryOperator* u) {
     ExprWidth w;
     switch (u.getOpcode()) {
     case PostInc:
@@ -126,18 +126,18 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
     case PreDec:
     case Plus:
         // TODO adjust for integer promotion?
-        return getExprWidth(u.getInner());
+        return c.getExprWidth(u.getInner());
     case AddrOf:
     case Deref:
         Expr* e = (Expr*)u;
-        return getTypeWidth(e.getType());
+        return c.getTypeWidth(e.getType());
     case Minus:
-        w = getExprWidth(u.getInner());
+        w = c.getExprWidth(u.getInner());
         // TODO modify width?
         w.is_signed = true;
         break;
     case Not:
-        w = getExprWidth(u.getInner());
+        w = c.getExprWidth(u.getInner());
         // TODO modify width?
         w.is_signed = false;
         break;
@@ -149,25 +149,25 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
     return w;
 }
 
-fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
+fn ExprWidth Checker.getBinOpWidth(Checker* c, const BinaryOperator* b) {
     switch (b.getOpcode()) {
     case Multiply:
         break;
     case Divide:
-        return getExprWidth(b.getLHS());
+        return c.getExprWidth(b.getLHS());
     case Remainder:
-        return getExprWidth(b.getRHS());
+        return c.getExprWidth(b.getRHS());
     case Add:
     case Subtract:
         break;
     case ShiftLeft:
-        ExprWidth result = getExprWidth(b.getLHS());
+        ExprWidth result = c.getExprWidth(b.getLHS());
         // TODO handle constant RHS and int promotion
         if (result.width < 32) { result.width = 32; result.is_signed = true; }
         return result;
     case ShiftRight:
         // TODO handle constant RHS
-        return getExprWidth(b.getLHS());
+        return c.getExprWidth(b.getLHS());
     case LessThan:
     case GreaterThan:
     case LessEqual:
@@ -177,8 +177,8 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
         ExprWidth result = { .width = 1, .is_signed = false }
         return result;
     case And:
-        ExprWidth l = getExprWidth(b.getLHS());
-        ExprWidth r = getExprWidth(b.getRHS());
+        ExprWidth l = c.getExprWidth(b.getLHS());
+        ExprWidth r = c.getExprWidth(b.getRHS());
         return ExprWidth.mergeSmaller(l, r);
     case Xor:
     case Or:
@@ -199,15 +199,15 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     case XorAssign:
     case OrAssign:
         // TODO: refine this
-        return getExprWidth(b.getLHS());
+        return c.getExprWidth(b.getLHS());
     }
 
-    ExprWidth lhs = getExprWidth(b.getLHS());
-    ExprWidth rhs = getExprWidth(b.getRHS());
+    ExprWidth lhs = c.getExprWidth(b.getLHS());
+    ExprWidth rhs = c.getExprWidth(b.getRHS());
     return ExprWidth.mergeWider(lhs, rhs);
 }
 
-fn ExprWidth getTypeWidth(QualType qt) {
+fn ExprWidth Checker.getTypeWidth(Checker* c, QualType qt) {
     qt = qt.getCanonicalType();
     if (qt.isEnum()) {
         EnumType* et = qt.getEnumType();

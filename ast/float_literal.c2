@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import number_radix local;
@@ -32,16 +31,13 @@ public type FloatLiteral struct @(opaque) {
     f64 val;
 }
 
-public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, f64 val, Radix radix, BuiltinKind kind) {
-    FloatLiteral* i = c.alloc(sizeof(FloatLiteral));
+public fn FloatLiteral* FloatLiteral.create(AstContext* c, SrcLoc loc, u32 src_len, f64 val, Radix radix, BuiltinKind kind) {
+    FloatLiteral* i = c.alloc(sizeof(FloatLiteral), FloatLiteral);
     i.base.init(FloatLiteral, loc, 1, 1, 0, RValue);
     i.base.base.floatLiteralBits.radix = radix;
     i.base.base.floatLiteralBits.src_len = src_len;
     i.val = val;
-#if AstStatistics
-    Stats.addExpr(FloatLiteral, sizeof(FloatLiteral));
-#endif
-    i.base.setType(getBuiltinQT(kind));
+    i.base.setType(c.getBuiltinQT(kind));
 
     return i;
 }

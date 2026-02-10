@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 public type FunctionTypeDecl struct @(opaque) {
@@ -23,14 +22,11 @@ public type FunctionTypeDecl struct @(opaque) {
     FunctionDecl* func;
 }
 
-public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* func, u32 ast_idx) {
-    FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
+public fn FunctionTypeDecl* FunctionTypeDecl.create(AstContext* c, FunctionDecl* func, u32 ast_idx) {
+    FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl), FunctionTypeDecl);
     Decl* d = func.asDecl();
     ftd.base.init(FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), ast_idx);
     ftd.func = func;
-#if AstStatistics
-    Stats.addDecl(FunctionType, sizeof(FunctionTypeDecl));
-#endif
     return ftd;
 }
 

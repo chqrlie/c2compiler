@@ -19,7 +19,7 @@ import ast local;
 import init_checker;
 import src_loc local;
 import scope;
-import string_buffer;
+import string_buffer local;
 import string;
 import value_type local;
 
@@ -118,6 +118,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             // check for uncovered cases
             if (checker.getCount() < numConstants) {
                 string_buffer.Buf* out = string_buffer.create(128, false, 0);
+                out.setOpaque(ma.context);
                 u32 missing = 0;
                 EnumConstantDecl** ecd = etd.getConstants();
                 for (u32 i = 0; i < numConstants; i++) {
@@ -177,7 +178,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                     }
                 } else
                 if (!e.isNil()) {
-                    e.dump();
+                    e.dump(ma.context);
                     assert(0);
                 }
                 Expr* num = ma.builder.actOnIntegerLiteral(e.getLoc(), 0, index, Default);
@@ -420,7 +421,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                 ma.error(cond.getLoc(), "case condition is not compile-time constant");
                 return false;
             }
-            Value v = ast.evalExpr(cond);
+            Value v = ast.evalExpr(cond, ma.context);
             index = v.as_u32();
             *name_idxp = 0;
             if (loc) {

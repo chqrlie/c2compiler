@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 import string;
@@ -36,7 +35,7 @@ public type SwitchStmt struct @(opaque) {
     //SwitchCase*[0] cases; // tail-allocated
 }
 
-public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
+public fn SwitchStmt* SwitchStmt.create(AstContext* c,
                                           SrcLoc loc,
                                           Stmt* decl,
                                           Expr* cond,
@@ -46,7 +45,7 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
 {
     bool has_decl = (decl != nil);
     u32 size = sizeof(SwitchStmt) + has_decl * sizeof(Stmt*) + numCases * sizeof(SwitchCase*);
-    SwitchStmt* s = c.alloc(size);
+    SwitchStmt* s = c.alloc(size, SwitchStmt);
     s.base.init(Switch, loc);
     s.base.switchStmtBits.has_default = has_default;
     s.base.switchStmtBits.num_cases = numCases;
@@ -56,9 +55,6 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     if (has_decl) s.decl[0] = decl;
     SwitchCase** cases_dest = (void*)(s.decl + has_decl);
     string.memcpy(cases_dest, cases, numCases * sizeof(SwitchCase*));
-#if AstStatistics
-    Stats.addStmt(Switch, size);
-#endif
     return s;
 }
 
@@ -66,7 +62,7 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     bool has_decl = s.base.switchStmtBits.has_decl;
     u32 numCases = s.getNumCases();
     u32 size = sizeof(SwitchStmt) + has_decl * sizeof(Stmt*) + numCases * sizeof(SwitchCase*);
-    SwitchStmt* s2 = inst.c.alloc(size);
+    SwitchStmt* s2 = inst.c.alloc(size, SwitchStmt);
     s2.base = s.base;
     s2.cond = s.cond.instantiate(inst);
     if (has_decl) s2.decl[0] = s.decl[0].instantiate(inst);
@@ -75,9 +71,6 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     for (u32 i=0; i<numCases; i++) {
         cases_dest[i] = cases_from[i].instantiate(inst);
     }
-#if AstStatistics
-    Stats.addStmt(Switch, size);
-#endif
     return (Stmt*)s2;
 }
 

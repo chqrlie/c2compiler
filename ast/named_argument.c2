@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -26,14 +25,11 @@ public type NamedArgument struct @(opaque) {
     Expr* inner;
 }
 
-public fn NamedArgument* NamedArgument.create(ast_context.Context* c, SrcLoc loc, u32 name, Expr* inner) {
-    NamedArgument* e = c.alloc(sizeof(NamedArgument));
+public fn NamedArgument* NamedArgument.create(AstContext* c, SrcLoc loc, u32 name, Expr* inner) {
+    NamedArgument* e = c.alloc(sizeof(NamedArgument), NamedArgument);
     e.base.init(NamedArgument, loc, 0, 0, false, RValue);
     e.name = name;
     e.inner = inner;
-#if AstStatistics
-    Stats.addExpr(NamedArgument, sizeof(NamedArgument));
-#endif
     return e;
 }
 
@@ -55,17 +51,19 @@ fn SrcLoc NamedArgument.getEndLoc(const NamedArgument* e) {
 }
 
 fn void NamedArgument.print(const NamedArgument* e, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
     out.color(col_Value);
-    out.add(idx2name(e.name));
+    out.add(g.idx2name(e.name));
     out.newline();
     e.inner.print(out, indent + 1);
 }
 
 fn void NamedArgument.printLiteral(const NamedArgument* e, string_buffer.Buf* out) {
-    out.add(idx2name(e.name));
+    AstContext* g = out.getOpaque();
+    out.add(g.idx2name(e.name));
     out.add(": ");
     e.inner.printLiteral(out);
 }

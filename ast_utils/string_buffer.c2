@@ -31,9 +31,10 @@ public type Buf struct {
     bool truncated;
     bool colors;
     u32 indent_step;
+    void* opaque;
 }
 
-static_assert(24, sizeof(Buf));
+static_assert(32, sizeof(Buf));
 
 public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
     assert(capacity);
@@ -45,6 +46,7 @@ public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_
     buf.grow = grow;
     buf.colors = use_colors;
     buf.indent_step = indent_step;
+    buf.opaque = nil;
     if (!data) {
         buf.data_ = malloc(capacity);
         buf.own = true;
@@ -91,6 +93,14 @@ public fn void Buf.setColors(Buf* buf, bool colors) @(unused) {
 
 public fn void Buf.setIndent(Buf* buf, u32 indent_step) @(unused) {
     buf.indent_step = indent_step;
+}
+
+public fn void Buf.setOpaque(Buf* buf, void* opaque) @(unused) {
+    buf.opaque = opaque;
+}
+
+public fn void* Buf.getOpaque(const Buf* buf) @(unused) {
+    return buf.opaque;
 }
 
 public fn u32 Buf.size(const Buf* buf) {

@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import string;
@@ -40,7 +39,7 @@ public type EnumTypeDecl struct @(opaque) {
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 }
 
-public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
+public fn EnumTypeDecl* EnumTypeDecl.create(AstContext* c,
                                               u32 name,
                                               SrcLoc loc,
                                               bool is_public,
@@ -54,7 +53,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     if (is_incremental) size += sizeof(EnumConstantDecl**);
-    EnumTypeDecl* d = c.alloc(size);
+    EnumTypeDecl* d = c.alloc(size, EnumTypeDecl);
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.create((Type*)etype);
     d.base.init(EnumType, name, loc, is_public, qt, ast_idx);
@@ -81,16 +80,13 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 
     if (num_assoc_values) {
         u32 assoc_size = num_assoc_values * sizeof(VarDecl*);
-        d.assoc_values = c.alloc(assoc_size);
+        d.assoc_values = c.alloc(assoc_size, AssocValue);
         size += assoc_size;
         string.memcpy(d.assoc_values, assoc_values, assoc_size);
-        d.assoc_decls = c.alloc(assoc_size);
+        d.assoc_decls = c.alloc(assoc_size, AssocValue);
         size += assoc_size;
         string.memset(d.assoc_decls, 0, assoc_size);
     }
-#if AstStatistics
-    Stats.addDecl(EnumType, size);
-#endif
     return d;
 }
 
@@ -134,10 +130,10 @@ public fn EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
     return d.constants;
 }
 
-public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
+public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, AstContext* c, IdentifierExpr** constants, u32 count) {
     assert(count);
     const u32 size = count * sizeof(EnumConstantDecl*);
-    EnumConstantDecl** decls = c.alloc(size);
+    EnumConstantDecl** decls = c.alloc(size, EnumConstantDecl);
 
     QualType qt = d.base.getType();
 
@@ -197,9 +193,9 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
     return d.constants[idx];
 }
 
-public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u16 count) {
+public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, AstContext* c, FunctionDecl** funcs, u16 count) {
     const u32 size = count * sizeof(FunctionDecl*);
-    FunctionDecl** dest = c.alloc(size);
+    FunctionDecl** dest = c.alloc(size, FunctionDeclArray);
     string.memcpy(dest, funcs, size);
     d.enum_functions = dest;
     d.num_enum_functions = count;

@@ -30,7 +30,7 @@ public type AST struct @(opaque) {
     Module* mod;
     string_pool.Pool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
-    u32 name;   // into auxPool
+    u32 filename;   // into auxPool
     u32 idx;    // ast idx
     bool is_interface;
     bool is_generated;
@@ -47,12 +47,12 @@ public type AST struct @(opaque) {
 
 static_assert(144+64, sizeof(AST));
 
-fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
+fn AST* AST.create(AstContext* c, string_pool.Pool* auxPool, u32 filename, Module* mod, bool is_interface, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
-    a.name = name;
-    a.idx = globals.addAST(a);
+    a.filename = filename;
+    a.idx = c.addAST(a);
     a.is_interface = is_interface;
     a.is_generated = is_generated;
     a.imports.init();
@@ -76,7 +76,7 @@ fn void AST.free(AST* a) {
 }
 
 public fn const char* AST.getFilename(const AST* a) @(unused) {
-    return a.auxPool.idx2str(a.name);
+    return a.auxPool.idx2str(a.filename);
 }
 
 public fn u32 AST.getIdx(const AST* a) { return a.idx; }

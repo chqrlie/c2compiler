@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -25,18 +24,15 @@ public type AssertStmt struct @(opaque) {
     Expr* call;
 }
 
-public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
+public fn AssertStmt* AssertStmt.create(AstContext* c,
                                           SrcLoc loc,
                                           Expr* inner,
                                           Expr* call)
 {
-    AssertStmt* s = c.alloc(sizeof(AssertStmt));
+    AssertStmt* s = c.alloc(sizeof(AssertStmt), AssertStmt);
     s.base.init(Assert, loc);
     s.inner = inner;
     s.call = call;
-#if AstStatistics
-    Stats.addStmt(Assert, sizeof(AssertStmt));
-#endif
     return s;
 }
 

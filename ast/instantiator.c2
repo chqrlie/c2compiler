@@ -15,13 +15,12 @@
 
 module ast;
 
-import ast_context;
 import src_loc;
 
 public type OpaqueErrorfn fn void (void* arg, src_loc.SrcLoc loc, Decl* decl);
 
 public type Instantiator struct {
-    ast_context.Context* c;
+    AstContext* c;
     const TypeRef* ref;
     u32 template_name;
     u16 instance_ast_idx;

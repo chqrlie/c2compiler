@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -27,16 +26,13 @@ public type ForStmt struct @(opaque) {
     Stmt* body;
 }
 
-public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
-    ForStmt* s = c.alloc(sizeof(ForStmt));
+public fn ForStmt* ForStmt.create(AstContext* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
+    ForStmt* s = c.alloc(sizeof(ForStmt), ForStmt);
     s.base.init(For, loc);
     s.init = init;
     s.cond = cond;
     s.cont = cont;
     s.body = body;
-#if AstStatistics
-    Stats.addStmt(For, sizeof(ForStmt));
-#endif
     return s;
 }
 

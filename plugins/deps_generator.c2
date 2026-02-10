@@ -92,6 +92,7 @@ fn void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool
 }
 
 type Generator struct {
+    AstContext* context;
     const char* curfile;
     bool is_external;  // current component is external
 
@@ -244,7 +245,7 @@ fn void Generator.on_global_decl(void* arg, Decl* d) {
     if (d.isImport()) return;
 
     gen.out.indent(gen.indent);
-    gen.out.print("<atom name='%s' full='%s'>\n", gen.getPrefixedName(d), d.getFullName());
+    gen.out.print("<atom name='%s' full='%s'>\n", gen.getPrefixedName(d), d.getFullName(gen.context));
 
     gen.indent++;
     gen.deps_count = 0;
@@ -253,7 +254,7 @@ fn void Generator.on_global_decl(void* arg, Decl* d) {
     for (u32 i=0; i<gen.deps_count; i++) {
         Decl* dep = gen.deps[i];
         gen.out.indent(gen.indent);
-        gen.out.print("<dep dest='%s' str='1'/>\n", dep.getFullName());
+        gen.out.print("<dep dest='%s' str='1'/>\n", dep.getFullName(gen.context));
     }
 
     gen.indent--;
@@ -409,11 +410,12 @@ fn void Generator.create_basic(Generator* gen, component.Component* c) {
 #endif
 
 
-public fn void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
+public fn void generate(AstContext* context, const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
     Generator gen = { nil }
 
 
     // TODO options to be passed later
+    gen.context = context;
     gen.show_dirs = true;
     gen.show_files = false;
     gen.show_externals = false;

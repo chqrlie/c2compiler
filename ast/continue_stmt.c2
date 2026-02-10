@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -29,18 +28,15 @@ public type ContinueStmt struct @(opaque) {
     u32[0] name_idx;
 }
 
-public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc, u32 name_idx) {
+public fn ContinueStmt* ContinueStmt.create(AstContext* c, SrcLoc loc, u32 name_idx) {
     u32 size = sizeof(ContinueStmt);
     if (name_idx) size += sizeof(u32);
-    ContinueStmt* s = c.alloc(size);
+    ContinueStmt* s = c.alloc(size, ContinueStmt);
     s.base.init(Continue, loc);
     if (name_idx) {
         s.base.breakStmtBits.has_name = true;
         s.name_idx[0] = name_idx;
     }
-#if AstStatistics
-    Stats.addStmt(Continue, size);
-#endif
     return s;
 }
 
@@ -54,8 +50,9 @@ public fn u32 ContinueStmt.getName(const ContinueStmt* s) {
 }
 
 fn void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     s.base.printKind(out, indent);
-    if (s.hasName()) out.print(" %s", ast.idx2name(s.name_idx[0]));
+    if (s.hasName()) out.print(" %s", g.idx2name(s.name_idx[0]));
     out.newline();
 }
 

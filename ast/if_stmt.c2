@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -33,17 +32,11 @@ public type IfStmt struct @(opaque) {
     Stmt*[0] tail; // tail-allocated: else/decl
 }
 
-public fn IfStmt* IfStmt.create(ast_context.Context* c,
-                                SrcLoc loc,
-                                Stmt* decl,
-                                Expr* cond,
-                                Stmt* then,
-                                Stmt* else_stmt)
-{
+public fn IfStmt* IfStmt.create(AstContext* c, SrcLoc loc, Stmt* decl, Expr* cond, Stmt* then, Stmt* else_stmt) {
     u32 has_decl = (decl != nil);
     u32 has_else = (else_stmt != nil);
     u32 size = sizeof(IfStmt) + (has_decl + has_else) * sizeof(Stmt*);
-    IfStmt* s = c.alloc(size);
+    IfStmt* s = c.alloc(size, IfStmt);
     s.base.init(If, loc);
     s.base.ifStmtBits.has_source_cond = (cond != nil);
     s.cond = cond;
@@ -57,9 +50,6 @@ public fn IfStmt* IfStmt.create(ast_context.Context* c,
         s.base.ifStmtBits.has_decl = 1;
         s.tail[has_else] = decl;
     }
-#if AstStatistics
-    Stats.addStmt(If, size);
-#endif
     return s;
 }
 

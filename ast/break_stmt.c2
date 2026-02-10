@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -29,18 +28,15 @@ public type BreakStmt struct @(opaque) {
     u32[0] name_idx;
 }
 
-public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc, u32 name_idx) {
+public fn BreakStmt* BreakStmt.create(AstContext* c, SrcLoc loc, u32 name_idx) {
     u32 size = sizeof(BreakStmt);
     if (name_idx) size += sizeof(u32);
-    BreakStmt* s = c.alloc(size);
+    BreakStmt* s = c.alloc(size, BreakStmt);
     s.base.init(Break, loc);
     if (name_idx) {
         s.base.breakStmtBits.has_name = true;
         s.name_idx[0] = name_idx;
     }
-#if AstStatistics
-    Stats.addStmt(Break, size);
-#endif
     return s;
 }
 
@@ -54,8 +50,9 @@ public fn u32 BreakStmt.getName(const BreakStmt* s) {
 }
 
 fn void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     s.base.printKind(out, indent);
-    if (s.hasName()) out.print(" %s", ast.idx2name(s.name_idx[0]));
+    if (s.hasName()) out.print(" %s", g.idx2name(s.name_idx[0]));
     out.newline();
 }
 

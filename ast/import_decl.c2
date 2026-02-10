@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 import string local;
@@ -35,7 +34,7 @@ public type ImportDecl struct @(opaque) {
     Symbol[0] symlist;
 }
 
-public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
+public fn ImportDecl* ImportDecl.create(AstContext* c,
                                           u32 name,
                                           SrcLoc loc,
                                           u32 alias_name,
@@ -46,7 +45,7 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           u32 symlist_count)
 {
     u32 size = sizeof(ImportDecl) + symlist_count * sizeof(*symlist);
-    ImportDecl* d = c.alloc(size);
+    ImportDecl* d = c.alloc(size, ImportDecl);
     d.base.init(Import, name, loc, false, QualType_Invalid, ast_idx);
     d.base.importDeclBits.is_local = is_local;
     d.base.importDeclBits.symlist_count = symlist_count;
@@ -54,9 +53,6 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
     d.alias_loc = alias_loc;
     d.dest = nil;
     memcpy(d.symlist, symlist, symlist_count * sizeof(*symlist));
-#if AstStatistics
-    Stats.addDecl(Import, size);
-#endif
     return d;
 }
 
@@ -95,6 +91,7 @@ public fn Decl* ImportDecl.findSymbol(ImportDecl* d, u32 name_idx) {
 }
 
 fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     out.indent(indent);
     out.color(col_Decl);
     out.add("ImportDecl");
@@ -115,16 +112,16 @@ fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent
         out.color(col_Attr);
         out.add(" as ");
         out.color(col_Value);
-        out.add(idx2name(d.alias_idx));
+        out.add(g.idx2name(d.alias_idx));
     }
     if (d.base.importDeclBits.symlist_count) {
         out.color(col_Normal);
         out.add(" {");
         for (u32 i = 0; i < d.base.importDeclBits.symlist_count; i++) {
             const Symbol* sp = &d.symlist[i];
-            out.print(" %s", idx2name(sp.name_idx));
+            out.print(" %s", g.idx2name(sp.name_idx));
             if (sp.name_idx != sp.as_name_idx) {
-                out.print(" as %s", idx2name(sp.as_name_idx));
+                out.print(" as %s", g.idx2name(sp.as_name_idx));
             }
         }
         out.add(" }");

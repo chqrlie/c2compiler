@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -25,18 +24,15 @@ public type ArrayValue struct @(opaque) {
     Expr* value;
 }
 
-public fn ArrayValue* ArrayValue.create(ast_context.Context* c,
+public fn ArrayValue* ArrayValue.create(AstContext* c,
                                           u32 name,
                                           SrcLoc loc,
                                           Expr* value)
 {
-    ArrayValue* d = c.alloc(sizeof(ArrayValue));
+    ArrayValue* d = c.alloc(sizeof(ArrayValue), ArrayValue);
     d.name_idx = name;
     d.loc = loc;
     d.value = value;
-#if AstStatistics
-    Stats.addArrayValue(sizeof(ArrayValue));
-#endif
     return d;
 }
 
