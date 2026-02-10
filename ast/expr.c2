@@ -154,7 +154,7 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
     case Alternate:
         return AlternateExpr.instantiate((AlternateExpr*)e, inst);
     }
-    e.dump();
+    e.dump(inst.c);
     assert(0);
     return nil;
 }
@@ -593,10 +593,10 @@ public fn bool Expr.needsSemi(const Expr* e) {
     return true;
 }
 
-public fn void Expr.dump(const Expr* e) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+public fn void Expr.dump(const Expr* e, AstContext* context) {
+    string_buffer.Buf* out = context.getDumpBuf();
     e.print(out, 0);
-    ast.flushDumpBuf(out);
+    context.flushDumpBuf(out);
 }
 
 fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {

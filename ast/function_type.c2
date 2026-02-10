@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 
 public type FunctionType struct @(opaque) {
@@ -23,16 +22,13 @@ public type FunctionType struct @(opaque) {
     FunctionDecl* decl;
 }
 
-fn FunctionType* FunctionType.create(ast_context.Context* c, FunctionDecl* decl) {
-    FunctionType* t = c.alloc(sizeof(FunctionType));
+fn FunctionType* FunctionType.create(AstContext* c, FunctionDecl* decl) {
+    FunctionType* t = c.alloc(sizeof(FunctionType), FunctionType);
     t.base.init(Function);
     t.base.setAlignment(c.getWordSize());
     t.decl = decl;
 
     t.base.setCanonicalType(QualType.create(&t.base));
-#if AstStatistics
-    Stats.addType(Function, sizeof(FunctionType));
-#endif
     return t;
 }
 
@@ -45,7 +41,8 @@ fn void FunctionType.print(const FunctionType* t, string_buffer.Buf* out) {
 }
 
 fn void FunctionType.fullPrint(const FunctionType* t, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     out.indent(indent);
-    out.print("FunctionType [%p] %s\n", t, t.decl.asDecl().getName());
+    out.print("FunctionType [%p] %s\n", t, t.decl.asDecl().getName(g));
 }
 

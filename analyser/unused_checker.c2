@@ -21,17 +21,20 @@ import string_pool;
 import warning_flags;
 
 type Checker struct {
+    AstContext* context;
     diagnostics.Diags* diags;
     string_pool.Pool* astPool;
     const warning_flags.Flags* warnings;
 }
 
-public fn void check(diagnostics.Diags* diags,
+public fn void check(AstContext* context,
+                       diagnostics.Diags* diags,
                        string_pool.Pool* astPool,
                        const warning_flags.Flags* warnings,
                        Module* mod)
 {
     Checker c = {
+        .context = context,
         .diags = diags,
         .astPool = astPool,
         .warnings = warnings,
@@ -54,7 +57,7 @@ fn const char* Checker.getName(const Checker* c, const Decl* d) {
 
 fn const char* Checker.getFullName(const Checker* c, const Decl* d) {
     // TODO: pass astPool and buffer to d.getFullName()
-    return d.getFullName();
+    return d.getFullName(c.context);
 }
 
 fn void Checker.unused_module(void* arg, AST* a) {

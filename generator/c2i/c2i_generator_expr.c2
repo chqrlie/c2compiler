@@ -42,8 +42,8 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         // add prefix if external
         const IdentifierExpr* i = (IdentifierExpr*)e;
         Decl* d = i.getDecl();
-        if (d.getModule() != gen.mod) {
-            out.add(d.getFullName());
+        if (d.getModule(gen.context) != gen.mod) {
+            out.add(d.getFullName(gen.context));
         } else {
             gen.emitName(out, d);
         }
@@ -179,8 +179,8 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, const M
         gen.emitExpr(out, base);
     } else {
         Decl* d = m.getDecl(0);
-        if (d.getModule() != gen.mod) {
-            out.add(d.getFullName());
+        if (d.getModule(gen.context) != gen.mod) {
+            out.add(d.getFullName(gen.context));
         } else {
             gen.emitName(out, d);
         }
@@ -191,7 +191,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, const M
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, const FieldDesignatedInitExpr* fdi) {
     out.add1('.');
-    out.add(fdi.getFieldName());
+    out.add(fdi.getFieldName(out.getOpaque()));
     out.add(" = ");
     gen.emitExpr(out, fdi.getInit());
 }

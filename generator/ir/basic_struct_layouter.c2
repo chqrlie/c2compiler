@@ -55,7 +55,7 @@ fn void BasicStructLayouter.add(BasicStructLayouter* l,
     if (ml.is_bitfield) {
         l.bitfield_base_size = ml.size;
         if (e.isCtv()) {
-            Value value = ast.evalExpr(e);
+            Value value = ast.evalExpr(e, l.gen.astContext);
             value.mask(ml.bitfield_width);
             value.left_shift2(ml.bitfield_offset);
             u64 v = value.as_u64();

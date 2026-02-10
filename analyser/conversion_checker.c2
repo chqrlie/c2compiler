@@ -103,8 +103,10 @@ const u8[BuiltinKind][BuiltinKind] BuiltinConversions = {
 }
 
 public type Checker struct {
+    AstContext* context;
     diagnostics.Diags* diags;
     ast_builder.Builder* builder;
+    QualType* builtins;
     BuiltinKind native_kind;
 
     // changes every check
@@ -114,15 +116,17 @@ public type Checker struct {
     Expr** expr_ptr;
 }
 
-public fn void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.Builder* builder) {
+public fn void Checker.init(Checker* c, AstContext* context, diagnostics.Diags* diags, ast_builder.Builder* builder) {
+    c.context = context;
     c.diags = diags;
     c.builder = builder;
-    c.native_kind = builder.getNativeKind();
+    c.builtins = context.getBuiltins();
+    c.native_kind = context.getNativeKind();
     // leave other fields uninitialized
 }
 
 fn bool Checker.conversionError(Checker* c, const char* msg) {
-    c.diags.error(c.loc, "%s '%s' to '%s'", msg, c.rhs.diagName(), c.lhs.diagName());
+    c.diags.error(c.loc, "%s '%s' to '%s'", msg, c.rhs.diagName(c.context), c.lhs.diagName(c.context));
     return false;
 }
 
@@ -131,8 +135,8 @@ fn bool Checker.shouldNotHappen(Checker* c, const char* from @(auto_func),
 {
     c.diags.error(c.loc, "%s: SHOULD NOT HAPPEN (%s -> %s, res=%d)\n",
                   from, rcanon.getKind().name, lcanon.getKind().name, res);
-    c.lhs.dump_full();
-    c.rhs.dump_full();
+    c.lhs.dump_full(c.context);
+    c.rhs.dump_full(c.context);
     assert(0);
     return false;
 }
@@ -150,7 +154,7 @@ public fn bool Checker.checkAssign(Checker* c, QualType lhs, QualType rhs, Expr*
         // TODO if bool, always allow, except in init?
         if (t1.isBool()) return true;
 
-        return ctv_analyser.checkRange(c.diags, lhs, *e_ptr);
+        return ctv_analyser.checkRange(c.context, c.diags, lhs, *e_ptr);
     }
 
     const Type* lcanon = t1.getTypeOrNil();
@@ -223,7 +227,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
     case 0:     // should not happen
         break;
     case 1:     // ok, needs conversion
-        //c.diags.note(c.loc, "WIDEN %s -> %s", c.rhs.diagName(), c.lhs.diagName());
+        //c.diags.note(c.loc, "WIDEN %s -> %s", c.rhs.diagName(c.context), c.lhs.diagName(c.context));
         c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         return true;
     case 2:     // incompatible
@@ -287,7 +291,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
 
     BuiltinKind kind = bi.getKind();
     if (kind == Bool) {
-        c.builder.insertImplicitCast(PointerToBoolean, c.expr_ptr, getBuiltinQT(Bool));
+        c.builder.insertImplicitCast(PointerToBoolean, c.expr_ptr, c.builtins[BuiltinKind.Bool]);
         return true;
     }
 
@@ -306,7 +310,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
         }
     }
 
-    c.builder.insertImplicitCast(PointerToInteger, c.expr_ptr, getBuiltinQT(USize));
+    c.builder.insertImplicitCast(PointerToInteger, c.expr_ptr, c.builtins[BuiltinKind.USize]);
     return true;
 }
 
@@ -324,7 +328,7 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
 fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
     u32 wl = bi.getWidth();
-    ExprWidth w = getExprWidth(e);
+    ExprWidth w = c.getExprWidth(e);
     //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
     if (w.width > wl) return false;
@@ -434,7 +438,7 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
 
     // NOTE: EnumConstDecls are CTV, but variables of the type are not!
     if ((*c.expr_ptr).isCtv()) {
-        return ctv_analyser.checkRange(c.diags, c.lhs, *c.expr_ptr);
+        return ctv_analyser.checkRange(c.context, c.diags, c.lhs, *c.expr_ptr);
     } else {
         // compare impl type
         const EnumType* et = (EnumType*)rcanon;
@@ -505,7 +509,7 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
         if (fd.canBeNil()) return true; // Variable with Function type (eg callback)
 
         // TODO not always comparison (bool b = test1);
-        c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
+        c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName(c.context));
         return false;
     }
 
@@ -629,8 +633,8 @@ const BuiltinKind[BuiltinKind][BuiltinKind] ConditionalOperatorResult = {
     {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
 }
 
-public fn QualType get_common_arithmetic_type(BuiltinType* bi1, BuiltinType* bi2) {
-    return getBuiltinQT(ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()]);
+public fn QualType get_common_arithmetic_type(const QualType* builtins, BuiltinType* bi1, BuiltinType* bi2) {
+    return builtins[ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()]];
 }
 
 // See ISO/IEC 9899:201x 6.3.1
@@ -667,7 +671,7 @@ const BuiltinKind[BuiltinKind][BuiltinKind] UsualArithmeticConversions = {
     {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
 }
 
-public fn QualType usual_arithmetic_conversion(const BuiltinType* bi1, const BuiltinType* bi2) {
-    return getBuiltinQT(UsualArithmeticConversions[bi1.getBaseKind()][bi2.getBaseKind()]);
+public fn QualType usual_arithmetic_conversion(const QualType* builtins, const BuiltinType* bi1, const BuiltinType* bi2) {
+    return builtins[UsualArithmeticConversions[bi1.getBaseKind()][bi2.getBaseKind()]];
 }
 

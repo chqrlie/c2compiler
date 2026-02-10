@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import string_buffer;
 import src_loc local;
 
@@ -32,7 +31,7 @@ public type ImportDecl struct @(opaque) {
     Module* dest;
 }
 
-public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
+public fn ImportDecl* ImportDecl.create(AstContext* c,
                                           u32 name,
                                           SrcLoc loc,
                                           u32 alias_name,
@@ -40,15 +39,12 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           u32 ast_idx,
                                           bool is_local)
 {
-    ImportDecl* d = c.alloc(sizeof(ImportDecl));
+    ImportDecl* d = c.alloc(sizeof(ImportDecl), ImportDecl);
     d.base.init(Import, name, loc, false, QualType_Invalid, ast_idx);
     d.base.importDeclBits.is_local = is_local;
     d.alias_idx = alias_name;
     d.alias_loc = alias_loc;
     d.dest = nil;
-#if AstStatistics
-    Stats.addDecl(Import, sizeof(ImportDecl));
-#endif
     return d;
 }
 
@@ -73,6 +69,7 @@ public fn Module* ImportDecl.getDest(const ImportDecl* d) { return d.dest; }
 public fn bool ImportDecl.isLocal(const ImportDecl* d) { return d.base.importDeclBits.is_local; }
 
 fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
+    AstContext* g = out.getOpaque();
     out.indent(indent);
     out.color(col_Decl);
     out.add("ImportDecl");
@@ -93,7 +90,7 @@ fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent
         out.color(col_Attr);
         out.add(" as ");
         out.color(col_Value);
-        out.add(idx2name(d.alias_idx));
+        out.add(g.idx2name(d.alias_idx));
     }
     out.newline();
 }

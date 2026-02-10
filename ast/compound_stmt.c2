@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context;
 import src_loc local;
 import string_buffer;
 
@@ -31,20 +30,17 @@ public type CompoundStmt struct @(opaque) {
     Stmt*[0] stmts; // tail-allocated
 }
 
-public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLoc, Stmt** stmts, u32 count) {
+public fn CompoundStmt* CompoundStmt.create(AstContext* c, SrcLoc endLoc, Stmt** stmts, u32 count) {
     assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
-    CompoundStmt* s = c.alloc(size);
+    CompoundStmt* s = c.alloc(size, CompoundStmt);
     s.base.init(Compound, endLoc);
     s.base.compoundStmtBits.count = count;
 
     if (count) {
         string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
     }
-#if AstStatistics
-    Stats.addStmt(Compound, size);
-#endif
     return s;
 }
 
@@ -52,15 +48,12 @@ fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
     const u32 count = s.base.compoundStmtBits.count;
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
-    CompoundStmt* s2 = inst.c.alloc(size);
+    CompoundStmt* s2 = inst.c.alloc(size, CompoundStmt);
     s2.base = s.base;
 
     for (u32 i=0; i<count; i++) {
         s2.stmts[i] = s.stmts[i].instantiate(inst);
     }
-#if AstStatistics
-    Stats.addStmt(Compound, size);
-#endif
     return s2;
 }
 
