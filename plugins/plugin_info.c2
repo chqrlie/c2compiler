@@ -17,7 +17,6 @@ module plugin_info;
 
 import ast;
 import ast_builder { Builder }
-import ast_context { Context }
 import build_target { BuildTarget }
 import component { ComponentList }
 import console;
@@ -26,6 +25,7 @@ import file_utils { Max_path }
 import source_mgr { SourceMgr }
 import string_pool { StringPool }
 import string_buffer { StringBuf }
+import tail_allocator { * }
 
 public type RegisterAttrFn fn bool (void* arg, u32 name, ast.AttrHandlerFn func, void* arg2);
 
@@ -39,10 +39,10 @@ public type Info struct {
     ComponentList* components;
     StringPool* astPool;
     StringPool* auxPool;
-    Context* context;
+    TailAllocator* arena;
     Builder* builder;
-    ast.Globals* ast_globals;
-    void* ast_builtins__;  // part of ast_globals now
+    ast.AstContext* context;
+    ast.QualType* ast_builtins__; // pad
 
     AddSourceFn addSource;
     RegisterAttrFn register_attr;
