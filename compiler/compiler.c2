@@ -17,7 +17,6 @@ module compiler;
 
 import ast;
 import ast_builder { Builder }
-import ast_context { Context }
 import attr_handler;
 import build_file;
 import build_target { Target }
@@ -38,6 +37,7 @@ import string_buffer { Buf }
 import string_list;
 import string_pool { Pool }
 import string_utils;
+import tail_allocator { * }
 import target_info;
 import utils;
 
@@ -105,14 +105,14 @@ public fn void build(Pool* auxPool,
         c.auxPool.report("auxPool");
     }
     if (opts.print_ast_stats) {
-        ast.report();
+        c.context.report_stats();
     }
 
     diags.printStatus();
 
     pluginHandler.end_target(pluginHandler.arg);
 
-    ast.deinit();
+    c.context.free();
     c.free();
 }
 
@@ -126,7 +126,8 @@ type Compiler struct {
     target_info.Info targetInfo;
     PluginHandler* pluginHandler; // no ownership
 
-    Context* context;
+    TailAllocator* arena;
+    ast.AstContext* context;
     Pool* astPool;
     Builder* builder;
     attr_handler.Handler* attr_handler;
@@ -290,10 +291,8 @@ fn void Compiler.build(Compiler* c,
     c.addFeature("EXPERIMENTAL");
 #endif
 
-    // TODO: reorganize these objects:
-    //  ast.AstContext should the global object
-    c.context = ast_context.create(16*1024, c.targetInfo.ptrWidth / 8);
-    ast.initialize(c.context, c.astPool, color.useColor());
+    c.arena = TailAllocator.create(16*1024);
+    c.context = ast.initialize(c.arena, c.astPool, c.targetInfo.ptrWidth / 8, color.useColor());
 
     c.attr_handler = attr_handler.create(diags, c.astPool, target.getWarnings());
     c.builder = ast_builder.create(c.context,
@@ -353,10 +352,10 @@ fn void Compiler.build(Compiler* c,
     info.diags = diags;
     info.target = target;
     info.components = &c.components;
-    info.ast_globals = ast.getGlobals();
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;
+    info.arena = c.arena;
     info.builder = c.builder;
     info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
@@ -422,7 +421,7 @@ fn void Compiler.free(Compiler* c) {
     c.builder.free();
     c.attr_handler.free();
     c.astPool.free();
-    c.context.free();
+    c.arena.free();
     c.libdirs.free();
     c.libdirs_bin.free();
 }

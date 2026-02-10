@@ -69,13 +69,13 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
             const StructTypeDecl* std = st.getDecl();
             if (std.isOpaque()) {
                 const Decl* d = (Decl*)std;
-                bool is_external = ma.mod != d.getModule();
-                if (ma.curFunction && ma.curFunction.getInstanceModule() == d.getModule()) {
+                bool is_external = ma.mod != d.getModule(ma.context);
+                if (ma.curFunction && ma.curFunction.getInstanceModule(ma.context) == d.getModule(ma.context)) {
                     // type is local in instantiation module
                     is_external = false;
                 }
                 if (is_external) {
-                    ma.error(inner.getLoc(), "opaque type '%s' used by value", qt.diagName());
+                    ma.error(inner.getLoc(), "opaque type '%s' used by value", qt.diagName(ma.context));
                 }
             }
         }
@@ -85,7 +85,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
     e.setValue(info.size);
-    return getBuiltinQT(UInt32);
+    return ma.getBuiltinQT(UInt32);
 }
 
 fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
@@ -105,13 +105,13 @@ fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
             return QualType_Invalid;
         }
         b.setValue(at.getSize());
-        return getBuiltinQT(UInt32);
+        return ma.getBuiltinQT(UInt32);
     }
     const EnumType* et = qt.getEnumTypeOrNil();
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
         b.setValue(etd.getNumConstants());
-        return getBuiltinQT(UInt32);
+        return ma.getBuiltinQT(UInt32);
     }
     ma.error(inner.getLoc(), "countof can only be used on arrays/enums");
     return QualType_Invalid;
@@ -137,7 +137,7 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     QualType qmem = ma.findMemberOffset(qt, member, &offset);
     if (qmem.isInvalid()) return QualType_Invalid;
     b.setValue(offset);
-    qt = getBuiltinQT(UInt32);
+    qt = ma.getBuiltinQT(UInt32);
     e.setType(qt);
     return qt;
 }
@@ -222,7 +222,7 @@ fn QualType Analyser.findMemberOffset(Analyser* ma, QualType qt, Expr* member, u
         }
         // check range
         u32 size = ap.getSize();
-        Value val = ast.evalExpr(de);
+        Value val = ast.evalExpr(de, ma.context);
         u64 idx = val.as_u64();
         if (size && idx > size) { // dont give error if arrays has size 0 (allowed for struct members)
             ma.errorRange(de.getLoc(), de.getRange(), "array index '%d' greater than array length '%d'", idx, size);

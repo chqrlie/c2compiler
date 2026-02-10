@@ -327,7 +327,7 @@ fn void Generator.emitMemberDecl(Generator* gen, Buf* out, Decl* d, MemberContex
     case Function:
         if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
         mc.baseType = d.getType();
-        gen.emitCNameMod(out, d, d.getModule());
+        gen.emitCNameMod(out, d, d.getModule(gen.context));
         break;
     case Import:
         // ignore
@@ -348,13 +348,13 @@ fn void Generator.emitMemberDecl(Generator* gen, Buf* out, Decl* d, MemberContex
         gen.genDeclIfNeeded(d);
         break;
     case EnumConstant:
-        gen.emitCNameMod(out, d, d.getModule());
+        gen.emitCNameMod(out, d, d.getModule(gen.context));
         break;
     case FunctionType:
         assert(0);
         break;
     case AliasType:
-        gen.emitCNameMod(out, d, d.getModule());
+        gen.emitCNameMod(out, d, d.getModule(gen.context));
         break;
     case Variable:
         if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
@@ -391,7 +391,7 @@ fn void Generator.emitMemberExpr(Generator* gen, Buf* out, MemberExpr* m, Member
 fn void Generator.emitFieldDesigExpr(Generator* gen, Buf* out, Expr* e) {
     FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)e;
     out.add1('.');
-    out.add(fdi.getFieldName());
+    out.add(fdi.getFieldName(out.getOpaque()));
     out.add(" = ");
     gen.emitExpr(out, fdi.getInit());
 }

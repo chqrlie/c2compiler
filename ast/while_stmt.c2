@@ -15,7 +15,6 @@
 
 module ast;
 
-import ast_context { Context }
 import src_loc { SrcLoc }
 import string_buffer { Buf }
 
@@ -25,18 +24,15 @@ public type WhileStmt struct @(opaque) {
     Stmt* body;
 }
 
-public fn WhileStmt* WhileStmt.create(Context* c,
+public fn WhileStmt* WhileStmt.create(AstContext* c,
                                       SrcLoc loc,
                                       Stmt* cond,
                                       Stmt* body)
 {
-    WhileStmt* s = c.alloc(sizeof(WhileStmt));
+    WhileStmt* s = c.alloc(sizeof(WhileStmt), WhileStmt);
     s.base.init(While, loc);
     s.cond = cond;
     s.body = body;
-#if AstStatistics
-    Stats.addStmt(While, sizeof(WhileStmt));
-#endif
     return s;
 }
 
