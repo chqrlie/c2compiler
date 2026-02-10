@@ -44,7 +44,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExp
     case EnumConstant:
         if (m.hasExpr()) {
             // TODO can be <expr>.<type_func> or <expr>.a.<type_func>
-            //e.dump();
+            //e.dump(gen.astContext);
             goto next;
         }
         Decl* d = m.getFullDecl();
@@ -108,7 +108,7 @@ next:
         u32 offset = 0;
         Decl* dd = std.findMember(d.getNameIdx(), &offset);
         if (!dd) {
-            ((Expr*)m).dump();
+            ((Expr*)m).dump(gen.astContext);
         }
         assert(dd);
 
