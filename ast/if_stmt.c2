@@ -63,9 +63,15 @@ public fn Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }
 public fn Stmt** IfStmt.getCond2(IfStmt* s) { return &s.cond; }
 
 public fn Stmt* IfStmt.getThen(const IfStmt* s) { return s.then; }
+public fn Stmt** IfStmt.getThen2(IfStmt* s) { return &s.then; }
 
 public fn Stmt* IfStmt.getElse(const IfStmt* s) {
     if (s.base.ifStmtBits.has_else) return s.else_stmt[0];
+    return nil;
+}
+
+public fn Stmt** IfStmt.getElse2(IfStmt* s) {
+    if (s.base.ifStmtBits.has_else) return &s.else_stmt[0];
     return nil;
 }
 

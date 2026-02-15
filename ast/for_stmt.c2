@@ -52,6 +52,7 @@ public fn Stmt* ForStmt.getInit(const ForStmt* s) { return s.init; }
 public fn Expr* ForStmt.getCond(const ForStmt* s) { return s.cond; }
 public fn Expr* ForStmt.getCont(const ForStmt* s) { return s.cont; }
 public fn Stmt* ForStmt.getBody(const ForStmt* s) { return s.body; }
+public fn Stmt** ForStmt.getBody2(ForStmt* s) { return &s.body; }
 
 public fn Stmt** ForStmt.getInit2(ForStmt* s) { return s.init ? &s.init : nil; }
 public fn Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }

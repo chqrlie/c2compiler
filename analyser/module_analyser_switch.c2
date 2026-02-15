@@ -170,8 +170,9 @@ fn FlowBits Analyser.analyseCase(Analyser* ma,
     }
     bool has_decls = false;
     FlowBits flow2 = FlowNext;
+    Stmt** stmts = c.getStmts();
     for (u32 i = 0; i < count; i++) {
-        Stmt* st = c.getStmt(i);
+        Stmt* st = stmts[i];
         if (st.isFallthrough() && !is_last) {
             c.setHasFallthrough();
             if (i + 1 != count) {
@@ -180,7 +181,7 @@ fn FlowBits Analyser.analyseCase(Analyser* ma,
             }
             continue;
         }
-        flow2 = ma.analyseStmt(st, true);
+        flow2 = ma.analyseStmt(&stmts[i], true);
         flow |= flow2 & (FlowReturn | FlowBreak | FlowContinue | FlowGoto | FlowNoReturn | FlowError);
         if (ma.has_error) return FlowError;
         if (st.isDecl()) has_decls = true;

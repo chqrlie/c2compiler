@@ -57,4 +57,5 @@ public fn Stmt* WhileStmt.getCond(const WhileStmt* s) { return s.cond; }
 public fn Stmt** WhileStmt.getCond2(WhileStmt* s) { return &s.cond; }
 
 public fn Stmt* WhileStmt.getBody(const WhileStmt* s) { return s.body; }
+public fn Stmt** WhileStmt.getBody2(WhileStmt* s) { return &s.body; }
 

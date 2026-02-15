@@ -59,7 +59,8 @@ fn bool Analyser.isNoReturn(Analyser* ma, Expr* e) {
     return fd.hasAttrNoReturn();
 }
 
-fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
+fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
+    Stmt* s = *s_ptr;
     FlowBits flow = 0;
     if (ma.scope.isUnreachable()) {
         if (s.getKind() != Label && !ma.warnings.no_unreachable_code) {
@@ -74,7 +75,7 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         return FlowReturn;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
-        ma.analyseExpr((Expr**)&s, false, 0);
+        ma.analyseExpr((Expr**)s_ptr, false, 0);
         Expr* e = (Expr*)s;
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
         if (!ma.has_error && ma.isNoReturn(e)) return FlowNoReturn;
@@ -164,7 +165,7 @@ fn FlowBits Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
         ma.labels.add(lab);
     }
 
-    Stmt* lss = ls.getStmt();
+    Stmt** lss = ls.getStmt2();
     if (!lss) return FlowNext;
     return ma.analyseStmt(lss, true);
 }
@@ -189,8 +190,7 @@ fn FlowBits Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     u32 count = c.getCount();
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
-        Stmt* s = stmts[i];
-        flow2 = ma.analyseStmt(s, true);
+        flow2 = ma.analyseStmt(&stmts[i], true);
         flow |= flow2 & (FlowReturn | FlowBreak | FlowContinue | FlowGoto | FlowNoReturn | FlowError);
         if (ma.has_error) return flow;
     }
@@ -235,11 +235,11 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     // TODO: handle constant conditions
 
     ma.scope.enter(scope.Decl);
-    flow = ma.analyseStmt(i.getThen(), true);
+    flow = ma.analyseStmt(i.getThen2(), true);
     ma.scope.exit(ma.has_error);
 
     FlowBits flow2 = FlowNext;
-    Stmt* else_ = i.getElse();
+    Stmt** else_ = i.getElse2();
     if (else_) {
         ma.scope.enter(scope.Decl);
         flow2 = ma.analyseStmt(else_, true);
@@ -285,7 +285,7 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         if (qt.isInvalid()) goto done;
     }
 
-    FlowBits flow2 = ma.analyseStmt(f.getBody(), true);
+    FlowBits flow2 = ma.analyseStmt(f.getBody2(), true);
     flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
     if (flow2 & FlowBreak) flow |= FlowNext;
 done:
@@ -312,7 +312,7 @@ fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     }
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
-    FlowBits flow2 = ma.analyseStmt(w.getBody(), true);
+    FlowBits flow2 = ma.analyseStmt(w.getBody2(), true);
     ma.scope.exit(ma.has_error);
     flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
     if (flow2 & FlowBreak) flow |= FlowNext;

@@ -68,6 +68,11 @@ public fn Stmt* LabelStmt.getStmt(const LabelStmt* s) {
     return s.stmt;
 }
 
+public fn Stmt** LabelStmt.getStmt2(LabelStmt* s) {
+    if (!s.stmt) return nil;
+    return &s.stmt;
+}
+
 fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.color(col_Value);
