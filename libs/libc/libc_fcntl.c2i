@@ -1,6 +1,4 @@
-module libc_fcntl;
-
-import c2 local;
+module libc_fcntl extern "C";
 
 #if SYSTEM_LINUX
 const u32 O_BINARY    =        0;
@@ -66,9 +64,7 @@ const u32 F_SETFL = 4;
 
 const u32 FD_CLOEXEC = 1;
 
-fn c_int open(const char* __file, c_int __oflag, ...);
-
-fn c_int openat(i32 dirfd, const char* pathname, i32 flags, ...);
-
-fn c_int fcntl(i32 __fd, c_int __cmd, ...);
+int open(const char* __file, int __oflag, ...);
+int openat(int dirfd, const char* pathname, int flags, ...);
+int fcntl(int __fd, int __cmd, ...);
 

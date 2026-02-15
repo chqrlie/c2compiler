@@ -20,6 +20,7 @@ module test;
 import c2;
 
 // import all libc modules
+import builtin;
 import c_errno;
 import csetjmp;
 import csignal;

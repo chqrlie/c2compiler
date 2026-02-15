@@ -1,16 +1,14 @@
-module ifaddrs;
-
-import c2 local;
+module ifaddrs extern "C";
 
 import sys_socket;
 
 /* The `getifaddrs' function generates a linked list of these structures.
    Each element of the list describes one network interface.  */
-type Ifaddrs struct {
+struct Ifaddrs {
   Ifaddrs* ifa_next;    /* Pointer to the next structure.  */
 
   char* ifa_name;       /* Name of this network interface.  */
-  u32   ifa_flags;      /* Flags as from SIOCGIFFLAGS ioctl.  */
+  unsigned ifa_flags;      /* Flags as from SIOCGIFFLAGS ioctl.  */
 
   sys_socket.Sockaddr* ifa_addr;    /* Network address of this interface.  */
   sys_socket.Sockaddr* ifa_netmask; /* Netmask of this interface.  */
@@ -33,8 +31,7 @@ type Ifaddrs struct {
    The storage returned in *IFAP is allocated dynamically and can
    only be properly freed by passing it to `freeifaddrs'.
 */
-fn c_int get(Ifaddrs** __ifap) @(cname="getifaddrs");
+int get(Ifaddrs** __ifap) @(cname="getifaddrs");
 
 /* Reclaim the storage allocated by a previous `getifaddrs' call.  */
-fn void Ifaddrs.free(Ifaddrs* __ifa) @(cname="freeifaddrs");
-
+void Ifaddrs.free(Ifaddrs* __ifa) @(cname="freeifaddrs");

@@ -1,11 +1,10 @@
-module net_if;
+module net_if extern "C";
 
-import c2 local;
 import sys_socket;
 
-type CAddr char* @(cname="__caddr_t");
+typedef char* CAddr @(cname="__caddr_t");
 
-type Flag enum u32 @(cname="ifflag") {
+enum Flag : u32 @(cname="ifflag") {
     IFF_UP = 0x1,
     IFF_BROADCAST = 0x2,
     IFF_DEBUG = 0x4,
@@ -17,7 +16,7 @@ type Flag enum u32 @(cname="ifflag") {
     /* some entries skipped */
 }
 
-type Addr struct @(cname="ifaddr") {
+struct Addr @(cname="ifaddr") {
     sys_socket.Sockaddr ifa_addr;
     union ifa_ifu {
         sys_socket.Sockaddr ifu_broadaddr;
@@ -27,19 +26,19 @@ type Addr struct @(cname="ifaddr") {
     Addr* ifa_next;
 }
 
-type Map struct @(cname="ifmap") {
-    c_ulong mem_start;
-    c_ulong mem_end;
-    c_ushort base_addr;
-    c_uchar irq;
-    c_uchar dma;
-    c_uchar port;
+struct Map @(cname="ifmap") {
+    unsigned long mem_start;
+    unsigned long mem_end;
+    unsigned short base_addr;
+    unsigned char irq;
+    unsigned char dma;
+    unsigned char port;
     // 3 bytes spare
 }
 
 const u32 IFNAMSIZ = 16;
 
-type Req struct @(cname="ifreq") {
+struct Req @(cname="ifreq") {
     union ifr_ifrn {
         char[IFNAMSIZ] ifrn_name;
     }
@@ -49,9 +48,9 @@ type Req struct @(cname="ifreq") {
         sys_socket.Sockaddr ifru_broadaddr;
         sys_socket.Sockaddr ifru_netmask;
         sys_socket.Sockaddr ifru_hwaddr;
-        c_short ifru_flags;
-        c_int ifru_ivalue;
-        c_int ifru_mtu;
+        short ifru_flags;
+        int ifru_ivalue;
+        int ifru_mtu;
         Map ifru_map;
         char[IFNAMSIZ] ifru_slave;
         char[IFNAMSIZ] ifru_newname;
@@ -59,8 +58,8 @@ type Req struct @(cname="ifreq") {
     }
 }
 
-type Conf struct @(cname="ifconf") {
-    c_int ifc_len;
+struct Conf @(cname="ifconf") {
+    int ifc_len;
     union ifc_ifcu {
         CAddr ifcu_buf;
         Req* ifcu_req;

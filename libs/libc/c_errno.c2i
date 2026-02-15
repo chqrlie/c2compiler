@@ -1,30 +1,28 @@
-module c_errno;
-
-import c2 local;
+module c_errno extern "C";
 
 // NOTE: errno isn't working in case of REENTRANT LIBC, where errno is defined as
 // #define errno *errno_location()
 // TODO: define variables with functional getter/setter/getlvalue
 
 #if SYSTEM_LINUX
-fn c_int* __errno_location();
-fn c_int* errno2() @(cname="__errno_location");
-c_int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
+int* __errno_location();
+int* errno2() @(cname="__errno_location");
+int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
 #endif
 #if SYSTEM_DARWIN
-fn c_int* __error();
-fn c_int* errno2() @(cname="__error");
-c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+int* __error();
+int* errno2() @(cname="__error");
+int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_FREEBSD
-fn c_int* __error();
-fn c_int* errno2() @(cname="__error");
-c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+int* __error();
+int* errno2() @(cname="__error");
+int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_OPENBSD
-fn c_int* __errno();
-fn c_int* errno2() @(cname="__errno");
-c_int errno @(cname="(*__errno())", cdef="int* __errno(void)");
+int* __errno();
+int* errno2() @(cname="__errno");
+int errno @(cname="(*__errno())", cdef="int* __errno(void)");
 #endif
 
 #if SYSTEM_LINUX

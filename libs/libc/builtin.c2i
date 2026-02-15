@@ -1,0 +1,37 @@
+module builtin extern "C";
+
+// Returns one plus the index of the least significant 1-bit of x, or if x is zero, returns zero.
+u8 ffs(u32) @(cname="__builtin_ffs");
+
+// Returns the number of leading 0-bits in x, starting at the most significant bit position. If x is 0, the result is undefined.
+u8 clz(u32) @(cname="__builtin_clz");
+
+// Returns the number of trailing 0-bits in x, starting at the least significant bit position. If x is 0, the result is undefined.
+u8 ctz(u32) @(cname="__builtin_ctz");
+
+// Returns the number of leading redundant sign bits in x, i.e. the number of bits following the most significant bit that are identical to it. There are no special cases for 0 or other values.
+u8 clrsb(i32) @(cname="__builtin_clrsb");
+
+// Returns the number of 1-bits in x.
+u8 popcount(u32) @(cname="__builtin_popcount");
+
+// Returns the parity of x, i.e. the number of 1-bits in x modulo 2.
+u8 parity(u32) @(cname="__builtin_parity");
+
+// Similar to __builtin_ffs, except the argument type is long long.
+u8 ffs64(i64) @(cname="__builtin_ffsll");
+
+// Similar to __builtin_clz, except the argument type is unsigned long long.
+u8 clz64(u64) @(cname="__builtin_clzll");
+
+// Similar to __builtin_ctz, except the argument type is unsigned long long.
+u8 ctz64(u64) @(cname="__builtin_ctzll");
+
+// Similar to __builtin_clrsb, except the argument type is long long.
+u8 clrsb64(i64) @(cname="__builtin_clrsbll");
+
+// Similar to __builtin_popcount, except the argument type is unsigned long long.
+u8 popcount64(u64) @(cname="__builtin_popcountll");
+
+// Similar to __builtin_parity, except the argument type is unsigned long long.
+u8 parity64(u64) @(cname="__builtin_parityll");

@@ -407,10 +407,10 @@ fn void Parser.parseTopLevel(Parser* p) {
         p.parseVarDecl(is_public);
         break;
     invalid_c:
-        p.error("invalid keyword in extern C code");
+        p.error("invalid keyword '%s' in extern C code", p.tok.kind.str());
         //noreturn;
     invalid_c2:
-        p.error("invalid definition in C2 code");
+        p.error("invalid '%s' definition in C2 code", p.tok.kind.str());
         //noreturn;
     }
 }

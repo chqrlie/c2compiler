@@ -1,61 +1,59 @@
-module math;
-
-import c2 local;
+module math extern "C";
 
 // NOTE: long double (16 bytes on 64-bit system) not supported yet
 
-const c_double HUGE_VAL   = 1e500;
-const c_float HUGE_VALF   = 1e500; //FIXME: should use (f32)1e50;
-//const c_double HUGE_VALL  = 1e5000;
-const c_double NAN        = 0.0 / 0.0;
-const c_double INFINITY   = 1.0 / 0.0;
+const double HUGE_VAL   = 1e500;
+const float HUGE_VALF   = 1e50F;
+//const long double HUGE_VALL  = 1e5000;
+const double NAN        = 0.0 / 0.0;
+const double INFINITY   = 1.0 / 0.0;
 #if SYSTEM_LINUX
-const c_int FP_NAN        = 0;
-const c_int FP_INFINITE   = 1;
-const c_int FP_ZERO       = 2;
-const c_int FP_SUBNORMAL  = 3;
-const c_int FP_NORMAL     = 4;
+const int FP_NAN        = 0;
+const int FP_INFINITE   = 1;
+const int FP_ZERO       = 2;
+const int FP_SUBNORMAL  = 3;
+const int FP_NORMAL     = 4;
 #endif
 #if SYSTEM_FREEBSD || SYSTEM_OPENBSD
-const c_int FP_INFINITE   = 0x01;
-const c_int FP_NAN        = 0x02;
-const c_int FP_NORMAL     = 0x04;
-const c_int FP_SUBNORMAL  = 0x08;
-const c_int FP_ZERO       = 0x10;
+const int FP_INFINITE   = 0x01;
+const int FP_NAN        = 0x02;
+const int FP_NORMAL     = 0x04;
+const int FP_SUBNORMAL  = 0x08;
+const int FP_ZERO       = 0x10;
 #endif
 #if SYSTEM_DARWIN
-const c_int FP_NAN        = 1;
-const c_int FP_INFINITE   = 2;
-const c_int FP_ZERO       = 3;
-const c_int FP_NORMAL     = 4;
-const c_int FP_SUBNORMAL  = 5;
+const int FP_NAN        = 1;
+const int FP_INFINITE   = 2;
+const int FP_ZERO       = 3;
+const int FP_NORMAL     = 4;
+const int FP_SUBNORMAL  = 5;
 #endif
 
-type FP32_ union { f32 f; u32 u; }
-type FP64_ union { f64 d; u64 u; }
+union FP32_ { f32 f; u32 u; }
+union FP64_ { f64 d; u64 u; }
 
-fn c_int fpclassifyf(c_float) @(cname="__fpclassifyf");
-fn c_int isfinitef(c_float) @(cname="__isfinitef");
-fn c_int isinff(c_float) @(cname="__isinff");
-fn c_int isnanf(c_float x) { return x != x; }
-fn c_int isnormalf(c_float) @(cname="__isnormalf");
-fn c_int signbitf(c_float f) { FP32_ u; u.f = f; return (u.u >> 31) & 1; }
+int fpclassifyf(float) @(cname="__fpclassifyf");
+int isfinitef(float) @(cname="__isfinitef");
+int isinff(float) @(cname="__isinff");
+int isnanf(float x) { return x != x; }
+int isnormalf(float) @(cname="__isnormalf");
+int signbitf(float f) { FP32_ u; u.f = f; return (u.u >> 31) & 1; }
 
-fn c_int isnan(c_double x) { return x != x; }
-fn c_int signbit(c_double d) { FP64_ u; u.d = d; return (u.u >> 63) & 1; }
+int isnan(double x) { return x != x; }
+int signbit(double d) { FP64_ u; u.d = d; return (u.u >> 63) & 1; }
 #if SYSTEM_LINUX || SYSTEM_OPENBSD
-fn c_int fpclassify(c_double) @(cname="__fpclassify");
+int fpclassify(double) @(cname="__fpclassify");
 #else
-fn c_int fpclassify(c_double) @(cname="__fpclassifyd");
+int fpclassify(double) @(cname="__fpclassifyd");
 #endif
 #if SYSTEM_LINUX || SYSTEM_OPENBSD || SYSTEM_FREEBSD
-fn c_int isfinite(c_double) @(cname="__isfinite");
-fn c_int isinf(c_double) @(cname="__isinf");
-fn c_int isnormal(c_double) @(cname="__isnormal");
+int isfinite(double) @(cname="__isfinite");
+int isinf(double) @(cname="__isinf");
+int isnormal(double) @(cname="__isnormal");
 #else
-fn c_int isfinite(c_double) @(cname="__isfinited");
-fn c_int isinf(c_double) @(cname="__isinfd");
-fn c_int isnormal(c_double) @(cname="__isnormald");
+int isfinite(double) @(cname="__isfinited");
+int isinf(double) @(cname="__isinfd");
+int isnormal(double) @(cname="__isnormald");
 #endif
 //int fpclassifyl(long double);
 //int isfinitel(long double);
@@ -70,254 +68,256 @@ fn c_int isnormal(c_double) @(cname="__isnormald");
 //fn bool f64.isnan(f64 x) { return x != x; }
 //fn bool f32.signbit(f32 f) { FP32 u; u.f = f; return (u.u >> 31) & 1; }
 //fn bool f64.signbit(f64 d) { FP64 u; u.d = d; return (u.u >> 63) & 1; }
-fn c_int c_float.fpclassify(c_float) @(cname="__fpclassifyf");
-fn c_int c_double.fpclassify(c_double) @(cname="__fpclassifyd");
-fn c_int c_float.isnormal(c_float) @(cname="__isnormalf");
-fn c_int c_double.isnormal(c_double) @(cname="__isnormald");
-fn c_int c_float.isfinite(c_float) @(cname="__isfinitef");
-fn c_int c_double.isfinite(c_double) @(cname="__isfinited");
-fn c_int c_float.isinf(c_float) @(cname="__isinff");
-fn c_int c_double.isinf(c_double) @(cname="__isinfd");
+int float.fpclassify(float) @(cname="__fpclassifyf");
+int double.fpclassify(double) @(cname="__fpclassifyd");
+int float.isnormal(float) @(cname="__isnormalf");
+int double.isnormal(double) @(cname="__isnormald");
+int float.isfinite(float) @(cname="__isfinitef");
+int double.isfinite(double) @(cname="__isfinited");
+int float.isinf(float) @(cname="__isinff");
+int double.isinf(double) @(cname="__isinfd");
 #endif
 
-fn c_float acosf(c_float);
-fn c_double acos(c_double);
+float acosf(float);
+double acos(double);
 //long double acosl(long double);
 
-fn c_float asinf(c_float);
-fn c_double asin(c_double);
+float asinf(float);
+double asin(double);
 //long double asinl(long double);
 
-fn c_float atanf(c_float);
-fn c_double atan(c_double);
+float atanf(float);
+double atan(double);
 //long double atanl(long double);
 
-fn c_float atan2f(c_float, c_float);
-fn c_double atan2(c_double, c_double);
+float atan2f(float, float);
+double atan2(double, double);
 //long double atan2l(long double, long double);
 
-fn c_float cosf(c_float);
-fn c_double cos(c_double);
+float cosf(float);
+double cos(double);
 //long double cosl(long double);
 
-fn c_float sinf(c_float);
-fn c_double sin(c_double);
+float sinf(float);
+double sin(double);
 //long double sinl(long double);
 
-fn c_float tanf(c_float);
-fn c_double tan(c_double);
+float tanf(float);
+double tan(double);
 //long double tanl(long double);
 
-fn c_float acoshf(c_float);
-fn c_double acosh(c_double);
+float acoshf(float);
+double acosh(double);
 //long double acoshl(long double);
 
-fn c_float asinhf(c_float);
-fn c_double asinh(c_double);
+float asinhf(float);
+double asinh(double);
 //long double asinhl(long double);
 
-fn c_float atanhf(c_float);
-fn c_double atanh(c_double);
+float atanhf(float);
+double atanh(double);
 //long double atanhl(long double);
 
-fn c_float coshf(c_float);
-fn c_double cosh(c_double);
+float coshf(float);
+double cosh(double);
 //long double coshl(long double);
 
-fn c_float sinhf(c_float);
-fn c_double sinh(c_double);
+float sinhf(float);
+double sinh(double);
 //long double sinhl(long double);
 
-fn c_float tanhf(c_float);
-fn c_double tanh(c_double);
+float tanhf(float);
+double tanh(double);
 //long double tanhl(long double);
 
-fn c_float expf(c_float);
-fn c_double exp(c_double);
+float expf(float);
+double exp(double);
 //long double expl(long double);
 
-fn c_float exp2f(c_float);
-fn c_double exp2(c_double);
+float exp2f(float);
+double exp2(double);
 //long double exp2l(long double);
 
-fn c_float expm1f(c_float);
-fn c_double expm1(c_double);
+float expm1f(float);
+double expm1(double);
 //long double expm1l(long double);
 
-fn c_float logf(c_float);
-fn c_double log(c_double);
+float logf(float);
+double log(double);
 //long double logl(long double);
 
-fn c_float log10f(c_float);
-fn c_double log10(c_double);
+float log10f(float);
+double log10(double);
 //long double log10l(long double);
 
-fn c_float log2f(c_float);
-fn c_double log2(c_double);
+float log2f(float);
+double log2(double);
 //long double log2l(long double);
 
-fn c_float log1pf(c_float);
-fn c_double log1p(c_double);
+float log1pf(float);
+double log1p(double);
 //long double log1pl(long double);
 
-fn c_float logbf(c_float);
-fn c_double logb(c_double);
+float logbf(float);
+double logb(double);
 //long double logbl(long double);
 
-fn c_float modff(c_float, c_float *);
-fn c_double modf(c_double, c_double *);
+float modff(float, float *);
+double modf(double, double *);
 //long double modfl(long double, long double *);
 
-fn c_float ldexpf(c_float, c_int);
-fn c_double ldexp(c_double, c_int);
+float ldexpf(float, int);
+double ldexp(double, int);
 //long double ldexpl(long double, int);
 
-fn c_float frexpf(c_float, c_int *);
-fn c_double frexp(c_double, c_int *);
+float frexpf(float, int *);
+double frexp(double, int *);
 //long double frexpl(long double, int *);
 
-fn c_int ilogbf(c_float);
-fn c_int ilogb(c_double);
+int ilogbf(float);
+int ilogb(double);
 //int ilogbl(long double);
 
-fn c_float scalbnf(c_float, c_int);
-fn c_double scalbn(c_double, c_int);
+float scalbnf(float, int);
+double scalbn(double, int);
 //long double scalbnl(long double, int);
 
-fn c_float scalblnf(c_float, c_long);
-fn c_double scalbln(c_double, c_long);
+float scalblnf(float, long int);
+double scalbln(double, long int);
 //long double scalblnl(long double, long int);
 
-fn c_float fabsf(c_float);
-fn c_double fabs(c_double);
+float fabsf(float);
+double fabs(double);
 //long double fabsl(long double);
 
-fn c_float cbrtf(c_float);
-fn c_double cbrt(c_double);
+float cbrtf(float);
+double cbrt(double);
 //long double cbrtl(long double);
 
-fn c_float hypotf(c_float, c_float);
-fn c_double hypot(c_double, c_double);
+float hypotf(float, float);
+double hypot(double, double);
 //long double hypotl(long double, long double);
 
-fn c_float powf(c_float, c_float);
-fn c_double pow(c_double, c_double);
+float powf(float, float);
+double pow(double, double);
 //long double powl(long double, long double);
 
-fn c_float sqrtf(c_float);
-fn c_double sqrt(c_double);
+float sqrtf(float);
+double sqrt(double);
 //long double sqrtl(long double);
 
-fn c_float erff(c_float);
-fn c_double erf(c_double);
+float erff(float);
+double erf(double);
 //long double erfl(long double);
 
-fn c_float erfcf(c_float);
-fn c_double erfc(c_double);
+float erfcf(float);
+double erfc(double);
 //long double erfcl(long double);
 
-fn c_float lgammaf(c_float);
-fn c_double lgamma(c_double);
+float lgammaf(float);
+double lgamma(double);
 //long double lgammal(long double);
 
-fn c_float tgammaf(c_float);
-fn c_double tgamma(c_double);
+float tgammaf(float);
+double tgamma(double);
 //long double tgammal(long double);
 
-fn c_float ceilf(c_float);
-fn c_double ceil(c_double);
+float ceilf(float);
+double ceil(double);
 //long double ceill(long double);
 
-fn c_float floorf(c_float);
-fn c_double floor(c_double);
+float floorf(float);
+double floor(double);
 //long double floorl(long double);
 
-fn c_float nearbyintf(c_float);
-fn c_double nearbyint(c_double);
+float nearbyintf(float);
+double nearbyint(double);
 //long double nearbyintl(long double);
 
-fn c_float rintf(c_float);
-fn c_double rint(c_double);
+float rintf(float);
+double rint(double);
 //long double rintl(long double);
 
-fn c_long lrintf(c_float);
-fn c_long lrint(c_double);
-//c_long lrintl(long double);
+long int lrintf(float);
+long int lrint(double);
+//long int lrintl(long double);
 
-fn c_float roundf(c_float);
-fn c_double round(c_double);
+float roundf(float);
+double round(double);
 //long double roundl(long double);
 
-fn c_long lroundf(c_float);
-fn c_long lround(c_double);
-//c_long lroundl(long double);
+long int lroundf(float);
+long int lround(double);
+//long int lroundl(long double);
 
-fn c_longlong llrintf(c_float);
-fn c_longlong llrint(c_double);
-//long long llrintl(long double);
+long long int llrintf(float);
+long long int llrint(double);
+//long long int llrintl(long double);
 
-fn c_longlong llroundf(c_float);
-fn c_longlong llround(c_double);
-//long long llroundl(long double);
+long long int llroundf(float);
+long long int llround(double);
+//long long int llroundl(long double);
 
-fn c_float truncf(c_float);
-fn c_double trunc(c_double);
+float truncf(float);
+double trunc(double);
 //long double truncl(long double);
 
-fn c_float fmodf(c_float, c_float);
-fn c_double fmod(c_double, c_double);
+float fmodf(float, float);
+double fmod(double, double);
 //long double fmodl(long double, long double);
 
-fn c_float remainderf(c_float, c_float);
-fn c_double remainder(c_double, c_double);
+float remainderf(float, float);
+double remainder(double, double);
 //long double remainderl(long double, long double);
 
-fn c_float remquof(c_float, c_float, c_int *);
-fn c_double remquo(c_double, c_double, c_int *);
+float remquof(float, float, int *);
+double remquo(double, double, int *);
 //long double remquol(long double, long double, int *);
 
-fn c_float copysignf(c_float, c_float);
-fn c_double copysign(c_double, c_double);
+float copysignf(float, float);
+double copysign(double, double);
 //long double copysignl(long double, long double);
 
-fn c_float nanf(const char *);
-fn c_double nan(const char *);
+float nanf(const char *);
+double nan(const char *);
 //long double nanl(const char *);
 
-fn c_float nextafterf(c_float, c_float);
-fn c_double nextafter(c_double, c_double);
+float nextafterf(float, float);
+double nextafter(double, double);
 //long double nextafterl(long double, long double);
 
 //double nexttoward(double, long double);
 //float nexttowardf(float, long double);
 //long double nexttowardl(long double, long double);
 
-fn c_float fdimf(c_float, c_float);
-fn c_double fdim(c_double, c_double);
+float fdimf(float, float);
+double fdim(double, double);
 //long double fdiml(long double, long double);
 
-fn c_float fmaxf(c_float, c_float);
-fn c_double fmax(c_double, c_double);
+float fmaxf(float, float);
+double fmax(double, double);
 //long double fmaxl(long double, long double);
 
-fn c_float fminf(c_float, c_float);
-fn c_double fmin(c_double, c_double);
+float fminf(float, float);
+double fmin(double, double);
 //long double fminl(long double, long double);
 
-fn c_float fmaf(c_float, c_float, c_float);
-fn c_double fma(c_double, c_double, c_double);
+float fmaf(float, float, float);
+double fma(double, double, double);
 //long double fmal(long double, long double, long double);
 
-const c_double M_E         = 2.71828182845904523536028747135266250;   /* e */
-const c_double M_LOG2E     = 1.44269504088896340735992468100189214;   /* log2(e) */
-const c_double M_LOG10E    = 0.434294481903251827651128918916605082;  /* log10(e) */
-const c_double M_LN2       = 0.693147180559945309417232121458176568;  /* loge(2) */
-const c_double M_LN10      = 2.30258509299404568401799145468436421;   /* loge(10) */
-const c_double M_PI        = 3.14159265358979323846264338327950288;   /* pi */
-const c_double M_PI_2      = 1.57079632679489661923132169163975144;   /* pi/2 */
-const c_double M_PI_4      = 0.785398163397448309615660845819875721;  /* pi/4 */
-const c_double M_1_PI      = 0.318309886183790671537767526745028724;  /* 1/pi */
-const c_double M_2_PI      = 0.636619772367581343075535053490057448;  /* 2/pi */
-const c_double M_2_SQRTPI  = 1.12837916709551257389615890312154517;   /* 2/sqrt(pi) */
-const c_double M_SQRT2     = 1.41421356237309504880168872420969808;   /* sqrt(2) */
-const c_double M_SQRT1_2   = 0.707106781186547524400844362104849039;  /* 1/sqrt(2) */
+const double M_E         = 2.71828182845904523536028747135266250;   /* e */
+const double M_LOG2E     = 1.44269504088896340735992468100189214;   /* log2(e) */
+const double M_LOG10E    = 0.434294481903251827651128918916605082;  /* log10(e) */
+const double M_LN2       = 0.693147180559945309417232121458176568;  /* loge(2) */
+const double M_LN10      = 2.30258509299404568401799145468436421;   /* loge(10) */
+const double M_PI        = 3.14159265358979323846264338327950288;   /* pi */
+const double M_PI_2      = 1.57079632679489661923132169163975144;   /* pi/2 */
+const double M_PI_4      = 0.785398163397448309615660845819875721;  /* pi/4 */
+const double M_1_PI      = 0.318309886183790671537767526745028724;  /* 1/pi */
+const double M_2_PI      = 0.636619772367581343075535053490057448;  /* 2/pi */
+const double M_2_SQRTPI  = 1.12837916709551257389615890312154517;   /* 2/sqrt(pi) */
+const double M_SQRT2     = 1.41421356237309504880168872420969808;   /* sqrt(2) */
+const double M_SQRT1_2   = 0.707106781186547524400844362104849039;  /* 1/sqrt(2) */
+
+//const float MAXFLOAT    = 0x1.fffffep+127F   // use FLT_MAX instead?

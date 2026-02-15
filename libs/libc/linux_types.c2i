@@ -1,13 +1,11 @@
-module linux_types;
-
-import c2 local;
+module linux_types extern "C";
 
 // ------ linux/time_types.h
 
 //__kernel_timespec
-type Timespec struct {
-    c_longlong tv_sec; // seconds
-    c_longlong tv_nsec; // nanoseconds
+struct Timespec {
+    long long tv_sec; // seconds
+    long long tv_nsec; // nanoseconds
 }
 
 // incomplete

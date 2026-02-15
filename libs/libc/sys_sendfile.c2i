@@ -1,8 +1,6 @@
-module sys_sendfile;
+module sys_sendfile extern "C";
 
-import c2 local;
+typedef u64 Offset @(cname="off_t");
 
-type Offset u64 @(cname="off_t");
-
-fn c_ssize sendfile(i32 __out_fd, i32 __in_fd, Offset* __offset, c_size __count);
+ssize_t sendfile(int __out_fd, int __in_fd, Offset* __offset, size_t __count);
 

@@ -1,9 +1,8 @@
-module sys_signalfd;
+module sys_signalfd extern "C";
 
 import csignal;
-import c2 local;
 
-type Siginfo struct {
+struct Siginfo {
   u32 ssi_signo;
   i32 ssi_errno;
   i32 ssi_code;
@@ -28,5 +27,5 @@ type Siginfo struct {
   u8[28] __pad;
 }
 
-fn c_int signalfd(c_int __fd, const csignal.Sigset* mask, c_int flags) @(cname="signalfd");
+int signalfd(int __fd, const csignal.Sigset* mask, int flags) @(cname="signalfd");
 

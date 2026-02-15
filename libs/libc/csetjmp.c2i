@@ -1,8 +1,6 @@
-module csetjmp;
+module csetjmp extern "C";
 
-import c2 local;
-
-type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
+struct JmpBufTag @(cname="__jmp_buf_tag", aligned=8) {
     // TODO: use actual sizes?
 #if SYSTEM_LINUX
     char[200] data; // for 64-bit
@@ -25,13 +23,10 @@ type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
 #endif
 }
 
-type JmpBuf JmpBufTag* @(cname="jmp_buf");
+typedef JmpBufTag* JmpBuf @(cname="jmp_buf");
 
 // TODO alias setjmp -> _setjmp
-fn i32 setjmp(JmpBuf __env);
-
-fn i32 _setjmp(JmpBuf __env);
-
-
-fn void longjmp(JmpBuf __env, i32 __val) @(noreturn);
+i32 setjmp(JmpBuf __env);
+i32 _setjmp(JmpBuf __env);
+void longjmp(JmpBuf __env, i32 __val) @(noreturn);
 
