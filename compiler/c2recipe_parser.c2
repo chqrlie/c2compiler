@@ -273,7 +273,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             // lex until whitespace
             const char* start = p.cur;
             while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
-            result.kind = p.new_line ? Kind.File : Kind.Text;
+            result.kind = p.new_line ? File : Text;
             if (*p.cur == 0) result.kind = Eof;
             p.new_line = false;
             u32 len = (u32)(p.cur - start);
@@ -329,7 +329,7 @@ fn void Parser.lex(Parser* p, Token* result) {
                 const char* start = p.cur;
                 while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
                 // TODO check EOF
-                result.kind = p.new_line ? Kind.File : Kind.Text;
+                result.kind = p.new_line ? File : Text;
                 p.new_line = false;
                 u32 len = (u32)(p.cur - start);
                 result.value = p.pool.add(start, len, true);
@@ -518,7 +518,7 @@ fn void Parser.parsePlugin(Parser* p, bool is_global) {
     p.consumeToken();
 
     u32 options = 0;
-    if (p.token.kind == Kind.PluginOptions) {
+    if (p.token.kind == PluginOptions) {
         options = p.token.value;
         p.consumeToken();
     }
@@ -750,7 +750,7 @@ fn void Parser.parseTarget(Parser* p) {
             p.consumeToken();
             p.expect(Text, "expect export");
 
-            while (p.token.kind == Kind.Text) {
+            while (p.token.kind == Text) {
                 p.target.addExport(p.token.value);
                 p.consumeToken();
             }
@@ -787,7 +787,7 @@ fn void Parser.parseTarget(Parser* p) {
             p.target.addLib(libname, kind);
             p.consumeToken();
 
-            while (p.token.kind == Kind.Text) p.consumeToken();
+            while (p.token.kind == Text) p.consumeToken();
             break;
         case AsmFile:
             if (files_started) p.error("$asm must come before files");
@@ -849,7 +849,7 @@ fn void Parser.parseBackend(Parser* p) {
 }
 
 fn void Parser.parseBackEndOptions(Parser* p) {
-    while (p.token.kind == Kind.Text) {
+    while (p.token.kind == Text) {
         const char* option = p.pool.idx2str(p.token.value);
         switch (option) {
         case "no-build":

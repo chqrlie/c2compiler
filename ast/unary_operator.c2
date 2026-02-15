@@ -57,8 +57,7 @@ public type UnaryOperator struct @(opaque) {
 
 public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
-    e.base.init(UnaryOperator, loc, 0, 0, kind <= PreDec,
-                kind == Deref ? ValType.LValue : ValType.RValue);
+    e.base.init(UnaryOperator, loc, 0, 0, kind <= PreDec, kind == Deref ? LValue : RValue);
     e.base.base.unaryOperatorBits.kind = kind;
     e.inner = inner;
 #if AstStatistics

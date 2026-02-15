@@ -557,7 +557,7 @@ fn Cont FallthroughStmt.eval(FallthroughStmt* s, Evaluator* sf) { return Normal;
 
 fn Cont LabelStmt.eval(LabelStmt* s, Evaluator* sf) {
     Stmt* s1 = s.getStmt();
-    return s1 ? s1.eval(sf) : Cont.Normal;
+    return s1 ? s1.eval(sf) : Normal;
 }
 
 fn Cont GotoStmt.eval(GotoStmt* s, Evaluator* sf) {

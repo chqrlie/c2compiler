@@ -307,7 +307,7 @@ public fn void setTypePublicUsed(QualType qt) {
 }
 
 public fn BuiltinKind getNativeKind() {
-    return globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
+    return globals.wordsize == 8 ? UInt64 : UInt32;
 }
 
 Color col_Stmt = Color.Bmagenta;

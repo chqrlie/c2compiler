@@ -253,7 +253,7 @@ fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
         }
         t.cur++;
     }
-    result.kind = (delim == '"') ? TokenKind.Double_Quoted_Scalar : TokenKind.Single_Quoted_Scalar;
+    result.kind = (delim == '"') ? Double_Quoted_Scalar : Single_Quoted_Scalar;
     result.text_idx = t.data.add_text(start, (u32)(t.cur - start));
     t.cur++;    // skip terminating delimiter
 }

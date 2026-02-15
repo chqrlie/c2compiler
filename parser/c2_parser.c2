@@ -292,7 +292,7 @@ fn void Parser.parseModule(Parser* p) {
     p.consumeToken();
     if (p.tok.kind == KW_extern) {
         p.consumeToken();
-        if (p.tok.kind == Kind.StringLiteral) {
+        if (p.tok.kind == StringLiteral) {
             const char* extern_name = p.pool.idx2str(p.tok.text_idx);
             if (p.tok.text_len != 1 || *extern_name != 'C') {
                 p.error("unsupported extern module language tag '%s'", extern_name);
@@ -600,7 +600,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, 
     }
 
     // Accept (void) argument list in c_mode
-    if (p.tokenizer.c_mode && p.tok.kind == Kind.KW_void && p.peekToken(1) == Kind.RParen) {
+    if (p.tokenizer.c_mode && p.tok.kind == KW_void && p.peekToken(1) == RParen) {
         p.consumeToken();
         p.consumeToken();
         return false;
@@ -758,7 +758,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         }
         p.consumeToken();
 
-        if (p.tok.kind == Kind.LParen) {
+        if (p.tok.kind == LParen) {
             if (!p.tokenizer.c_mode) {
                 p.error("function definitions require the 'fn' keyword");
             }
@@ -766,9 +766,9 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
             return;
         }
 
-        if (p.tok.kind == Kind.Dot) {
-            if (p.peekToken(1) == Kind.Identifier) {
-                if (p.peekToken(2) == Kind.LParen) {
+        if (p.tok.kind == Dot) {
+            if (p.peekToken(1) == Identifier) {
+                if (p.peekToken(2) == LParen) {
                     // Either a function definition or an init call
                     if (!p.tokenizer.c_mode)
                         p.error("global variables cannot have an init call");
@@ -888,32 +888,32 @@ fn Kind Parser.convertCType(Parser* p) {
         case KW_char:
             if (has_signed == 1) {
                 has_signed = 0;
-                kind = Kind.KW_i8;
+                kind = KW_i8;
             } else
             if (has_unsigned == 1) {
                 has_unsigned = 0;
-                kind = Kind.KW_u8;
+                kind = KW_u8;
             } else {
-                kind = Kind.KW_char;
+                kind = KW_char;
             }
             break;
         case KW_int:
             break;
         case KW_ssize_t:
-            kind = Kind.KW_isize;
+            kind = KW_isize;
             break;
         case KW_size_t:
-            kind = Kind.KW_usize;
+            kind = KW_usize;
             break;
         case KW_float:
-            kind = Kind.KW_f32;
+            kind = KW_f32;
             break;
         case KW_double:
             if (has_long == 1) {
                 // long double -> double
                 has_long = 0;
             }
-            kind = Kind.KW_f64;
+            kind = KW_f64;
             break;
         case KW_short:
             has_short++;
@@ -931,18 +931,18 @@ fn Kind Parser.convertCType(Parser* p) {
             skip--;  // no C type, keep last qualifier
             break;
         }
-        if (kind == Kind.KW_i32) {
+        if (kind == KW_i32) {
             if (has_short == 1) {
-                kind = Kind.KW_i16;
+                kind = KW_i16;
                 has_short = 0;
             } else
             if (has_long == 2) {
-                kind = Kind.KW_i64;
+                kind = KW_i64;
                 has_long = 0;
             } else
             if (has_long == 1) {
                 if (getWordSize() == 8)
-                    kind = Kind.KW_i64;
+                    kind = KW_i64;
                 has_long = 0;
             }
             if (has_signed == 1) {
@@ -1131,15 +1131,15 @@ fn void Parser.parseExternDecl(Parser* p) {
     bool was_interface = p.is_interface;
     p.is_interface = true;
 
-    if (p.tok.kind == Kind.StringLiteral) {
+    if (p.tok.kind == StringLiteral) {
         if (p.tok.text_len != 1 || *p.pool.idx2str(p.tok.text_idx) != 'C') {
             p.error("extern must be followed by \"C\" and a block");
         }
         p.consumeToken();
         p.tokenizer.c_mode++;   // must set before consuming the token
-        p.expectAndConsume(Kind.LBrace);
-        while (p.tok.kind != Kind.RBrace) {
-            if (p.tok.kind == Kind.Eof)
+        p.expectAndConsume(LBrace);
+        while (p.tok.kind != RBrace) {
+            if (p.tok.kind == Eof)
                 p.error("unterminated extern \"C\" block");
             p.parseTopLevel();
         }

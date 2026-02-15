@@ -278,7 +278,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.consumeToken();
         break;
     case 3: // FloatLiteral
-        BuiltinKind kind = p.tok.suffix_F ? BuiltinKind.Float32 : BuiltinKind.Float64;
+        BuiltinKind kind = p.tok.suffix_F ? Float32 : Float64;
         res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value, p.tok.getRadix(), kind);
         p.consumeToken();
         break;
@@ -702,8 +702,7 @@ fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(RParen);
 
-    return p.builder.actOnBuiltinExpr(loc, src_len, expr,
-                                      is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
+    return p.builder.actOnBuiltinExpr(loc, src_len, expr, is_min ? EnumMin : EnumMax);
 }
 
 fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
