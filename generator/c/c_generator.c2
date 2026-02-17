@@ -257,22 +257,35 @@ const char*[BuiltinKind] builtinType_cnames = {
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
 
-    if (qt.isConst()) out.add("const ");
-    if (qt.isVolatile()) out.add("volatile ");
+    if (qt.prefixQualifiers()) {
+        if (qt.isConst()) out.add("const ");
+        if (qt.isVolatile()) out.add("volatile ");
+    }
 
     switch (qt.getKind()) {
     case Builtin:
         BuiltinType* bt = (BuiltinType*)qt.getType();
         out.add(builtinType_cnames[bt.getKind()]);
         return;
+    case Void:
+        out.add("void");
+        return;
     case Pointer:
         PointerType* pt = (PointerType*)qt.getType();
         gen.emitTypePre(out, pt.getInner());
         out.add1('*');
+        if (qt.postfixQualifiers()) {
+            if (qt.isConst()) out.add(" const");
+            if (qt.isVolatile()) out.add(" volatile");
+        }
         return;
     case Array:
         ArrayType* at = (ArrayType*)qt.getType();
         gen.emitTypePre(out, at.getElemType());
+        if (qt.postfixQualifiers()) {
+            if (qt.isConst()) out.add(" const");
+            if (qt.isVolatile()) out.add(" volatile");
+        }
         return;
     case Struct:
         StructType* st = (StructType*)qt.getType();
@@ -280,7 +293,6 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         if (std.hasAttrNoTypeDef()) {
             out.add(std.isStruct() ? "struct " : "union ");
         }
-
         decl = (Decl*)st.getDecl();
         break;
     case Enum:
@@ -289,12 +301,8 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         break;
     case Function:
         FunctionType* ft = (FunctionType*)qt.getType();
-        FunctionDecl* fd = ft.getDecl();
-        decl = (Decl*)fd;
+        decl = (Decl*)ft.getDecl();
         break;
-    case Void:
-        out.add("void");
-        return;
     case Alias:
         AliasType* at = (AliasType*)qt.getType();
         decl = (Decl*)at.getDecl();
