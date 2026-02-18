@@ -47,8 +47,9 @@ fn const char* IdentifierKind.str(IdentifierKind k) {
 type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;
-    u32 kind : 3;   // IdentifierKind
-    u32 name_len : 32 - NumExprBits - 4;
+    u32 : 1;
+    IdentifierKind kind : 3;
+    u32 name_len : 32 - NumExprBits - 5;
 }
 
 public type IdentifierExpr struct @(opaque) {
@@ -101,7 +102,7 @@ public fn void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) {
 }
 
 public fn IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) {
-    return (IdentifierKind)e.base.base.identifierExprBits.kind;
+    return e.base.base.identifierExprBits.kind;
 }
 
 public fn const char* IdentifierExpr.getName(const IdentifierExpr* e) {

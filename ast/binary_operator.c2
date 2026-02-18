@@ -94,7 +94,8 @@ public fn const char* BinaryOpcode.str(BinaryOpcode opcode) {
 
 type BinaryOperatorBits struct {
     u32 : NumExprBits;
-    u32 kind : 5;
+    u32 : 2;
+    BinaryOpcode kind : 5;
 }
 
 public type BinaryOperator struct @(opaque) {
@@ -120,7 +121,7 @@ fn Expr* BinaryOperator.instantiate(BinaryOperator* e, Instantiator* inst) {
 }
 
 public fn BinaryOpcode BinaryOperator.getOpcode(const BinaryOperator* e) {
-    return (BinaryOpcode)e.base.base.binaryOperatorBits.kind;
+    return e.base.base.binaryOperatorBits.kind;
 }
 
 public fn Expr* BinaryOperator.getLHS(const BinaryOperator* e) { return e.lhs; }

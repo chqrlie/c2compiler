@@ -16,7 +16,6 @@
 module c2_tokenizer;
 
 import constants;
-import number_radix local;
 import keywords;
 import src_loc local;
 import string_buffer;
@@ -768,7 +767,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 
     if (p[0] == '0') {
         if (p[1] == 'x' || p[1] == 'X') {  // hexadecimal
-            result.radix = Radix.Hex;
+            result.radix = Hex;
             p += 2;
             if (isxdigit(*p)) {
                 while (isxdigit(*p)) {
@@ -799,7 +798,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             goto check_overflow;
         }
         if (p[1] == 'b' || p[1] == 'B') {   // binary
-            result.radix = Radix.Binary;
+            result.radix = Binary;
             p += 2;
             while (is_binary(*p)) {
                 if (value > u64.max >> 1) {
@@ -848,10 +847,10 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         }
         t.cur = p;
         if (p == start + 1) {
-            // value is 0, radix = Radix.Default, len = 1
+            // value is 0, radix = Default, len = 1
             return;
         }
-        result.radix = Radix.Octal;
+        result.radix = Octal;
         goto check_overflow;
     }
 
@@ -1024,7 +1023,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
     case '5':
     case '6':
     case '7':
-        result.radix = Radix.Octal;
+        result.radix = Octal;
         nc = octconv(p, 3, &cc);
         if (cc > 255) {
             t.error(result, "octal escape sequence out of range");
@@ -1035,7 +1034,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
     case 'x':
         // C consumes all hex digits after \x (at least one)
         // C2 requires 2 hex digits, but rejects extra digits to simplify C generation
-        result.radix = Radix.Hex;
+        result.radix = Hex;
         nc = hexconv(p + 1, i32.max, &cc);
         if (nc == 0) {
             t.error(result, "expect hexadecimal number after '\\x'");
@@ -1067,7 +1066,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
         t.buf.add1(c);
         break;
     case 'u':
-        result.radix = Radix.Hex;
+        result.radix = Hex;
         nc = hexconv(p + 1, 4, &cc);
         if (nc != 4) {
             t.error(result, "expect 4 hexadecimal digits after '\\u'");
@@ -1076,7 +1075,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
         nc++;
         goto add_utf8;
     case 'U':
-        result.radix = Radix.Hex;
+        result.radix = Hex;
         nc = hexconv(p + 1, 8, &cc);
         if (nc != 8) {
             t.error(result, "expect 8 hexadecimal digits after '\\U'");

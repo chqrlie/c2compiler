@@ -40,8 +40,9 @@ const char*[BuiltinExprKind] builtin_names = {
 
 type BuiltinExprBits struct {
     u32 : NumExprBits;
-    u32 kind : 3;       // BuiltinExprKind
-    u32 src_len : 32 - NumExprBits - 3; // length of () expression
+    u8 : 2; // make sure kind does not span an 8-bit boundary
+    BuiltinExprKind kind : 3;
+    u32 src_len : 32 - NumExprBits - 5; // length of () expression
 }
 
 type ToContainerData struct {
@@ -81,7 +82,7 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     const u32 size = sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(Builtin, loc, true, true, false, RValue);
-    e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
+    e.base.base.builtinExprBits.kind = OffsetOf;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.value.setUnsigned(0);
@@ -96,7 +97,7 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(Builtin, loc, false, false, false, RValue);
-    e.base.base.builtinExprBits.kind = BuiltinExprKind.ToContainer;
+    e.base.base.builtinExprBits.kind = ToContainer;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.value.setUnsigned(0);
@@ -130,7 +131,7 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
 }
 
 public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
-    return (BuiltinExprKind)e.base.base.builtinExprBits.kind;
+    return e.base.base.builtinExprBits.kind;
 }
 
 public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }

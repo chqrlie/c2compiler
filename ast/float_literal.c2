@@ -22,7 +22,7 @@ import number_radix local;
 
 type FloatLiteralBits struct {
     u32 : NumExprBits;
-    u32 radix : 2;      // number_radix.Radix enum
+    Radix radix : 2;
     u32 src_len : 32 - NumExprBits - 2;
 }
 
@@ -64,7 +64,7 @@ fn void FloatLiteral.print(const FloatLiteral* e, string_buffer.Buf* out, u32 in
 
 public fn void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Buf* out) {
     switch (e.base.base.floatLiteralBits.radix) {
-    case Radix.Hex:
+    case Hex:
         out.print("%a", e.val);
         break;
     default:

@@ -55,7 +55,7 @@ const char*[StmtKind] stmtKind_names = {
 }
 
 type StmtBits struct {
-    u32 kind : NumStmtBits;
+    StmtKind kind : NumStmtBits;
 }
 
 const u32 NumStmtBits = 4;
@@ -138,7 +138,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 }
 
 // TEMP cast needed until Analyser fixed
-public fn StmtKind Stmt.getKind(const Stmt* s) { return (StmtKind)s.stmtBits.kind; }
+public fn StmtKind Stmt.getKind(const Stmt* s) { return s.stmtBits.kind; }
 
 public fn bool Stmt.isExpr(const Stmt* s) {
     return s.getKind() == Expr;

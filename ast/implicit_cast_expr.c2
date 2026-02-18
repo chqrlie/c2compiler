@@ -39,7 +39,8 @@ const char*[ImplicitCastKind] implicitCastKind_names = {
 
 type ImplicitCastBits struct {
     u32 : NumExprBits;
-    u32 kind : 3;
+    u32 : 2;
+    ImplicitCastKind kind : 3;
 }
 
 public type ImplicitCastExpr struct @(opaque) {
@@ -81,7 +82,7 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
 }
 
 public fn ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
-    return (ImplicitCastKind)e.base.base.implicitCastBits.kind;
+    return e.base.base.implicitCastBits.kind;
 }
 
 public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {

@@ -29,14 +29,14 @@ public type MemberConversion enum u8 {
 
 type MemberExprBits struct {
     u32 : NumExprBits;
-    u32 kind : 3;   // IdentifierKind
     u32 num_decls : 2;  // how many refs have a decl (from the bottom up), set during analysis
+    IdentifierKind kind : 3;
     u32 has_expr : 1;
     u32 is_struct_func : 1; // not only a function with prefix, but also used that way
     u32 is_static_sf : 1;
     u32 is_const_base : 1;
     u32 is_volatile_base : 1;
-    u32 conversion : 2; // MemberConversion
+    MemberConversion conversion : 2;
     u32 is_bitfield : 1;
     u32 base_len : 5;
 }
@@ -104,7 +104,7 @@ public fn void MemberExpr.setConversion(MemberExpr* e, MemberConversion c) {
 }
 
 public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
-    return (MemberConversion)e.base.base.memberExprBits.conversion;
+    return e.base.base.memberExprBits.conversion;
 }
 
 public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
@@ -177,7 +177,7 @@ public fn Ref MemberExpr.getRef(const MemberExpr* e) {
 }
 
 public fn IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
-    return (IdentifierKind)e.base.base.memberExprBits.kind;
+    return e.base.base.memberExprBits.kind;
 }
 
 public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
@@ -318,9 +318,8 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     out.print("MemberExpr loc %d expr %d decl %d/2\n",
               m.base.getLoc(), m.hasExpr(), m.base.base.memberExprBits.num_decls);
     const MemberExprBits* bits = &m.base.base.memberExprBits;
-    IdentifierKind k = (IdentifierKind)bits.kind;
     out.print("  bits: kind %s, sf %d, ssf %d, conv %d, bitf %d\n",
-              k.str(), bits.is_struct_func, bits.is_static_sf,
+              bits.kind.str(), bits.is_struct_func, bits.is_static_sf,
               bits.conversion, bits.is_bitfield);
     u32 start = 0;
     if (m.hasExpr()) {
