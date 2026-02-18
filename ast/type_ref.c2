@@ -43,9 +43,9 @@ type TypeRefBits struct {
     u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
     u32 num_arrays : 2; // limit to 3-dimensional arrays
     u32 incr_array : 1;
-    u32 kind : 2;   // TypeRefKind
     u32 has_prefix : 1;
-    u32 builtin_kind : 4;   // only if builtin (!is_user)
+    TypeRefKind kind : 2;
+    BuiltinKind builtin_kind : 4;   // only if builtin (!is_user)
 }
 
 public type Ref struct {
@@ -175,13 +175,13 @@ public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcL
 
 public fn void TypeRefHolder.setVoid(TypeRefHolder* h, SrcLoc loc) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.kind = TypeRefKind.Void;
+    r.flags.kind = Void;
     r.loc = loc;
 }
 
 public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.kind = TypeRefKind.User;
+    r.flags.kind = User;
     h.user.loc = loc;
     h.user.name_idx = name_idx;
     h.user.decl = nil;
@@ -189,7 +189,7 @@ public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx)
 
 public fn void TypeRefHolder.setFunction(TypeRefHolder* h, Decl* fd) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.kind = TypeRefKind.Function;
+    r.flags.kind = Function;
     h.user.loc = 0;
     h.user.name_idx = 0;
     h.user.decl = fd;
@@ -245,7 +245,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
 }
 
 fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
-    if (r.flags.kind != TypeRefKind.User || r.flags.has_prefix) return false;
+    if (r.flags.kind != User || r.flags.has_prefix) return false;
     return r.refs[0].name_idx == template_arg;
 }
 
@@ -256,7 +256,7 @@ fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
         // TODO enforce no prefix in template functions
         r.flagBits = r2.flagBits;
         r.dest = r2.dest;
-        if (r2.flags.kind == TypeRefKind.User) {
+        if (r2.flags.kind == User) {
             r.refs[0].name_idx = r2.refs[0].name_idx;
             r.refs[0].loc = r1.refs[0].loc;     // location from instance?
             r.refs[0].decl = r2.refs[0].decl;
@@ -285,7 +285,7 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
 
 fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     // User, StructMemberType use Ref
-    u32 numrefs = (r.flags.kind != TypeRefKind.Builtin) + r.flags.has_prefix;
+    u32 numrefs = (r.flags.kind != Builtin) + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
     extra += r.flags.num_arrays * sizeof(Expr*);
     return extra;
@@ -310,19 +310,19 @@ public fn bool TypeRef.isVolatile(const TypeRef* r) {
 }
 
 public fn bool TypeRef.isUser(const TypeRef* r) {
-    return r.flags.kind == TypeRefKind.User;
+    return r.flags.kind == User;
 }
 
 fn bool TypeRef.isBuiltin(const TypeRef* r) {
-    return r.flags.kind == TypeRefKind.Builtin;
+    return r.flags.kind == Builtin;
 }
 
 public fn bool TypeRef.isFunction(const TypeRef* r) {
-    return r.flags.kind == TypeRefKind.Function;
+    return r.flags.kind == Function;
 }
 
 public fn bool TypeRef.isVoid(const TypeRef* r) {
-    return r.flags.kind == TypeRefKind.Void;
+    return r.flags.kind == Void;
 }
 
 public fn bool TypeRef.isConstCharPtr(const TypeRef* r) {
@@ -348,11 +348,11 @@ public fn bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
 }
 
 public fn BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
-    return (BuiltinKind)r.flags.builtin_kind;
+    return r.flags.builtin_kind;
 }
 
 public fn TypeRefKind TypeRef.getKind(const TypeRef* r) {
-    return (TypeRefKind)r.flags.kind;
+    return r.flags.kind;
 }
 
 public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
@@ -433,7 +433,7 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
-    switch ((TypeRefKind)r.flags.kind) {
+    switch (r.flags.kind) {
     case Builtin:
         out.add(builtinType_names[r.getBuiltinKind()]);
         break;
@@ -475,7 +475,7 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
-    switch ((TypeRefKind)r.flags.kind) {
+    switch (r.flags.kind) {
     case Builtin:
         out.add(builtinType_names[r.getBuiltinKind()]);
         break;
@@ -530,7 +530,7 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
     out.add("flags:");
     if (r.flags.is_const) out.add(" const");
     out.print(" ptrs=%d", r.flags.num_ptrs);
-    out.print(" kind=%s", TypeRefKind.str((TypeRefKind)r.flags.kind));
+    out.print(" kind=%s", r.flags.kind.str());
     out.print(" has_prefix=%d", r.flags.has_prefix);
     out.newline();
     out.indent(1);

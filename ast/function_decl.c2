@@ -56,9 +56,9 @@ type FunctionDeclBits struct {
     u32 : NumDeclBits;
     u32 is_variadic : 1;
     u32 has_prefix : 1;     // is a (static) type-function
-    u32 call_kind : 2;  // CallKind
+    CallKind call_kind : 2;
     u32 has_return : 1;     // if it returns something, set during analysis
-    u32 def_kind : 3;
+    DefKind def_kind : 3;
     u32 has_body : 1;    // if function is defined in C2
 }
 
@@ -73,7 +73,7 @@ type FunctionDeclFlags struct {
     u32 attr_destructor : 1;
     u32 attr_pure : 1;
     u32 attr_deprecated : 1;
-    u32 format_attr : 2; // FormatAttr
+    FormatAttr format_attr : 2;
 }
 
 public type FunctionDecl struct @(opaque) {
@@ -115,7 +115,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     QualType qt = QualType.create(ftype.asType());
     d.base.init(Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
-    d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
+    d.base.functionDeclBits.call_kind = prefix ? StaticTypeFunc : Normal;
     d.base.functionDeclBits.def_kind = def_kind;
     d.body = nil;
     d.rt = QualType_Invalid;
@@ -160,8 +160,8 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     QualType qt = QualType.create(ftype.asType());
     d.base.init(Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
-    d.base.functionDeclBits.call_kind = CallKind.Normal;
-    d.base.functionDeclBits.def_kind = DefKind.Template;
+    d.base.functionDeclBits.call_kind = Normal;
+    d.base.functionDeclBits.def_kind = Template;
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
@@ -198,7 +198,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     // copy members
     fd2.base = fd.base;
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
-    fd2.base.functionDeclBits.def_kind = DefKind.Global;
+    fd2.base.functionDeclBits.def_kind = Global;
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
     fd2.base.qt = QualType.create(ftype.asType());
 
@@ -317,7 +317,7 @@ public fn bool FunctionDecl.isParam(const FunctionDecl* d) {
 }
 
 fn DefKind FunctionDecl.getDefKind(const FunctionDecl* d) {
-    return (DefKind)d.base.functionDeclBits.def_kind;
+    return d.base.functionDeclBits.def_kind;
 }
 
 public fn u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
@@ -380,7 +380,7 @@ public fn bool FunctionDecl.isTypeFunc(const FunctionDecl* d) {
 }
 
 public fn CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {
-    return (CallKind)d.base.functionDeclBits.call_kind;
+    return d.base.functionDeclBits.call_kind;
 }
 
 public fn bool FunctionDecl.isVariadic(const FunctionDecl* d) {
@@ -467,7 +467,7 @@ public fn void FunctionDecl.setFormatAttr(FunctionDecl* d, FormatAttr format_att
 
 public fn FormatAttr FunctionDecl.getFormatAttr(const FunctionDecl* d, u8 *format_arg_ptr) {
     *format_arg_ptr = d.attr_format_arg;
-    return (FormatAttr)d.flags.format_attr;
+    return d.flags.format_attr;
 }
 
 public fn void FunctionDecl.setAttrDeprecated(FunctionDecl* d) {

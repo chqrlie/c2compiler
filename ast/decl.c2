@@ -56,8 +56,8 @@ const char*[DeclCheckState] declCheckState_names = {
 }
 
 type DeclBits struct {
-    u32 kind : 4;
-    u32 check_state : 2;
+    DeclKind kind : 4;
+    DeclCheckState check_state : 2;
     u32 is_public : 1;
     u32 is_used : 1;
     u32 is_used_public : 1;
@@ -120,12 +120,12 @@ public fn u32 Decl.getGenIdx(const Decl* d) {
 }
 
 // TEMP cast needed until Analyser fixed
-public fn DeclKind Decl.getKind(const Decl* d) { return (DeclKind)d.declBits.kind; }
+public fn DeclKind Decl.getKind(const Decl* d) { return d.declBits.kind; }
 
-public fn DeclCheckState Decl.getCheckState(const Decl* d) { return (DeclCheckState)d.declBits.check_state; }
+public fn DeclCheckState Decl.getCheckState(const Decl* d) { return d.declBits.check_state; }
 /*
 public fn const char* Decl.getCheckStateName(const Decl* d) {
-    return declCheckState_names[(DeclCheckState)d.declBits.check_state)];
+    return declCheckState_names[d.declBits.check_state)];
 }
 */
 
@@ -137,8 +137,8 @@ public fn bool Decl.isCheckInProgress(const Decl* d) {
     return d.getCheckState() == InProgress;
 }
 
-public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
-public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = DeclCheckState.InProgress; }
+public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = Checked; }
+public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = InProgress; }
 
 public fn void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
 public fn bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }

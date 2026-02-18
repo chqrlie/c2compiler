@@ -47,7 +47,8 @@ const char*[UnaryOpcode] unaryOpcode_names = {
 
 type UnaryOperatorBits struct {
     u32 : NumExprBits;
-    u32 kind : 4;
+    u32 : 2;
+    UnaryOpcode kind : 4;
 }
 
 public type UnaryOperator struct @(opaque) {
@@ -71,7 +72,7 @@ fn Expr* UnaryOperator.instantiate(UnaryOperator* e, Instantiator* inst) {
 }
 
 public fn UnaryOpcode UnaryOperator.getOpcode(const UnaryOperator* e) {
-    return (UnaryOpcode)e.base.base.unaryOperatorBits.kind;
+    return e.base.base.unaryOperatorBits.kind;
 }
 
 public fn Expr* UnaryOperator.getInner(const UnaryOperator* e) { return e.inner; }

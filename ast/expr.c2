@@ -109,10 +109,10 @@ const char*[ValType] valType_names = {
 
 type ExprBits struct {
     u32 : NumStmtBits;
-    u32 kind : 5;
     u32 is_ctv : 1;
     u32 is_ctc : 1;
-    u32 valtype : 2;
+    ValType valtype : 2;
+    ExprKind kind : 5;
     u32 has_effect : 1;
 }
 const u32 NumExprBits = NumStmtBits + 10;
@@ -196,7 +196,7 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
 public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 
 // TEMP cast needed until Analyser fixed
-public fn ExprKind Expr.getKind(const Expr* e) { return (ExprKind)e.base.exprBits.kind; }
+public fn ExprKind Expr.getKind(const Expr* e) { return e.base.exprBits.kind; }
 
 public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == StringLiteral;
@@ -309,7 +309,7 @@ public fn bool Expr.hasEffect(const Expr* e) {
 }
 
 public fn ValType Expr.getValType(const Expr* e) {
-    return (ValType)e.base.exprBits.valtype;
+    return e.base.exprBits.valtype;
 }
 
 public fn bool Expr.isNValue(const Expr* e) {
@@ -327,11 +327,11 @@ public fn bool Expr.isLValue(const Expr* e) {
 }
 
 public fn void Expr.setLValue(Expr* e) {
-    e.base.exprBits.valtype = ValType.LValue;
+    e.base.exprBits.valtype = LValue;
 }
 
 public fn void Expr.setRValue(Expr* e) {
-    e.base.exprBits.valtype = ValType.RValue;
+    e.base.exprBits.valtype = RValue;
 }
 
 /*

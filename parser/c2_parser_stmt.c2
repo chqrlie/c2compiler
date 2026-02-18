@@ -174,7 +174,7 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
 /*
   Syntax:
     Number num = .     // id = type
-    Utils.Type t = .  // id = module.type
+    utils.Type t = .  // id = module.type
     myfunc()        // id = func
     Mod.func()     // id = module.func
     count =         // id = var

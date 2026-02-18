@@ -23,7 +23,7 @@ import number_radix local;
 type CharLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 8;
-    u32 radix : 2;      // number_radix.Radix enum
+    Radix radix : 2;
     u32 src_len : 32 - NumExprBits - 8 - 2;
 }
 
@@ -65,10 +65,10 @@ public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf*
     u8 c = (u8)e.base.base.charLiteralBits.value;
 
     switch (e.base.base.charLiteralBits.radix) {
-    case Radix.Octal:
+    case Octal:
         out.print("'\\%o'", c);
         return;
-    case Radix.Hex:
+    case Hex:
         out.print("'\\x%02x'", c);
         return;
     default:

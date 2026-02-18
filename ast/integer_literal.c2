@@ -22,7 +22,7 @@ import number_radix local;
 
 type IntegerLiteralBits struct {
     u32 : NumExprBits;
-    u32 radix : 2;      // number_radix.Radix enum
+    Radix radix : 2;
     u32 src_len : 32 - NumExprBits - 2;
 }
 
@@ -55,7 +55,7 @@ fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
 
 /*
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
-    return e.base.base.integerLiteralBits.radix == Radix.Default;
+    return e.base.base.integerLiteralBits.radix == Default;
 }
 */
 
@@ -97,16 +97,16 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
 
 public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out, bool c_style) {
     switch (e.base.base.integerLiteralBits.radix) {
-    case Radix.Default:
+    case Default:
         out.print("%d", e.val);
         break;
-    case Radix.Hex:
+    case Hex:
         out.print("0x%x", e.val);
         break;
-    case Radix.Octal:
+    case Octal:
         printOctal(out, e.val);
         break;
-    case Radix.Binary:
+    case Binary:
         printBinary(out, e.val);
         break;
     }
