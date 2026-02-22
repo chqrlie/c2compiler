@@ -16,9 +16,6 @@
 // @file{file1}
 module test;
 
-// import builtin modules
-import c2;
-
 // import all libc modules
 import builtin;
 import c_errno;

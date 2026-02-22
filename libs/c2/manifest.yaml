@@ -8,7 +8,6 @@ info:
 
 modules:
     - c_types
-    - c2
     - char
     - i8
     - i16
