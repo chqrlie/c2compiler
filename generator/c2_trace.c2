@@ -16,6 +16,7 @@
 module c2_trace;
 
 import c2_trace_tables local;
+
 import stdio local;
 import stdlib local;
 import string local;

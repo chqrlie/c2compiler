@@ -16,8 +16,8 @@
 module ast;
 
 #if AstStatistics
-import string;
 import stdio local;
+import string;
 
 const u32 NCat = 1;             // 32 for fine grained analysis
 const u32 BucketWidth = 8;      // 4 or less for slack analysis

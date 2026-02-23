@@ -15,9 +15,9 @@
 
 module expect_file;
 
+import stdio local;
 import stdlib local;
 import string local;
-import stdio local;
 
 #if TesterDebug
 import color;

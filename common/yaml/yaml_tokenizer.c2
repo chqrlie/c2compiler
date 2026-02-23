@@ -15,9 +15,9 @@
 
 module yaml;
 
-import string local;
-import stdio local;
 import ctype local;
+import stdio local;
+import string local;
 
 type Location struct {
     u32 line;

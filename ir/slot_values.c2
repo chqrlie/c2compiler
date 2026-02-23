@@ -17,9 +17,9 @@ module ir_slot_values;
 
 import ir local;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 public type SlotValues struct {
     Ref* values;    // slot is index

@@ -15,9 +15,9 @@
 
 module string_pool;
 
-import string;
-import stdlib;
 import stdio;
+import stdlib;
+import string;
 
 #if 1
 /* 32-bit pools can store up to 32K unique string for a combined length of 512KB */

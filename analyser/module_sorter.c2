@@ -21,10 +21,9 @@ import diagnostics;
 import module_list;
 import dsm_sorter;
 
+import stdio local;
 import stdlib;
 import string;
-
-import stdio local;
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
 public fn void sort(component.Component* c, diagnostics.Diags* diags) {

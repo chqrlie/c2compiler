@@ -18,10 +18,10 @@ module replacer;
 import file_utils;
 import quicksort;
 
+import c_errno local;
 import stdio local;
 import stdlib;
 import string;
-import c_errno local;
 
 type Loc struct {
     const char* filename;

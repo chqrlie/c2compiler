@@ -15,9 +15,9 @@
 
 module usage_counter;
 
+import stdio; // only for dump
 import stdlib local;
 import string local;
-import stdio; // only for dump
 
 // Usage 1 means only produces a temp (so can be removed if no side effects)
 public type Counter struct {

@@ -21,9 +21,9 @@ import source_mgr;
 import src_loc local;
 import yaml;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 fn u32 expandField(Info* info, const char* raw) {
     if (!raw) return 0;

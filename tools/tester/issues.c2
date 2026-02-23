@@ -17,9 +17,9 @@ module issues;
 
 import file_utils;
 
+import stdio local; // for dump()
 import stdlib local;
 import string local;
-import stdio local; // for dump()
 import unistd; // getcwd()
 
 type Issue struct {

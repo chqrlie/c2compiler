@@ -17,9 +17,9 @@ module ir_rev_list;
 
 import ir local;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 public type RevIndex struct {
     u16 start;

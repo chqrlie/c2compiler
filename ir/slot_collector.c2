@@ -18,9 +18,9 @@ module ir_slot_collector;
 import ir local;
 import ir_slot_writes_map local;
 
+import stdio local;
 import stdlib;
 import string local;
-import stdio local;
 
 public type ReadSlotAccess struct {
     u16 done : 1;

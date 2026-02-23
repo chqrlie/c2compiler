@@ -35,11 +35,11 @@ import token local;
 import utils;
 #endif
 
-import stdarg local;
-import stdlib local;
 import csetjmp local;
 import ctype local;
+import stdarg local;
 import stdio local;
+import stdlib local;
 
 const u32 NumStmtLists = 16;    // max used for c2c is 8
 const u32 MaxLookahead = 64;    // must be power of 2

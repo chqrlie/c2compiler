@@ -15,9 +15,9 @@
 
 module ir_live_map;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 const u32 NumArenas = 9;
 // Note: caps need to be double of previous (except first two)

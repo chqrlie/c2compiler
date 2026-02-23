@@ -15,8 +15,8 @@
 
 module ast_context;
 
-import stdlib local;
 import stdio;
+import stdlib local;
 #if __ASAN__ || __MSAN__ || __UBSAN__
 import string local;
 #endif

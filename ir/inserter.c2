@@ -17,9 +17,9 @@ module ir_inserter;
 
 import ir local;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 public type InstrInsertion struct {
     u32 location;   // instr to insert before

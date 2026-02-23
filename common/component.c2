@@ -25,9 +25,9 @@ import string_buffer;
 import string_list;
 import string_pool;
 
+import stdio;
 import stdlib local;
 import string;
-import stdio local;
 
 public type Kind enum u8 {
     // for main component

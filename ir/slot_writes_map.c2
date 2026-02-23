@@ -17,9 +17,9 @@ module ir_slot_writes_map;
 
 import ir;
 
+import stdio local;
 import stdlib;
 import string;
-import stdio local;
 
 public type SlotWrite struct {
     u16 slot;

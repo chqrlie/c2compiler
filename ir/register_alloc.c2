@@ -20,8 +20,8 @@ import ir local;
 import ir_interference_graph local;
 import ir_live_map;
 
-import stdlib;
 import stdio local;
+import stdlib;
 
 type LiveVector struct  {
     u32 count;

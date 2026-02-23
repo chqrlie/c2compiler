@@ -16,6 +16,7 @@
 module ast;
 
 import string_buffer;
+
 import stdio local;
 
 public const usize QualType_Const    = 0x1;

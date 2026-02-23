@@ -22,10 +22,10 @@ import replacer;
 import refs_finder;
 import utils;
 
+import c_errno local;
 import stdio local;
 import stdlib local;
 import string local;
-import c_errno local;
 
 type Options struct {
     const char* target;

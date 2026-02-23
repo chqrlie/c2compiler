@@ -21,9 +21,9 @@ import module_list;
 import constants;
 import src_loc local;
 
+import stdio;
 import stdlib;
 import string;
-import stdio;
 
 public const u32 Function    = 0x1;
 public const u32 Break       = 0x2;
