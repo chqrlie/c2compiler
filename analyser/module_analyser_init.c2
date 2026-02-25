@@ -28,6 +28,11 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
             return ma.analyseInitListExpr((InitListExpr*)e, expectedType);
         }
 
+        if (e.isNamedArgument()) {
+            NamedArgument* n = (NamedArgument*)e;
+            return ma.analyseInitExpr(n.getInner2(), expectedType, assignLoc, false, is_default_param);
+        }
+
         if (e.isStringLiteral()) {
             // could be (const) char* x = "text" OR (const) char[] x = "text";
             // check array case for overflow

@@ -1,0 +1,14 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 x;
+    bool y;
+}
+
+fn void test1(Foo f) { }
+
+public fn i32 main() {
+    test1(f: { 1, true });
+    return 0;
+}
