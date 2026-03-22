@@ -35,6 +35,7 @@ public type StmtKind enum u8 (const char* const name) {
     Asm          : { "Asm" },
     Assert       : { "AssertStmt" },
     StaticAssert : { "StaticAssert" },
+    When         : { "When" },
 }
 
 type StmtBits struct {
@@ -43,7 +44,7 @@ type StmtBits struct {
 }
 static_assert(4, sizeof(StmtBits));
 
-const u32 NumStmtBits = 4;
+const u32 NumStmtBits = 5;
 
 public type Stmt struct @(opaque) {
     union {
@@ -57,6 +58,7 @@ public type Stmt struct @(opaque) {
         LabelStmtBits labelStmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
+        WhenStmtBits whenStmtBits;
 
         ExprBits exprBits;
         ArrayDesignatedInitExprBits arrayDesignatedInitExprBits;
@@ -121,6 +123,8 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return AssertStmt.instantiate((AssertStmt*)s, inst);
     case StaticAssert:
         return StaticAssert.instantiate((StaticAssert*)s, inst);
+    case When:
+        return WhenStmt.instantiate((WhenStmt*)s, inst);
     }
     s.dump();
     assert(0);
@@ -148,6 +152,10 @@ public fn bool Stmt.isDecl(const Stmt* s) {
 
 public fn bool Stmt.isLabel(const Stmt* s) {
     return s.getKind() == Label;
+}
+
+public fn bool Stmt.isWhen(const Stmt* s) {
+    return s.getKind() == When;
 }
 
 public fn SrcLoc Stmt.getLoc(const Stmt* s) {
@@ -209,6 +217,9 @@ fn void Stmt.print(const Stmt* s, StringBuf* out, u32 indent) {
         break;
     case StaticAssert:
         StaticAssert.print((StaticAssert*)s, out, indent);
+        break;
+    case When:
+        WhenStmt.print((WhenStmt*)s, out, indent);
         break;
     }
 }

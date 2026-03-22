@@ -558,6 +558,7 @@ fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
     case Asm:         return ((AsmStmt*)s).eval(sf);
     case Assert:      return ((AssertStmt*)s).eval(sf);
     case StaticAssert: return Normal; // already evaluated at analysis time
+    case When:        return ((WhenStmt*)s).eval(sf);
     }
     return Abort;
 }
@@ -761,5 +762,11 @@ fn Cont AssertStmt.eval(AssertStmt* s, Evaluator* sf) {
         // TODO assertion string should be computed at parse time
         return sf.error("assertion failed");
     }
+    return Normal;
+}
+
+fn Cont WhenStmt.eval(WhenStmt* s, Evaluator* sf) {
+    if (s.isTrue()) return s.getThen().eval(sf);
+    if (s.hasElse()) return s.getElse().eval(sf);
     return Normal;
 }

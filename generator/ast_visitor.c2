@@ -244,6 +244,15 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         v.handleExpr(a.getLHS());
         if (Expr* rhs = a.getRHS()) v.handleExpr(rhs);
         break;
+    case When:
+        WhenStmt* w = (WhenStmt*)s;
+        if (w.isTrue()) {
+            v.handleStmt(w.getThen());
+        } else
+        if (w.hasElse()) {
+            v.handleStmt(w.getElse());
+        }
+        break;
     }
 }
 
