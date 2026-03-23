@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
 
 type WhenStmtBits struct {
     u32 : NumStmtBits;
@@ -32,7 +32,7 @@ public type WhenStmt struct @(opaque) {
     Stmt*[0] else_stmt; // tail-allocated
 }
 
-public fn WhenStmt* WhenStmt.create(ast_context.Context* c, SrcLoc loc, Expr* cond, Stmt* then, Stmt* else_stmt) {
+public fn WhenStmt* WhenStmt.create(Context* c, SrcLoc loc, Expr* cond, Stmt* then, Stmt* else_stmt) {
     u32 size = sizeof(WhenStmt);
     if (else_stmt) size += sizeof(Stmt*);
 
@@ -80,7 +80,7 @@ public fn Stmt** WhenStmt.getElse2(WhenStmt* s) {
     return nil;
 }
 
-fn void WhenStmt.print(const WhenStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void WhenStmt.print(const WhenStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
 
