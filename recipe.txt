@@ -56,6 +56,7 @@ set ast
     ast/var_decl.c2
     ast/var_decl_list.c2
     ast/symbol_list.c2
+    ast/when_decl.c2
 
     # ast statements
     ast/stmt.c2
