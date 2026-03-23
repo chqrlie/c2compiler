@@ -231,6 +231,7 @@ public fn IdentifierKind MemberExpr.getIdentifierKind(const MemberExpr* e) {
     case FunctionType:  return Type;
     case AliasType:     return Type;
     case Variable:      return Var;
+    case When:          break;
     }
 
     return Unresolved;

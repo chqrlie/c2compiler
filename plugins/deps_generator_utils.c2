@@ -44,6 +44,8 @@ public fn const char* getPrefixedName(const Decl* d) {
         break;
     case Variable:
         break;
+    case When:
+        break;
     }
     return d.getName();
 }
@@ -68,6 +70,9 @@ public fn bool isGlobal(const Decl* d) @(unused) {
     case Variable:
         const VarDecl* vd = (VarDecl*)d;
         return vd.isGlobal();
+    case When:
+        // TODO: support global when blocks
+        return false;
     }
     return true;
 }
