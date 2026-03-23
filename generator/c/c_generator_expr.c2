@@ -367,6 +367,9 @@ fn void Generator.emitMemberDecl(Generator* gen, Buf* out, Decl* d, MemberContex
         mc.need_dot = true;
         mc.is_local = true;
         break;
+    case When:
+        assert(0);
+        break;
     }
 }
 
