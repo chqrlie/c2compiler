@@ -409,6 +409,7 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
 
     for (u32 i=0; i<num_members; i++) {
         Decl* d = members[i];
+        if (d.isDisabled()) continue;
         FieldInitField* f = &fi.fii.fields[fi.idx];
         f.member_idx = fi.member_idx;
         const StructMemberLayout* ml = &layout.members[i];
@@ -560,8 +561,10 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
 
-        // skip bitfields with size 0
-        while (member_idx < num_members && layout.members[member_idx].is_bitfield && layout.members[member_idx].bitfield_width == 0) {
+        // skip bitfields with size 0 and disabled members
+        while (member_idx < num_members &&
+               (members[member_idx].isDisabled() ||
+                (layout.members[member_idx].is_bitfield && layout.members[member_idx].bitfield_width == 0))) {
             member_idx++;
         }
 

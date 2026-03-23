@@ -445,6 +445,7 @@ fn void Generator.emitStruct(Generator* gen, StringBuf* out, Decl* d, u32 indent
     u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
     for (u32 i=0; i<num_members; i++) {
+        if (members[i].isDisabled()) continue;
         gen.emitStructMember(out, members[i], indent+1);
     }
 
@@ -809,6 +810,9 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         bool in_header = gen.emitGlobalVarDecl(f.buf, d);
         gen.addFragment(f, in_header);
         break;
+    case When:
+        // Should have been dispatched to other lists
+        break;
     }
 
     d.setGenerated();
@@ -1085,6 +1089,9 @@ fn void Generator.emitHeaderDecl(Generator* gen, StringBuf* out, Decl* d) {
         break;
     case Variable:
         gen.emitGlobalVarDecl(out, d);
+        break;
+    case When:
+        // Should have been dispatched to other lists
         break;
     }
 }

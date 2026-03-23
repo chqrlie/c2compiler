@@ -29,7 +29,7 @@ public type WhenStmt struct @(opaque) {
     Stmt base;
     Expr* cond;
     Stmt* then;
-    Stmt*[0] else_stmt; // tail-allocated
+    Stmt*[] else_stmt; // tail-allocated
 }
 
 public fn WhenStmt* WhenStmt.create(Context* c, SrcLoc loc, Expr* cond, Stmt* then, Stmt* else_stmt) {
