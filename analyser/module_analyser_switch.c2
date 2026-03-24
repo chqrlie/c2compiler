@@ -207,7 +207,8 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         ct = ma.analyseExpr(&call, true, RHS);
         if (ct.isInvalid()) flow |= FlowError;
         else {
-            if (sw.hasCond()) {
+            // wrap source cond only for c2i generator
+            if (sw.hasSourceCond()) {
                 Expr* alt = ma.builder.actOnAlternate(cond, call);
                 // set alternate type to that of generated branch
                 alt.setType(call.getType());

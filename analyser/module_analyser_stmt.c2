@@ -228,13 +228,56 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     return qt;
 }
 
+fn QualType Analyser.analyseConditionDecl(Analyser* ma, Stmt** s_ptr, const char* stmt_name) {
+    Stmt* s = *s_ptr;
+    assert(s.isDecl());
+    QualType qt = ma.analyseDeclStmt(s);
+    if (qt.isValid()) {
+        DeclStmt* ds = (DeclStmt*)s;
+        VarDecl* vd = ds.getDecl(0);
+        // TODO: not an error if cond is present
+        if (!vd.getInit()) {
+            ma.error(vd.asDecl().getLoc(), "variable declaration in '%s' expression must have an initializer", stmt_name);
+            return QualType_Invalid;
+        }
+    }
+    return qt;
+}
+
 fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     FlowBits flow = FlowNext;
     IfStmt* i = (IfStmt*)s;
     ma.scope.enter(scope.Decl);
 
-    ma.analyseCondition(i.getCond2(), true);
-    if (ma.has_error) goto done;
+    if (i.hasDecl()) {
+        Stmt** declp = i.getDecl2();
+        QualType ct = ma.analyseConditionDecl(declp, "if");
+        if (ct.isInvalid()) {
+            ma.scope.exit(ma.has_error);
+            return FlowNext | FlowError;
+        }
+    }
+    VarDecl* vd = nil;
+    Expr** condp = i.getCond2();
+    if (!*condp) {
+        DeclStmt* ds = (DeclStmt*)i.getDecl();
+        assert(ds);
+        vd = ds.getDecl(0);
+        *condp = ma.builder.actOnIdentifier(0, vd.asDecl().getNameIdx(), 0);
+    }
+    QualType qt = ma.analyseExpr(condp, true, RHS);
+    if (qt.isInvalid()) goto done;
+    // reset the used bit so warning is emitted if variable is not used in the 'if' scope
+    if (vd) vd.asDecl().clearUsed();
+
+    Expr* e = *condp;
+    bool ok = ma.checker.check(getBuiltinQT(Bool), qt, condp, e.getLoc());
+    e = *condp;    // re-read in case of ImplicitCast insertions
+    if (e.isAssignment()) {
+        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+    }
+
+    if (!ok) goto done;
     // TODO: handle constant conditions
 
     ma.scope.enter(scope.Decl);
@@ -242,10 +285,10 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     ma.scope.exit(ma.has_error);
 
     FlowBits flow2 = FlowNext;
-    Stmt** else_ = i.getElse2();
-    if (else_) {
+    Stmt** else_stmt = i.getElse2();
+    if (else_stmt) {
         ma.scope.enter(scope.Decl);
-        flow2 = ma.analyseStmt(else_, true);
+        flow2 = ma.analyseStmt(else_stmt, true);
         ma.scope.exit(ma.has_error);
     }
     flow |= flow2;
