@@ -1,0 +1,34 @@
+module test;
+
+fn u32 pf(u32 x) @(pure) { return x; }
+fn u32 npf(u32 x) { return x; }
+
+fn void foo1(u32 x) { pf(x); } // @error{expression without effect}
+fn void foo2(u32 x) { (pf(x)); } // @error{expression without effect}
+fn void foo3(u32 x) { x ? pf(1) : pf(0); } // @error{expression without effect}
+fn void foo4(u32 x) { x && pf(1); } // @error{expression without effect}
+fn void foo5(u32 x) { x || pf(1); } // @error{expression without effect}
+fn void foo6(u32 x) { +npf(x); } // @error{expression without effect}
+fn void foo7(u32 x) { -npf(x); } // @error{expression without effect}
+fn void foo8(u32 x) { ~npf(x); } // @error{expression without effect}
+fn void foo9(u32 x) { !npf(x); } // @error{expression without effect}
+fn void foo10(u32 x) { npf(x) + 1; } // @error{expression without effect}
+fn void foo11(u32 x) { npf(x) - 1; } // @error{expression without effect}
+fn void foo12(u32 x) { npf(x) * 1; } // @error{expression without effect}
+fn void foo13(u32 x) { npf(x) / 1; } // @error{expression without effect}
+fn void foo14(u32 x) { npf(x) % 1; } // @error{expression without effect}
+fn void foo15(u32 x) { npf(x) << 1; } // @error{expression without effect}
+fn void foo16(u32 x) { npf(x) >> 1; } // @error{expression without effect}
+fn void foo17(u32 x) { npf(x) | 1; } // @error{expression without effect}
+fn void foo18(u32 x) { npf(x) & 1; } // @error{expression without effect}
+fn void foo19(u32 x) { npf(x) ^ 1; } // @error{expression without effect}
+fn void foo20(u32 x) { npf(x) + npf(x); } // @error{expression without effect}
+fn void foo21(u32 x) { npf(x) || pf(x); } // @error{expression without effect}
+fn void foo22(u32 x) { npf(x) && pf(x); } // @error{expression without effect}
+
+// These statements do have an effect
+fn void bar(u32 x) { npf(x); }
+fn void bar2(u32 x) { (npf(x)); }
+fn void bar3(u32 x) { x ? npf(1) : npf(0); }
+fn void bar4(u32 x) { x && npf(1); }
+fn void bar5(u32 x) { x || npf(1); }

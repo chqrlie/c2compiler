@@ -266,6 +266,8 @@ fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType
     }
     if (!validTestType(rhs)) return ma.invalidBinOp1(b, b.getRHS(), rhs);
 
+    ((Expr*)b).setEffect(b.getRHS().hasEffect());
+
     return getBuiltinQT(Bool);
 }
 

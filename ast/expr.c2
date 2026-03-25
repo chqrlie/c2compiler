@@ -317,6 +317,10 @@ public fn bool Expr.hasEffect(const Expr* e) {
     return e.base.exprBits.has_effect;
 }
 
+public fn void Expr.setEffect(Expr* e, bool effect = true) {
+    e.base.exprBits.has_effect = effect;
+}
+
 public fn ValType Expr.getValType(const Expr* e) {
     return e.base.exprBits.valtype;
 }

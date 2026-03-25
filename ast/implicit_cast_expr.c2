@@ -50,7 +50,7 @@ public type ImplicitCastExpr struct @(opaque) {
 
 public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
-    e.base.init(ImplicitCast, loc, 0, 0, 0, RValue);
+    e.base.init(ImplicitCast, loc, 0, 0, inner.hasEffect(), RValue);
     e.base.base.implicitCastBits.kind = kind;
     e.inner = inner;
     e.base.copyConstantFlags(inner);

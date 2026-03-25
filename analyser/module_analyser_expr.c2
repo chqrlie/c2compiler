@@ -113,6 +113,7 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         Expr* inner = p.getInner();
         e.copyConstantFlags(inner);
         e.copyValType(inner);
+        e.setEffect(inner.hasEffect());
         return qt;
     case BitOffset:
         break;
@@ -316,6 +317,8 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     QualType rcanon = rhs.getCanonicalType();
     assert(lcanon.isValid());
     assert(rcanon.isValid());
+
+    e.setEffect(cond.getLHS().hasEffect() & cond.getRHS().hasEffect());
 
     // TODO: refine this by selecting branch depending on cond value
     if (cond.getCond().isCtv()) e.combineConstantFlags(cond.getLHS(), cond.getRHS());

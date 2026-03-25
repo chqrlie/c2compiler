@@ -148,6 +148,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     }
 
+    if (fd.hasAttrPure()) e.setEffect(false);
+
     u32 num_auto_args = fd.getNumAutoArgs();
     bool rewrite = num_auto_args != 0;
 
