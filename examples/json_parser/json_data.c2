@@ -1,0 +1,466 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module json;
+
+import stdlib local;
+import string local;
+import stdio local;
+
+const u32 TEXT_INIT_SIZE = 256;
+const u32 NODE_INIT_SIZE = 64;
+
+type TextBuffer struct {
+    char* data;
+    u32 cur;
+    u32 cap;
+}
+
+fn void TextBuffer.init(TextBuffer* b, u32 size) {
+    // NOTE: entry 0 is reserved for empty strings
+    b.cap = size;
+    b.cur = 1;
+    b.data = malloc(b.cap);
+    b.data[0] = 0;
+}
+
+fn void TextBuffer.reset(TextBuffer* b) {
+    b.cur = 1;
+    b.data[0] = 0;
+}
+
+fn void TextBuffer.destroy(TextBuffer* b) {
+    free(b.data);
+}
+
+fn void TextBuffer.resize(TextBuffer* b, u32 cap2) {
+    b.cap = cap2;
+    char* data2 = malloc(b.cap);
+    memcpy(data2, b.data, b.cur);
+    free(b.data);
+    b.data = data2;
+}
+
+fn u32 TextBuffer.add(TextBuffer* b, const char* text, u32 len) {
+    u32 left = b.cap - b.cur;
+    if (len >= left) {
+        u32 cap2 = b.cap;
+        while (len >= left) {
+            cap2 *= 2;
+            left = cap2 - b.cur;
+        }
+        b.resize(cap2);
+    }
+
+    u32 idx = b.cur;
+    memcpy(&b.data[idx], text, len);
+    b.data[idx+len] = 0;
+    b.cur += len+1;
+    return idx;
+}
+
+fn void TextBuffer.dump(const TextBuffer* b, const char* text) {
+    printf("%s:  %d|%d\n", text, b.cur, b.cap);
+    u32 idx = 1;
+    while (idx < b.cur) {
+        const char* name = &b.data[idx];
+        printf("  [%3d] %s\n", idx, name);
+        idx += strlen(name) + 1;
+    }
+}
+
+
+type NodeKind enum u8 {
+    Object = 0,
+    Value = 1,
+    Array = 2,
+}
+
+fn const char* kind2str(NodeKind k) {
+    switch (k) {
+    case Object:   return "<object>";
+    case Value:    return " <value>";
+    case Array:    return " <array>";
+    }
+    return nil;
+}
+
+
+type Node struct @(packed) {
+    u32 next_kind;  // 2 upper bits is kind, rest is next_idx;
+    u32 name_idx;
+    union {
+        u32 child_idx;
+        u32 value_idx;
+    }
+}
+
+fn u32 Node.next(const Node* n) {
+    return n.next_kind & 0x3FFFFFFF;
+}
+
+fn NodeKind Node.kind(const Node* n) {
+    return cast<NodeKind>(n.next_kind >> 30);
+}
+
+fn bool Node.has_child(const Node* n) {
+    if (n.is_value()) return false;
+    return n.child_idx != 0;
+}
+
+fn bool Node.is_value(const Node* n) {
+    return n.kind() == NodeKind.Value;
+}
+
+fn bool Node.is_object(const Node* n) {
+    return n.kind() == NodeKind.Object;
+}
+
+fn bool Node.is_array(const Node* n) {
+    return n.kind() == NodeKind.Array;
+}
+
+type NodeBuffer struct {
+    Node* data;
+    u32 cur;
+    u32 cap;
+}
+
+fn void NodeBuffer.init(NodeBuffer* b, u32 size) {
+    b.cap = size;
+    b.cur = 1;  // skip nodes with idx 0 (reserved value)
+    b.data = malloc(size * sizeof(Node));
+}
+
+fn void NodeBuffer.destroy(NodeBuffer* b) {
+    free(b.data);
+}
+
+fn void NodeBuffer.reset(NodeBuffer* b) {
+    b.cur = 1;
+}
+
+fn u32 NodeBuffer.getSize(const NodeBuffer* b) {
+    return b.cur * sizeof(Node);
+}
+
+fn void NodeBuffer.resize(NodeBuffer* b, u32 cap2) {
+    b.cap = cap2;
+    char* data2 = malloc(b.cap * sizeof(Node));
+    memcpy(data2, b.data, b.cur * sizeof(Node));
+    free(b.data);
+    b.data = cast<Node*>(data2);
+}
+
+fn u32 NodeBuffer.add(NodeBuffer* b, NodeKind kind, u32 name_idx, u32 value_idx) {
+    if (b.cur == b.cap) b.resize(b.cap * 2);
+
+    u32 idx = b.cur;
+    Node* n = &b.data[idx];
+    n.next_kind = cast<u32>(kind << 30);
+    n.name_idx = name_idx;
+    n.value_idx = value_idx;
+    b.cur++;
+    return idx;
+}
+
+fn void NodeBuffer.dump(const NodeBuffer* b) {
+    printf("Nodes:  %d|%d\n", b.cur, b.cap);
+    u32 idx = 1;
+    while (idx < b.cur) {
+        const Node* n = &b.data[idx];
+        NodeKind kind = n.kind();
+        printf("  [%3d] %s %3d  [next %3d]", idx, kind2str(kind), n.name_idx, n.next());
+        switch (kind) {
+        case Object:
+            printf(" child %3d\n", n.child_idx);
+            break;
+        case Value:
+            printf(" value %3d\n", n.value_idx);
+            break;
+        case Array:
+            printf(" child %3d\n", n.child_idx);
+            break;
+        }
+        idx++;
+    }
+}
+
+
+public type Data struct @(opaque) {
+    TextBuffer names;
+    TextBuffer values;
+    NodeBuffer nodes;
+}
+
+fn Data* Data.create() {
+    Data* d = malloc(sizeof(Data));
+    d.names.init(TEXT_INIT_SIZE);
+    d.values.init(TEXT_INIT_SIZE);
+    d.nodes.init(NODE_INIT_SIZE);
+    return d;
+}
+
+fn void Data.destroy(Data* d) {
+    d.names.destroy();
+    d.values.destroy();
+    d.nodes.destroy();
+    free(d);
+}
+
+fn void Data.reset(Data* d) {
+    d.names.reset();
+    d.values.reset();
+    d.nodes.reset();
+}
+
+fn u32 Data.addName(Data* d, const char* name, u32 len) {
+    return d.names.add(name, len);
+}
+
+fn u32 Data.addValue(Data* d, const char* value, u32 len) {
+    return d.values.add(value, len);
+}
+
+fn u32 Data.addNode(Data* d, NodeKind kind, u32 name_idx, u32 value_idx) {
+    return d.nodes.add(kind, name_idx, value_idx);
+}
+
+fn void Data.setChild(Data* d, u32 parent_idx, u32 child_idx) {
+    Node* n = &d.nodes.data[parent_idx];
+    n.child_idx = child_idx;
+}
+
+fn void Data.setNext(Data* d, u32 prev_idx, u32 next_idx) {
+    Node* n = &d.nodes.data[prev_idx];
+    n.next_kind |= next_idx;
+}
+
+fn u32 Data.find_child(const Data* d, u32 idx, const char* key) {
+    if (idx == 0) return 0;
+    const Node* n = &d.nodes.data[idx];
+    if (n.is_value()) return 0;
+    // TODO
+    return 0;
+}
+
+fn void Data.dump(const Data* d, bool verbose) {
+    u32 used = d.nodes.cur * sizeof(Node) + d.names.cur + d.values.cur;
+    u32 cap = d.nodes.cap * sizeof(Node) + d.names.cap + d.values.cap;
+    printf("JSON  (memory: %d|%d)\n", used, cap);
+    if (verbose) {
+        d.nodes.dump();
+        d.names.dump("Names");
+        d.values.dump("Values");
+    }
+
+    if (d.nodes.cur == 1) return;
+    d.dumpNode(1, 0);
+}
+
+fn void Data.dumpNode(const Data* d, u32 idx, u32 indent_) {
+    while (idx != 0) {
+        const Node* n = &d.nodes.data[idx];
+        switch (n.kind()) {
+        case Object:
+            printf("%s%s\n", indent(indent_), &d.names.data[n.name_idx]);
+            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent_+1);
+            break;
+        case Value:
+            printf("%s%s = '%s'\n", indent(indent_), &d.names.data[n.name_idx], &d.values.data[n.value_idx]);
+            break;
+        case Array:
+            printf("%s %s\n", indent(indent_), &d.names.data[n.name_idx]);
+            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent_+1);
+            break;
+        }
+        idx = n.next();
+    }
+}
+
+
+public type Iter struct {
+    const Data* data;
+    u32 cur_idx;
+}
+
+public fn bool Iter.done(const Iter* i) {
+    return i.cur_idx == 0;
+}
+
+public fn void Iter.next(Iter* i) {
+    if (i.cur_idx == 0) return;
+
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    i.cur_idx = n.next();
+}
+
+public fn bool Iter.is_value(const Iter* i) {
+    if (i.cur_idx == 0) return false;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    return n.is_value();
+}
+
+public fn bool Iter.is_object(const Iter* i) {
+    if (i.cur_idx == 0) return false;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    return n.is_object();
+}
+
+public fn bool Iter.is_array(const Iter* i) {
+    if (i.cur_idx == 0) return false;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    return n.is_array();
+}
+
+public fn bool Iter.is_valid(const Iter* i) {
+    return i.cur_idx != 0;
+}
+
+public fn bool Iter.has_child(const Iter* i) {
+    if (i.cur_idx == 0) return false;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    return n.has_child();
+}
+
+public fn const char* Iter.key(const Iter* i) {
+    if (i.cur_idx == 0) return nil;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    if (!n.is_value()) return nil;
+    return &i.data.names.data[n.name_idx];
+}
+
+public fn const char* Iter.value(const Iter* i) {
+    if (i.cur_idx == 0) return nil;
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    if (!n.is_value()) return nil;
+    return &i.data.values.data[n.value_idx];
+}
+
+// for objects/arrays
+
+// Note: key == nil returns first child TODO
+public fn Iter Iter.get_child(const Iter* i, const char* key) {
+    Iter i2 = { i.data, 0 }
+    if (i.cur_idx == 0) return i2;
+
+    i2.cur_idx = find_nested_child(i.data, i.cur_idx, key);
+    return i2;
+}
+
+public fn Iter Iter.get_child_iter(const Iter* i) {
+    Iter iter = { i.data, 0 }
+    const Node* n = &i.data.nodes.data[i.cur_idx];
+    if (n.is_value()) return iter;
+    iter.cur_idx = n.child_idx;
+    return iter;
+}
+
+
+// Returns first child if key == nil, return nil if not found/not value
+public fn const char* Iter.child_value(const Iter* i, const char* key) {
+    u32 idx = find_nested_child(i.data, i.cur_idx, key);
+    if (idx == 0) return nil;
+
+    const Node* n = &i.data.nodes.data[idx];
+    if (!n.is_value()) return nil;
+    return &i.data.values.data[n.value_idx];
+}
+
+fn u32 find_nested_child(const Data* data, u32 idx, const char* key) {
+    if (idx == 0) return 0;
+
+    const Node* n = &data.nodes.data[idx];
+    if (n.kind() != NodeKind.Object) return 0;
+    if (key == nil) return 0; // TODO return first child?
+
+    u32 node_idx = idx;
+    const char* cp = key;
+    while (*cp) {
+        // NOTE: max name 64
+        const char* start = cp;
+        char[64] node_name;
+        while (*cp) {
+            if (*cp == '.') break;
+            cp++;
+        }
+        u32 len = cast<u32>(cp - start);
+        memcpy(node_name, start, len);
+        node_name[len] = 0;
+
+        node_idx = find_child(data, node_idx, node_name);
+        if (node_idx == 0) return 0;
+        if (*cp == '.') cp++;
+    }
+    n = &data.nodes.data[node_idx];
+    return node_idx;
+}
+
+fn u32 find_child(const Data* data, u32 cur_idx, const char* key) {
+    const Node* n = &data.nodes.data[cur_idx];
+
+    if (n.kind() == NodeKind.Value) return 0;
+    if (key == nil) return n.child_idx;
+
+    u32 idx = n.child_idx;
+    while (idx != 0) {
+        const Node* child = &data.nodes.data[idx];
+        const char* name = &data.names.data[child.name_idx];
+        if (strcmp(key, name) == 0) return idx;
+        idx = child.next();
+    }
+    return 0;
+}
+
+// Schema stuff
+fn bool Iter.check_schema_priv(const Iter* i, const char** schema) {
+    u32 cur_idx = i.cur_idx;
+    while (**schema != 0) {
+        if (cur_idx == 0) {
+            if (**schema == ')') return true;
+            return false;
+        }
+        const Node* n = &i.data.nodes.data[cur_idx];
+        switch (**schema) {
+        case 's':
+            if (!n.is_value()) return false;
+            break;
+        case 'a':
+            if (!n.is_array()) return false;
+            break;
+        case 'o':
+            if (!n.is_object()) return false;
+            if ((*schema)[1] == '(') {
+                *schema += 2;
+                Iter obj = { i.data, n.child_idx }
+                if (!obj.check_schema_priv(schema)) return false;
+            }
+            break;
+        case '.':
+            return true;
+        default:
+            return false;
+        }
+        cur_idx = n.next();
+        (*schema)++;
+    }
+    return (cur_idx == 0);
+}
+
+// schema: s = string, a = array, o = object, o(..) = object children, . = more coming (dont care)
+public fn bool Iter.check_schema(const Iter* i, const char* schema) {
+    return i.check_schema_priv(&schema);
+}
+

@@ -1,0 +1,155 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module script;
+
+import stdio local;
+import lua;
+import lua_auxlib local;
+import lua_lib local;
+import color;
+
+public type LuaState struct {
+    lua.State* l;
+}
+
+public fn void LuaState.init(LuaState* ls) {
+    ls.l = luaL_newstate();
+    ls.loadLib("", luaopen_base);
+    //ls.loadLib(LUA_TABLIBNAME, luaopen_table);
+    ls.loadLib("table", luaopen_table);
+    //ls.loadLib(LUA_IOLIBNAME, luaopen_io);
+    //ls.loadLib(LUA_OSLIBNAME, luaopen_os);
+    //ls.loadLib(LUA_MATHLIBNAME, luaopen_math);
+    ls.loadLib("math", luaopen_math);
+    //ls.loadLib(LUA_STRINGLIBNAME, luaopen_string);
+    ls.loadLib("string", luaopen_string);
+    //ls.loadLib(LUA_DBLIBNAME, luaopen_debug);
+    ls.loadLib("debug", luaopen_debug);
+    //ls.loadLib(LUA_COLIBNAME, luaopen_coroutine);
+    ls.loadLib("coroutine", luaopen_coroutine);
+}
+
+public fn void LuaState.destroy(LuaState* ls) {
+    lua.close(ls.l);
+}
+
+fn void LuaState.loadLib(LuaState* ls, const char* name, lua.CFunction f) {
+    luaL_requiref(ls.l, name, f, 1);
+    //lua_pop(ls.l, 1);  // TODO macro
+    lua.settop(ls.l, -(1)-1);
+}
+
+public fn void LuaState.registerFunc(LuaState* ls, const char* name, lua.CFunction func) {
+    //lua_pushcfunction(ls.l, name, func);
+    lua.pushcclosure(ls.l, func, 0);
+    lua.setglobal(ls.l, name);
+}
+
+public fn bool LuaState.loadFile(LuaState* ls, const char* filename) {
+    i32 status = luaL_loadfilex(ls.l, filename, nil);
+    if (status != lua.LUA_OK) {
+        printf("lua: %s\n", lua.tolstring(ls.l, -1, nil));
+        //lua_pop(ls.l, 1);
+        lua.settop(ls.l, -(1)-1);
+        return false;
+    }
+    return true;
+
+}
+
+public fn bool LuaState.execute(LuaState* ls) {
+    i32 status = lua.pcallk(ls.l, 0, lua.LUA_MULTRET, 0, 0, nil);
+    if (status != lua.LUA_OK) {
+        printf("lua: %s\n", lua.tolstring(ls.l, -1, nil));
+        //lua_pop(ls.l, 1);
+        lua.settop(ls.l, -(1)-1);
+        return false;
+    }
+    return true;
+}
+
+public fn bool LuaState.runFunction(LuaState* ls, const char* fname) {
+    printf("  C> running function %s\n", fname);
+    // TODO check returns
+    lua.getglobal(ls.l, fname);
+    i32 status = lua.pcallk(ls.l, 0, 0, 0, 0, nil);
+    if (status != lua.LUA_OK) {
+        printf("lua: %s\n", lua.tolstring(ls.l, -1, nil));
+        //lua_pop(ls.l, 1);
+        lua.settop(ls.l, -(1)-1);
+        return false;
+    }
+    return true;
+}
+
+public fn i32 startScript(lua.State* l) {
+    // TODO how to stop calling lua script?
+    i32 args = lua.gettop(l);
+    if (args != 1) {
+        lua.pushboolean(l, false);
+        lua.pushfstring(l, "need 1 argument, got %d", args);
+        //printf("  C> startScript: need 1 arg\n");
+        return 2;
+        //return -1;
+    }
+    if (!lua.isstring(l, 1)) {
+        printf("  C> startScript: arg not a string\n");
+        return -1;
+    }
+    const char* scriptname = lua.tolstring(l, -1, nil);
+    printf("  C> startScript(%s%s%s)\n", color.Green, scriptname, color.Normal);
+
+    // TODO check returns
+    lua.getglobal(l, "runScript");
+    lua.pushstring(l, scriptname);
+    i32 status = lua.pcallk(l, 1, 0, 0, 0, nil);
+    if (status != lua.LUA_OK) {
+        printf("  C> error starting script %s: %s\n", scriptname, lua.tolstring(l, -1, nil));
+        lua.settop(l, -(1)-1);
+        return 0;
+        // if we return -1, calling script is not continued
+    }
+    return 0;
+}
+
+public fn i32 stopScript(lua.State* l) {
+    i32 args = lua.gettop(l);
+    if (args != 1) {
+        lua.pushboolean(l, false);
+        lua.pushfstring(l, "need 1 argument, got %d", args);
+        return -2;
+    }
+    if (!lua.isstring(l, 1)) {
+        printf("  C> stopString: arg not a string\n");
+        return -1;
+    }
+    const char* scriptname = lua.tolstring(l, -1, nil);
+    printf("  C> stopScript(%s%s%s)\n", color.Red, scriptname, color.Normal);
+
+    return 0;
+}
+
+public fn void LuaState.callIntInt(LuaState* ls, const char* fname, i32 arg1) {
+    // TODO check returns
+    lua.getglobal(ls.l, fname);
+    lua.pushinteger(ls.l, arg1);
+    lua.callk(ls.l, 1, 1, 0, nil);
+    i32 result = lua.tointegerx(ls.l, 1, nil);
+    //lua_pop(ls.l, 1);
+    lua.settop(ls.l, -(1)-1);
+    printf("  C> calling LUA %s(%d) = %d\n", fname, arg1, result);
+}
+

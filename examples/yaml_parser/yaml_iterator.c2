@@ -1,0 +1,141 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module yaml;
+
+import string;
+
+public fn bool Node.isMap(const Node* n) { return n.kind == NodeKind.Map; }
+
+public fn bool Node.isSequence(const Node* n) { return n.kind == NodeKind.Sequence; }
+
+public fn bool Node.isScalar(const Node* n) { return n.kind == NodeKind.Scalar; }
+
+
+// TODO only pass iterators? (that way we dont need Parser* anymore)
+public fn const Node* Parser.getRoot(const Parser* p) {
+    u32 node_count = cast<u32>(p.data.nodes_cur - p.data.nodes) - 1;
+    if (node_count == 0) return nil;
+    return &p.data.nodes[1];
+}
+
+public fn const char* Parser.getScalarValue(const Parser* p, const char* path) {
+    const Node* n = p.findNode(path);
+    if (n && n.isScalar()) return &p.data.text[n.text_idx];
+    return nil;
+}
+
+public fn const Node* Parser.findNode(const Parser* p, const char* path) {
+    return p.data.findNode(path);
+}
+
+fn const Node* Data.findNode(const Data* d, const char* path) {
+    u32 node_count = cast<u32>(d.nodes_cur - d.nodes) - 1;
+    if (node_count == 0) return nil;
+    const Node* root = &d.nodes[1];
+    if (root.kind == NodeKind.Sequence) return nil;
+    return d.findChildNode(path, root.child_idx);
+}
+
+fn const Node* Data.findChildNode(const Data* d, const char* path, u32 next) {
+        // Note: path can be 'a.b.c' while node names are 'a.b' and 'c' so look for starts-with
+    while (next) {
+        const Node* node = d.idx2node(next);
+        if (node.name_idx) {
+            const char* name = &d.text[node.name_idx];
+            const char* rest = starts_with(path, name);
+            if (rest) { // match
+                path = rest;
+                if (path[0] == 0) return node; // found node
+                if (node.kind == NodeKind.Sequence) return nil;   // dont search in sequence
+                next = node.child_idx;
+                continue;
+            }
+        }
+
+        next = node.next_idx;
+    }
+    return nil;
+}
+
+public type Iter struct {
+    const void* data;
+    const Node* node;
+}
+
+public fn Iter Parser.getNodeChildIter(const Parser* p, const Node* n) {
+    Iter iter = { .data = &p.data, .node = nil }
+    if (n && n.kind != NodeKind.Scalar && n.child_idx) {
+        iter.node = p.data.idx2node(n.child_idx);
+    }
+    return iter;
+}
+
+public fn void Iter.next(Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node) {
+        if (iter.node.next_idx) iter.node = d.idx2node(iter.node.next_idx);
+        else iter.node = nil;
+    }
+}
+
+public fn bool Iter.done(const Iter* iter) {
+    return iter.node == nil;
+}
+
+public fn const char* Iter.getName(const Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node) return &d.text[iter.node.name_idx];
+    return nil;
+}
+
+public fn const char* Iter.getValue(const Iter* iter) {
+    const Data* d = cast<Data*>(iter.data);
+    if (iter.node && iter.node.kind == NodeKind.Scalar) return &d.text[iter.node.text_idx];
+    return nil;
+}
+
+public fn Iter Iter.getChildIter(Iter* parent) {
+    Iter iter = { .data = parent.data, .node = nil }
+    if (parent.node == nil) return iter;
+
+    const Node* n = parent.node;
+    if (n.kind != NodeKind.Scalar && n.child_idx) {
+        const Data* d = cast<Data*>(iter.data);
+        iter.node = d.idx2node(n.child_idx);
+    }
+    return iter;
+}
+
+public fn const char* Iter.getChildScalarValue(Iter* iter, const char* path) {
+    if (!iter.node) return nil;
+
+    if (iter.node.kind == NodeKind.Sequence) return nil;
+    const Data* d = cast<Data*>(iter.data);
+    const Node* n = d.findChildNode(path, iter.node.child_idx);
+    if (n && n.isScalar()) return &d.text[n.text_idx];
+    return nil;
+}
+
+fn const char* starts_with(const char* full, const char* start) {
+    u32 len = cast<u32>(string.strlen(start));
+    if (string.strncmp(full, start, len) == 0) {
+        full += len;
+        if (full[0] == '.') return full+1;
+        if (full[0] == 0) return full;
+    }
+    return nil;
+}
+

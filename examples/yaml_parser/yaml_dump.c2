@@ -1,0 +1,79 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module yaml;
+
+import stdio local;
+import string local;
+
+public fn void Parser.dump(const Parser* p, bool verbose) {
+    p.data.dump(verbose);
+}
+
+fn void Data.dump(const Data* d, bool verbose) {
+    u32 node_count = cast<u32>(d.nodes_cur - d.nodes);
+    if (verbose) {
+        printf("Text %d/%d\n", cast<u32>(d.text_cur - d.text), d.text_size);
+        const char* cp = d.text + 1;
+        while (cp < d.text_cur) {
+            u32 len = cast<u32>(strlen(cp));
+            u32 offset = cast<u32>(cp - d.text);
+            printf("  [%3d] %s\n", offset, cp);
+            cp += len + 1;
+        }
+
+        printf("Nodes %d/%d\n", node_count, d.nodes_count);
+        for (u32 i=1; i<node_count; i++) {
+            const Node* n = &d.nodes[i];
+            printf("  [%2d] %s  next %3d  name %3d  value/child %3d\n", i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
+        }
+    }
+
+    if (node_count > 1) d.dump_node(&d.nodes[1], 0);
+}
+
+fn Node* Data.idx2node(const Data* d, u32 idx) {
+    return &d.nodes[idx];
+}
+
+fn void Data.dump_node(const Data* d, const Node* n, i32 indent) {
+    // TEMP crude way
+    for (i32 i=0; i<indent; i++) printf("   ");
+
+    printf("[%2d] %s", d.node2idx(n), node_names[n.kind]);
+    printf("  name: ");
+    if (n.name_idx) printf("%s", &d.text[n.name_idx]);
+    else printf("-");
+    printf("  value: ");
+    switch (n.kind) {
+    case Unknown:
+        printf("-\n");
+        break;
+    case Scalar:
+        if (n.text_idx) printf("%s", &d.text[n.text_idx]);
+        printf("\n");
+        break;
+    case Map: fallthrough;
+    case Sequence:
+        printf("-\n");
+        if (n.child_idx) d.dump_node(d.idx2node(n.child_idx), indent+1);
+        break;
+    }
+
+    if (n.next_idx) {
+        d.dump_node(d.idx2node(n.next_idx), indent);
+    }
+}
+

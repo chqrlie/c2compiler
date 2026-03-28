@@ -1,0 +1,57 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module test;
+
+import script;
+import stdio local;
+import lua;
+
+// TODO wrap in own type so lua remains hidden
+fn i32 atpanic(lua.State* l) {
+    printf("lua panic\n");
+    return 0;
+}
+
+public fn i32 main(i32 argc, char** argv) {
+    const char* scriptName = "lua/script1.lua";
+    if (argc == 2) scriptName = argv[1];
+
+    script.LuaState ls;
+    ls.init();
+
+    lua.atpanic(ls.l, atpanic);
+    ls.registerFunc("startScript", script.startScript);
+    ls.registerFunc("stopScript", script.stopScript);
+
+    if (!ls.loadFile(scriptName)) return -1;
+    if (!ls.execute()) return -1;
+
+    ls.runFunction("doTick");
+    ls.runFunction("doTick");
+    ls.runFunction("doTick");
+    ls.runFunction("doTick");
+    ls.runFunction("doTick");
+
+    ls.callIntInt("timesTen", 2);
+    ls.callIntInt("timesTen", 3);
+
+    if (!ls.runFunction("function1")) return -1;
+
+    ls.destroy();
+    return 0;
+}
+
+

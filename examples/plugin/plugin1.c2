@@ -1,0 +1,41 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module plugin_main;
+
+import other;
+
+import stdio;
+
+public i32[] array1 = { 1, 2, 3 }
+
+public i32[+] array2;
+
+array2 += 4;
+array2 += 5;
+array2 += 6;
+array2 += 7;
+
+public i32[5] array3 = { 8, 9, 10, 11, 12 }
+
+public fn void load(i32 arg) {
+    stdio.printf("Plugin1.load() %d\n", arg);
+    stdio.printf("other.test1 = %p\n", other.test1);
+    stdio.printf("plugin1.array1 = %d\n", elemsof(array1));
+    stdio.printf("plugin1.array2 = %d\n", elemsof(array2));
+    stdio.printf("plugin1.array3 = %d\n", elemsof(array3));
+    other.test1();
+}
+

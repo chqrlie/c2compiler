@@ -1,0 +1,237 @@
+
+plugin refs_generator
+
+executable base64
+	$backend c
+    base64/base64.c2
+    base64/main.c2
+end
+
+executable cstrip
+    $warnings no-unused
+	$backend c
+    common/file/reader.c2
+    common/file/writer.c2
+    common/string_buffer.c2
+    comment_strip/main.c2
+end
+
+executable event
+    $warnings no-unused
+	$backend c
+    common/color.c2
+    common/logger.c2
+    event/events.c2
+    event/example_socket.c2
+    event/main.c2
+end
+
+executable file_ops
+    $warnings no-unused
+	$backend c
+    common/file/reader.c2
+    file_ops/main.c2
+end
+
+executable inline_asm
+#    $warnings no-unused
+	$backend c
+    inline_asm/main.c2
+end
+
+executable json_parser
+    $warnings no-unused
+	$backend c
+    common/file/reader.c2
+    common/file/writer.c2
+    json_parser/json_parser.c2
+    json_parser/json_data.c2
+    json_parser/json_builder.c2
+    json_parser/json_serialize.c2
+    json_parser/main.c2
+end
+
+executable list
+    $warnings no-unused
+	$backend c
+    common/color.c2
+    list/list.c2
+    list/main.c2
+end
+
+executable log
+    $warnings no-unused
+	$backend c
+    common/logger.c2
+    common/color.c2
+    logger/main.c2
+end
+
+executable jump
+    $warnings no-unused
+	$backend c
+    longjmp/jump.c2
+end
+
+# Disabled because location of lua.a/lua.so needs to be specified
+#executable lua_test
+#    $warnings no-unused
+#	$backend c
+#    $use lua dynamic
+#    common/color.c2
+#    lua/script.c2
+#    lua/main.c2
+#end
+
+executable signal_test
+    $warnings no-unused
+	$backend c
+    signals/main.c2
+end
+
+executable socket
+	$backend c
+    socket/server.c2
+end
+
+executable string
+    $warnings no-unused
+	$backend c
+    common/string_buffer.c2
+    string_buffer/main.c2
+end
+
+executable toml_parser
+    $warnings no-unused
+	$backend c
+#    $config DEBUG_NODES
+    common/file/reader.c2
+    toml_parser/toml_tokenizer.c2
+    toml_parser/toml_parser.c2
+    toml_parser/main.c2
+end
+
+executable yaml_parser
+    $warnings no-unused
+	$backend c
+#    $config YAML_PRINT_TOKENS
+    common/file/reader.c2
+    yaml_parser/yaml_parser.c2
+    yaml_parser/yaml_tokenizer.c2
+    yaml_parser/yaml_data.c2
+    yaml_parser/yaml_iterator.c2
+    yaml_parser/yaml_dump.c2
+    yaml_parser/main.c2
+end
+
+executable xml_parser
+    $warnings no-unused
+	$backend c
+    common/color.c2
+    common/file/reader.c2
+#    file_utils.c2
+    xml_parser/xml_parser.c2
+    xml_parser/xml_structure.c2
+    xml_parser/main.c2
+end
+
+executable sudoku
+    $warnings no-unused
+	$backend c
+    common/color.c2
+    sudoku/sudoku.c2
+    sudoku/boards.c2
+end
+
+lib plugin1 dynamic
+    $warnings no-unused
+	$backend c
+    $export plugin_main
+    plugin/other.c2
+    plugin/plugin1.c2
+end
+
+lib plugin2 dynamic
+    $warnings no-unused
+	$backend c
+    $export plugin_main
+    plugin/plugin2.c2
+end
+
+executable plugin_mgr
+    $warnings no-unused
+	$backend c
+    $use dl dynamic
+    plugin/other.c2
+    plugin/plugin_mgr.c2
+end
+
+#executable test_lib
+#    $warnings no-unused
+#	$backend c
+#    $use plugin1 dynamic
+#    plugin/test_lib.c2
+#end
+
+executable pthread_test
+    $warnings no-unused
+	$backend c
+    $use pthread dynamic
+
+    pthread/pthread.c2
+end
+
+executable load_file
+    $warnings no-unused
+    $backend c
+
+    load_file/main.c2
+end
+
+executable unit_test
+    $warnings no-unused
+    $backend c
+    $plugin unit_test []
+
+    unit_test/mod1.c2
+    unit_test/mod2.c2
+
+    unit_test/mod1_test.c2
+    unit_test/mod2_test.c2
+    unit_test/test_main.c2
+end
+
+executable mc_sender
+    $warnings no-unused
+    $backend c
+
+    multicast/multicast_sender.c2
+    multicast/sender.c2
+end
+
+executable mc_receiver
+    $warnings no-unused
+    $backend c
+
+    event/events.c2
+    multicast/multicast_receiver.c2
+    multicast/receiver.c2
+end
+
+executable dir_walker
+    $warnings no-unused
+    $backend c
+
+    dir_walker/main.c2
+end
+
+#executable source_lib_use
+#    $warnings no-unused
+#    $backend c
+#    #$use libc static
+#    $use foobar source
+#    #$use foobar static
+#    #$use foobar dynamic
+#
+#    source_lib_use/main.c2
+#end

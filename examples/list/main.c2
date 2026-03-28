@@ -1,0 +1,118 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module test;
+import stdio local;
+import stdlib local;
+import list as ll local;
+
+type Module struct {
+    const char* name;
+    i32 depth;
+    Element list;
+    Module*[4] deps;
+    u32 numDeps;
+}
+
+fn void printList(const char* name, const Element* list, bool printDeps) {
+    printf("%s:\n", name);
+    Element* node = list.next;
+    while (node != list) {
+        const Module* m = to_container(Module, list, node);
+        printf(" %-4s  %d\n", m.name, m.depth);
+        if (printDeps) {
+            for (u32 i=0; i<m.numDeps; i++) {
+                printf("  -> %s\n", m.deps[i].name);
+            }
+        }
+        node = node.next;
+    }
+}
+
+fn Module* createModule(Element* list, const char* name) {
+    Module* m = calloc(1, sizeof(Module));
+    m.name = name;
+    m.depth = -1;
+    list.addTail(&m.list);
+    return m;
+}
+
+fn void Module.addDep(Module* m, Module* dep) {
+    m.deps[m.numDeps] = dep;
+    m.numDeps++;
+}
+
+fn void check(Element* all, Module* top) {
+    Element todo;
+    Element done;
+    todo.init();
+    done.init();
+
+    i32 max_depth = cast<i32>(all.size());
+    top.list.remove();
+    todo.addFront(&top.list);
+    top.depth = 0;
+
+
+    while (!todo.isEmpty()) {
+        Element* node = todo.popFront();
+        Module* m = to_container(Module, list, node);
+        if (m.depth > max_depth) {
+            printf("LOOP found\n");
+            break;
+        }
+        done.addTail(node);
+        for (u32 i=0; i<m.numDeps; i++) {
+            Module* d = m.deps[i];
+            d.depth = m.depth + 1;
+            d.list.remove();
+            todo.addTail(&d.list);
+        }
+    }
+    done.move(all);
+}
+
+
+public fn i32 main() {
+    printf("this program orders a DAG by depth, using List\n");
+
+    Element modules;
+    modules.init();
+
+    Module* a = createModule(&modules, "A");
+    Module* b = createModule(&modules, "B");
+    Module* c = createModule(&modules, "C");
+    Module* d = createModule(&modules, "D");
+    Module* e = createModule(&modules, "E");
+    Module* f = createModule(&modules, "F");
+    Module* g = createModule(&modules, "G");
+
+    a.addDep(b);
+    a.addDep(c);
+    a.addDep(d);
+    a.addDep(f);
+    b.addDep(d);
+    c.addDep(b);
+    c.addDep(e);
+    d.addDep(e);
+
+    printList("all", &modules, true);
+    check(&modules, a);
+
+    printf("Ordered list\n");
+    printList("all", &modules, false);
+    return 0;
+}
+

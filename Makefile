@@ -94,5 +94,9 @@ warnings:
 
 rebuild: clean all test trace_calls
 
+.PHONY: examples
+examples: c2c
+	@$(MAKE) -C examples
+
 clean:
-	rm -rf output
+	rm -rf output examples/output

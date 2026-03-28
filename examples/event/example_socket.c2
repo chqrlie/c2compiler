@@ -1,0 +1,197 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module example_socket;
+
+import stdio local;
+import stdlib local;
+import unistd local;
+import string local;
+import sys_socket local;
+import events;
+import logger;
+
+const u8 LF = 0x0A;
+const u8 CR = 0x0D;
+
+fn void fatal(const char* msg) {
+    printf("%s\n", msg);
+    exit(EXIT_FAILURE);
+}
+
+fn void stripNewline(char* buffer, i64 len)
+{
+    if (buffer[len-1] == LF) {
+        buffer[len-1] = 0;
+        len--;
+    }
+    if (buffer[len-1] == CR) {
+        buffer[len-1] = 0;
+        len--;
+    }
+}
+
+type Connection struct {
+    i32 fd;
+    Connection* next;
+    logger.Log* log;
+    events.Event event;
+    Socket* socket;
+}
+
+fn Connection* Connection.create(i32 fd, Socket* s, logger.Log* log) {
+    Connection* conn = calloc(1, sizeof(Connection));
+    conn.fd = fd;
+    conn.log = log;
+    conn.socket = s;
+    conn.event.assign(s.base, fd, events.READ, connection_on_data, conn);
+    conn.event.add();
+
+    const char* msg = "welcome\n";
+    write(fd, msg, strlen(msg));
+    return conn;
+}
+
+fn void Connection.onData(Connection* conn)
+{
+    char[128] buffer;
+
+    i64 numread = read(conn.fd, buffer, 128);
+    if (numread == 0) {
+        conn.log.warn("client disconnected");
+        conn.destroy();
+        return;
+    }
+    buffer[numread] = 0;
+    stripNewline(buffer, numread);
+
+    conn.log.info("[%d] read [%s]", conn.fd, buffer);
+    if (strcmp(buffer, "quit") == 0) {
+        conn.log.warn("client requested disconnect");
+        conn.destroy();
+    }
+}
+
+fn void Connection.destroy(Connection* conn)
+{
+    conn.log.debug("destroy conn %d", conn.fd);
+    conn.socket.removeConnection(conn);
+    conn.event.del();
+    close(conn.fd);
+    free(conn);
+}
+
+fn void connection_on_data(i32 fd, void* arg, u16 flags)
+{
+    Connection* conn = arg;
+    conn.onData();
+}
+
+
+public type Socket struct @(opaque) {
+    i32 fd;
+    events.Base* base;
+    events.Event event;
+    logger.Log log;
+    Connection* conns;
+}
+
+public fn Socket* Socket.create(events.Base* base, logger.Base* logbase, const char* name, u16 port)
+{
+    Socket* s = calloc(1, sizeof(Socket));
+    s.base = base;
+    s.log.init(logbase, name);
+    s.log.setLevel(logger.Level.Debug);
+
+    s.fd = socket(AF_INET, SocketType.SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+    if (s.fd == -1) {
+        fatal("opening TCP socket");
+    }
+
+	Sockaddr_in my_addr;
+	my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(port);
+    my_addr.sin_addr.s_addr = INADDR_ANY;
+    memset(&my_addr.sin_zero, 0, 8);
+
+    i32 reuse = 1;
+    if (setsockopt(s.fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) != 0) {
+        fatal("setsockopt(SO_REUSEADDR)");
+    }
+
+    if (bind(s.fd, cast<Sockaddr*>(&my_addr), sizeof(Sockaddr)) != 0) fatal("bind() failed");
+
+    if (listen(s.fd, 1) != 0) fatal("listen() failed");
+
+    s.log.debug("listening to port %d", port);
+    s.event.assign(base, s.fd, events.READ, socket_on_connection, s);
+    s.event.add();
+    return s;
+}
+
+public fn void Socket.destroy(Socket* s)
+{
+    s.log.debug("closing socket");
+    while (s.conns) {
+        s.conns.destroy(); // self-removes itself from list
+    }
+    s.event.del();
+    close(s.fd);
+    free(s);
+}
+
+fn void Socket.addConnection(Socket* s, Connection* c)
+{
+    s.log.debug("add conn %d", c.fd);
+    if (s.conns == nil) {
+        s.conns = c;
+    } else {
+        Connection* cur = s.conns;
+        while (cur.next) cur = cur.next;
+        cur.next = c;
+    }
+}
+
+fn void Socket.removeConnection(Socket* s, Connection* c)
+{
+    s.log.debug("remove conn %d", c.fd);
+    if (s.conns == c) {
+        s.conns = c.next;
+    } else {
+        Connection* cur = s.conns;
+        while (cur.next != c) cur = cur.next;
+        cur.next = c.next;
+    }
+    c.next = nil;
+}
+
+fn void Socket.onConnection(Socket* s)
+{
+    u32 sin_size = sizeof(Sockaddr_in);
+    Sockaddr_in remote;
+    i32 new_fd = accept4(s.fd, cast<Sockaddr*>(&remote), &sin_size, SOCK_CLOEXEC);
+    if (new_fd == -1) fatal("accept4");
+
+    char* src_ipnr = inet_ntoa(remote.sin_addr);
+    s.log.info("new connection from %s", src_ipnr);
+    s.addConnection(Connection.create(new_fd, s, &s.log));
+}
+
+fn void socket_on_connection(i32 fd, void* arg, u16 flags)
+{
+    Socket* s = arg;
+    s.onConnection();
+}
+
