@@ -40,9 +40,7 @@ public fn i32 main() {
         unistd.sleep(1);
     }
 
-
-    sender.destroy();
-    return 0;
+    //sender.destroy();
+    //return 0;
 }
-
 

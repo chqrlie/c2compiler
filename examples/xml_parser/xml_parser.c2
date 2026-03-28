@@ -170,7 +170,7 @@ fn u32 XmlParser.parseNode(XmlParser* p) {
             break;
         }
     }
-    return off;
+    //return off;
 }
 
 fn bool XmlParser.parseTag(XmlParser* p, Node* node) {
@@ -220,7 +220,7 @@ fn bool XmlParser.parseTag(XmlParser* p, Node* node) {
             break;
         }
     }
-    return false;
+    //return false;
 }
 
 fn void XmlParser.parseEndTag(XmlParser* p, const Node* node) {
@@ -583,7 +583,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
             break;
         }
     }
-    return true;
+    //return true;
 }
 
 fn void Tokenizer.parseValue(Tokenizer* t, Token* result, char delimiter) {

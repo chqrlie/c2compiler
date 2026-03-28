@@ -459,7 +459,7 @@ fn const Node* Reader.findNode(const Reader* r, const char* key) {
         }
         cp++;
     }
-    return nil;
+    //return nil;
 }
 
 public fn const char* Reader.getValue(const Reader* r, const char* key) {
@@ -742,7 +742,7 @@ fn Node* Blocks.findNode(const Blocks* b, const char* name, const Node* parent) 
         if (!node.nextNode) return nil;
         node = &b.nodes[node.nextNode];
     }
-    return nil;
+    //return nil;
 }
 
 

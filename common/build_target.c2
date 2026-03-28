@@ -123,8 +123,6 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* 
     Target* t = stdlib.calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;
-    // remove this once the bootstrap handles improved flow analysis
-    t.warnings.no_unreachable_code = true;
     t.kind = kind;
     t.features.init(pool);
     t.libs.init();
