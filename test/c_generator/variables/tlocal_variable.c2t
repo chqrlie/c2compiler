@@ -1,0 +1,18 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void test1() {
+    tlocal i32 a = 10;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_test1(void)
+{
+    tlocal int a = 10;
+}
+

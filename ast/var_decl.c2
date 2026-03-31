@@ -61,6 +61,7 @@ type VarDeclBits struct {
     u32 addr_used : 1;
     AutoAttr auto_attr : 2;  // for parameters only
     FormatAttr format_attr : 2; // for parameters only
+    u32 is_tlocal : 1;  // local or global variables with thread local storage
 }
 
 public type BitFieldLayout struct {
@@ -318,6 +319,15 @@ public fn bool VarDecl.hasLocalQualifier(const VarDecl* d) {
 
 public fn void VarDecl.setLocal(VarDecl* d, bool has_local) {
     d.base.varDeclBits.has_local = has_local;
+}
+
+public fn bool VarDecl.isTLocal(const VarDecl* d) {
+    return d.base.varDeclBits.is_tlocal;
+}
+
+public fn void VarDecl.setTLocal(VarDecl* d) {
+    d.base.varDeclBits.has_local = true;
+    d.base.varDeclBits.is_tlocal = true;
 }
 
 public fn void VarDecl.setInitCall(VarDecl* d, bool has_init_call) {
