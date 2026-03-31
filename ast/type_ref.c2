@@ -71,6 +71,7 @@ public type TypeRef struct @(opaque, aligned=8) {
     Ref[0] refs;    // tail-allocated. [1] if is_user/struct_member_fn, [2] if also has_prefix
     //Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
 }
+static_assert(8, sizeof(TypeRef));
 
 // just a TypeRef with all possible tail-allocated fields
 public type TypeRefHolder struct {
@@ -312,7 +313,7 @@ fn bool TypeRef.isConst(const TypeRef* r, u32 level) {
     return (r.flags.qualifiers >> (2 * level)) & QualType_Const;
 }
 
-fn bool TypeRef.isVolatile(const TypeRef* r, u32 level) {
+public fn bool TypeRef.isVolatile(const TypeRef* r, u32 level) {
     return (r.flags.qualifiers >> (2 * level)) & QualType_Volatile;
 }
 

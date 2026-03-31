@@ -198,6 +198,7 @@ public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_unused_public = true;
     t.warnings.no_unused_label = true;
     t.warnings.no_unused_enum_constant = true;
+    t.warnings.no_unused_enum_assoc_value = true;
     t.warnings.no_unreachable_code = true;
     t.warnings.no_unknown_attribute = true;
     t.warnings.no_deprecated = true;
@@ -214,6 +215,7 @@ public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_unused_public = false;
     t.warnings.no_unused_label = false;
     t.warnings.no_unused_enum_constant = false;
+    t.warnings.no_unused_enum_assoc_value = false;
     t.warnings.no_unreachable_code = false;
     t.warnings.no_unknown_attribute = false;
     t.warnings.no_deprecated = false;

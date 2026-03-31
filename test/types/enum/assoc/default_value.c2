@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public i32 a = 1,     // @error{default values are not allowed here}
+                                 i32 b = 2) {    // @error{default values are not allowed here}
+    A : { 10, 20 },
+    B : { 15 },
+    C : { },
+}
+

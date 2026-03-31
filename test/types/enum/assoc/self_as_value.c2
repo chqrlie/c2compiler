@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (Enum next) {
+    A : { B },
+    B : { C },
+    C : { A },
+}
+

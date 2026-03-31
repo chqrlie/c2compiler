@@ -133,6 +133,13 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         break;
     case EnumType:
         EnumTypeDecl* etd = (EnumTypeDecl*)d;
+
+        u32 num_assocs = etd.getNumAssocs();
+        VarDecl** values = etd.getAssocValues();
+        for (u32 i=0; i<num_assocs; i++) {
+            Generator.on_decl(arg, (Decl*)values[i], false);
+        }
+
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
             Decl* ecd = (Decl*)constants[i];

@@ -69,9 +69,16 @@ fn void Checker.check(void* arg, Decl* d) {
         if (c.warnings.no_unused_type) return;
         break;
     case EnumType:
-        if (used && !c.warnings.no_unused_enum_constant) {
-            c.checkEnum((EnumTypeDecl*)d);
+        if (used) {
+            EnumTypeDecl* etd = (EnumTypeDecl*)d;
+            if (!c.warnings.no_unused_enum_constant) {
+                c.checkEnumConstants(etd);
+            }
+            if (etd.hasAssocValues() && !c.warnings.no_unused_enum_assoc_value) {
+                c.checkEnumAssocValues(etd);
+            }
         }
+        if (c.warnings.no_unused_type) return;
         break;
     case EnumConstant:
         break;
@@ -91,7 +98,7 @@ fn void Checker.check(void* arg, Decl* d) {
     }
 }
 
-fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
+fn void Checker.checkEnumConstants(Checker* c, EnumTypeDecl* d) {
     u32 num_consts = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
     for (u32 i=0; i<num_consts; i++) {
@@ -99,6 +106,29 @@ fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
         Decl* dd = (Decl*)ecd;
         if (!dd.isUsed()) {
             c.diags.warn(dd.getLoc(), "unused %s '%s'", dd.getKindName(), dd.getName());
+        }
+    }
+}
+
+fn void Checker.checkEnumAssocValues(Checker* c, EnumTypeDecl* etd) {
+    u32 num_assoc = etd.getNumAssocs();
+    VarDecl** values = etd.getAssocValues();
+    for (u32 i = 0; i < num_assoc; i++) {
+        VarDecl* vd = values[i];
+        Decl* d = (Decl*)vd;
+        bool used = d.isUsed();
+        if (used) {
+            if (d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public && !d.hasAttrUnused()) {
+                Decl* ed = (Decl*)etd;
+                const char* enum_name = ed.getFullName();
+                c.diags.warn(d.getLoc(), "enum-associated value '%s' is not used public", vd.getEnumAssocValueName(enum_name));
+            }
+        } else {
+            if (!d.hasAttrUnused()) {
+                Decl* ed = (Decl*)etd;
+                const char* enum_name = ed.getFullName();
+                c.diags.warn(d.getLoc(), "unused enum-associated value '%s'", vd.getEnumAssocValueName(enum_name));
+            }
         }
     }
 }

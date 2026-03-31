@@ -33,17 +33,21 @@ public type MemberKind enum u8 {
     StructMember,          // struct-var.member
     TypeFunc,
     StaticTypeFunc,
-    EnumConstant,
+    EnumConstant,           // Enum.A
+    EnumAssocValue,         // Enum.name
+    EnumConstantValue,      // e.name
 }
 
 fn const char* MemberKind.str(MemberKind k) {
     switch (k) {
-    case Unresolved:   return "Unresolved";
-    case Module:       return "Module";
-    case StructMember: return "StructMember";
-    case TypeFunc:     return "TypeFunc";
-    case StaticTypeFunc: return "StaticTypeFunc";
-    case EnumConstant: return "EnumConstant";
+    case Unresolved:        return "Unresolved";
+    case Module:            return "Module";
+    case StructMember:      return "StructMember";
+    case TypeFunc:          return "TypeFunc";
+    case StaticTypeFunc:    return "StaticTypeFunc";
+    case EnumConstant:      return "EnumConstant";
+    case EnumAssocValue:    return "EnumAssocValue";
+    case EnumConstantValue: return "EnumConstantValue";
     }
     return "";
 }
@@ -138,7 +142,9 @@ public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
 public fn u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     if (ref_idx == 0 && e.hasExpr()) {
         Expr* base = e.getBaseExpr();
-        if (base.isIdentifier()) return ((IdentifierExpr*)base).getNameIdx();
+        // Note: base can never be an Identifier (unless manually generated)
+        assert(!base.isIdentifier());
+        //if (base.isIdentifier()) return ((IdentifierExpr*)base).getNameIdx();
         return 0;
     }
     const MemberRef* ref = &e.refs[ref_idx];
@@ -211,6 +217,8 @@ public fn IdentifierKind MemberExpr.getIdentifierKind(const MemberExpr* e) {
     case TypeFunc:       return Function;
     case StaticTypeFunc: return Function;
     case EnumConstant:   return EnumConstant;
+    case EnumAssocValue:
+    case EnumConstantValue: return Var;
     }
 
     Decl* d = e.getFullDecl();

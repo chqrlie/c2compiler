@@ -59,6 +59,8 @@ public type Analyser struct @(opaque) {
 
     u32 c2_assert_idx;
     u32 c2_assert_fail_idx;
+    u32 min_idx;
+    u32 max_idx;
 
     // collect type-functions
     u32 prefix_cache_name;
@@ -81,8 +83,6 @@ public type Analyser struct @(opaque) {
 
     u32 check_idx;
     init_checker.Checker[4] init_checkers;
-    u32 min_idx;
-    u32 max_idx;
 
     u32 global_initializer;
     u32 need_const_expr;
@@ -153,16 +153,15 @@ public fn void Analyser.check(Analyser* ma, Module* mod) {
     ma.has_error = false;
     ma.usedPublic = false;
 
+    ma.builder.setModule(mod);
+
     mod.visitASTs(Analyser.createGlobalScope, ma);
 
     if (ma.diags.hasErrors()) return;
 
-    // TODO use mod.visitArrayValues(Analyser.handleEnumValue, ma);
-
     ma.collectTypeFunctions();
     if (ma.has_error) return;
 
-    // analyse types
     ma.collectIncrementalArrays();
     if (ma.has_error) return;
 
@@ -173,6 +172,9 @@ public fn void Analyser.check(Analyser* ma, Module* mod) {
     if (ma.has_error) return;
 
     mod.visitFunctions(Analyser.analyseFunctionProto, ma);
+    if (ma.has_error) return;
+
+    mod.visitTypeDecls(Analyser.handleEnumAssocValue, ma);
     if (ma.has_error) return;
 
     mod.visitVarDecls(Analyser.handleVarDecl, ma);
@@ -223,7 +225,7 @@ fn void Analyser.collectTypeFunctions(Analyser* ma) {
             fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
         } else {
             EnumTypeDecl* etd = (EnumTypeDecl*)info.decl;
-            etd.setEnumFunctions(ma.context, info.functions.getDecls(), info.functions.size());
+            etd.setEnumFunctions(ma.context, info.functions.getDecls(), (u16)info.functions.size());
         }
     }
 
@@ -271,7 +273,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         // create an InitListExpr here and add to VarDecl, dont analyse yet
         u32 num_values = entry.values.size();
         Expr** values = entry.values.getExprs();
-        Expr* init_expr = ma.builder.actOnInitList(0, 0, values, num_values);
+        Expr* init_expr = (Expr*)ma.builder.actOnInitList(0, 0, values, num_values);
         vd.setInit(init_expr);
     } else if (d.isEnum()) {
         // dont analyse yet, just check if Identifier and convert to EnumConstantDecl
@@ -507,6 +509,16 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
     Analyser* ma = arg;
     ma.analyseGlobalDecl(d);
+}
+
+fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
+    Analyser* ma = arg;
+    if (!d.isEnum()) return;
+    EnumTypeDecl* etd = (EnumTypeDecl*)d;
+    if (!etd.hasAssocValues()) return;
+    if (!ma.pushCheck(d, d.getAST().getPtr(), nil)) return;
+    ma.analyseEnumAssocValues(etd);
+    ma.popCheck();
 }
 
 fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {

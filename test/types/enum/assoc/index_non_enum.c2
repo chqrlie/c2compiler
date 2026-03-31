@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (i32 a) {
+    A : { 10 },
+    B : { 10 },
+}
+
+fn void test1() {
+    i32 bb = Enum.a[1]; // @error{array subscript must have enum type 'test.Enum'}
+}
+

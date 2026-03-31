@@ -220,6 +220,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
     d.setGenerated();
     u32 num_constants = etd.getNumConstants();
     EnumConstantDecl** decls = etd.getConstants();
+    bool has_assoc = etd.hasAssocValues();
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* ecd = decls[i];
         out.indent(1);
@@ -228,9 +229,9 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
         out.add(d.getName());
         out.add1('_');
         out.add(ecd.asDecl().getName());
-        Expr* ie = ecd.getInit();
         ecd.asDecl().setGenerated();
-        if (ie) {
+        Expr* ie = ecd.getInit();
+        if (ie && !has_assoc) {
             out.add(" = ");
             gen.emitExpr(out, ie);
         }

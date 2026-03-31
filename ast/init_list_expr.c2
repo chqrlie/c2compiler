@@ -20,9 +20,15 @@ import string_buffer;
 import src_loc local;
 import string;
 
+type InitListKind enum u8 {
+    Struct,
+    Array,
+    EnumAssocValues,
+}
+
 type InitListExprBits struct {
     u32 : NumExprBits;
-    u32 is_array : 1;   // otherwise is_struct
+    u32 kind : 2;   // InitListKind
     u32 has_designators : 1;    // ArrayDesignators for array, FieldDesignators for structs
 }
 
@@ -64,12 +70,20 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     return (Expr*)e2;
 }
 
+fn InitListKind InitListExpr.getKind(const InitListExpr* e) {
+    return (InitListKind)e.base.base.initListExprBits.kind;
+}
+
 public fn bool InitListExpr.isArray(const InitListExpr* e) {
-    return e.base.base.initListExprBits.is_array;
+    return e.getKind() == Array;
 }
 
 public fn void InitListExpr.setIsArray(InitListExpr* e) {
-    e.base.base.initListExprBits.is_array = 1;
+    e.base.base.initListExprBits.kind = InitListKind.Array;
+}
+
+public fn void InitListExpr.setIsEnumAssoc(InitListExpr* e) {
+    e.base.base.initListExprBits.kind = InitListKind.EnumAssocValues;
 }
 
 public fn bool InitListExpr.hasDesignators(const InitListExpr* e) {
@@ -92,15 +106,24 @@ public fn const Expr** InitListExpr.getValues2(const InitListExpr* e) {
     return (const Expr**)e.values;
 }
 
-fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
+public fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
     return e.endLoc;
 }
 
 fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    if (e.isArray()) out.add(" array");
-    else out.add(" struct");
+    switch (e.getKind()) {
+    case Struct:
+        out.add(" struct");
+        break;
+    case Array:
+        out.add(" array");
+        break;
+    case EnumAssocValues:
+        out.add(" enum-assoc-values");
+        break;
+    }
     if (e.hasDesignators()) out.add(" designators");
     out.newline();
 

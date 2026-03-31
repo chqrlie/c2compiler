@@ -50,6 +50,10 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExp
         Decl* d = m.getFullDecl();
         gen.emitSymbol(result, d);
         return;
+    case EnumAssocValue:
+    case EnumConstantValue:
+        assert(0);
+        break;
     }
 next:
     // base

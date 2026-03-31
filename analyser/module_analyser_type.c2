@@ -50,6 +50,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         return;
     }
 
+    bool has_assoc = d.hasAssocValues();
     bool is_regular = true;
     Value value = { }
     Value prev_value;
@@ -74,26 +75,28 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         Expr* initval = c.getInit();
         if (initval) {
             // NOTE: associated values are analysed in a separate phase
-            QualType res = ma.analyseConstExpr(c.getInit2(), true);
-            if (res.isInvalid()) return;
-            initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
-            if (!initval.isCtv()) {
-                ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
-                return;
-            }
-            Value ctv = ast.evalExpr(initval);
-            if (ctv.kind == Error) {
-                ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
-                return;
-            }
-            if (!ctv_analyser.checkTypeRange(ma.diags, implType, &ctv, 0, initval)) return;
+            if (!has_assoc) {
+                QualType res = ma.analyseConstExpr(c.getInit2(), true);
+                if (res.isInvalid()) return;
+                initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
+                if (!initval.isCtv()) {
+                    ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
+                    return;
+                }
+                Value ctv = ast.evalExpr(initval);
+                if (ctv.kind == Error) {
+                    ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
+                    return;
+                }
+                if (!ctv_analyser.checkTypeRange(ma.diags, implType, &ctv, 0, initval)) return;
 
-            if (i > 0 && ctv.is_less(&value)) {
-                value.decr(); // to get the previous value
-                ma.error(initval.getLoc(), "enum constants need to increase (value %s, previous %s)", ctv.str(), value.str());
-                return;
+                if (i > 0 && ctv.is_less(&value)) {
+                    value.decr(); // to get the previous value
+                    ma.error(initval.getLoc(), "enum constants need to increase (value %s, previous %s)", ctv.str(), value.str());
+                    return;
+                }
+                value = ctv;
             }
-            value = ctv;
         } else {
             if (!ctv_analyser.checkTypeRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
@@ -107,7 +110,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         ecd.setChecked();
         value.incr();
     }
-    if (is_regular) d.setRegular();
+    if (is_regular || has_assoc) d.setRegular();
 }
 
 fn QualType Analyser.analyseStructMemberTypeRef(Analyser* ma, TypeRef* ref) {

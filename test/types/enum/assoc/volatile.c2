@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (volatile i32 a) {    // @error{enum-associated values cannot be volatile}
+    A : { 1 },
+}
+

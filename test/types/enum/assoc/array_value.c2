@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (char[3] chars) {
+    A : { "ab" },       // will be 0-terminated
+    B : { { 'd', 'e', 'f' }, },
+    C : { { 1, 2, 3 }, },
+    D : { "abc" },       // @error{initializer-string for char array is too long}
+}
+

@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum1 enum u8 (test.Enum2 other) {
+    A : { AA },
+    B : { BB },
+    C : { CC },
+}
+
+type Enum2 enum u8 (test.Enum1 other) {
+    AA : { Enum1.A },
+    BB : { test.Enum1.B },
+    CC : { C },
+    DD : { A },
+}
+

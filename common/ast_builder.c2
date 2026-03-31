@@ -23,6 +23,7 @@ import component;
 import diagnostics;
 import number_radix local;
 import src_loc local;
+import string_buffer;
 import string_pool;
 
 import stdlib local;
@@ -30,6 +31,7 @@ import stdlib local;
 public type Builder struct @(opaque) {
     Context* context;           // no ownership
     diagnostics.Diags* diags;   // no ownership
+    string_pool.Pool* astPool;  // no ownership
     string_pool.Pool* auxPool;  // no ownership
     component.Component* comp;  // no ownership
     Module* mod;                // no ownership
@@ -47,15 +49,17 @@ public type Builder struct @(opaque) {
 }
 
 public fn Builder* create(Context* context,
-                            diagnostics.Diags* diags,
-                            string_pool.Pool* auxPool,
-                            u32 c2_name,
-                            u32 main_name,
-                            attr_handler.Handler* attr_handler_)
+                          diagnostics.Diags* diags,
+                          string_pool.Pool* astPool,
+                          string_pool.Pool* auxPool,
+                          u32 c2_name,
+                          u32 main_name,
+                          attr_handler.Handler* attr_handler_)
 {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
     b.diags = diags;
+    b.astPool = astPool;
     b.auxPool = auxPool;
     b.c2_name = c2_name;
     b.main_name = main_name;
@@ -73,6 +77,12 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.mod = nil;
     b.is_interface = !comp.hasSources();
     b.is_private = comp.isExternalSourceLib();  // all non-exported modules created here will be private
+}
+
+public fn void Builder.setModule(Builder* b, Module* mod) {
+    b.mod = mod;
+    b.ast = mod.getFirstAST();
+    b.ast_idx = b.ast.getIdx();
 }
 
 public fn bool Builder.setExternal(Builder* b, bool is_interface) {
@@ -268,14 +278,14 @@ public fn FieldInitInfo* Builder.actOnFieldInitInfo(Builder* b, StructTypeDecl* 
     return std.createFieldInfo(b.context);
 }
 
-public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
-                                            u32 name,
-                                            SrcLoc loc,
-                                            bool is_public,
-                                            TypeRefHolder* ref,
-                                            SrcLoc assignLoc,
-                                            bool has_embed,
-                                            Expr* initValue)
+public fn VarDecl* Builder.actOnGlobalVarDecl(Builder* b,
+                                              u32 name,
+                                              SrcLoc loc,
+                                              bool is_public,
+                                              TypeRefHolder* ref,
+                                              SrcLoc assignLoc,
+                                              bool has_embed,
+                                              Expr* initValue)
 {
     is_public |= b.is_interface;
     VarDecl* vd = VarDecl.create(b.context,
@@ -293,7 +303,7 @@ public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
     b.addSymbol(name, d);
     if (b.is_interface) d.setExternal();
 
-    return d;
+    return vd;
 }
 
 public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
@@ -315,6 +325,140 @@ public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
                           assignLoc,
                           false,
                           initValue);
+}
+
+public fn VarDecl* Builder.actOnEnumValue(Builder* b,
+                                          u32 name,
+                                          SrcLoc loc,
+                                          bool is_public,
+                                          const TypeRefHolder* ref,
+                                          SrcLoc assignLoc,
+                                          Expr* initValue)
+{
+    is_public |= b.is_interface;
+    return VarDecl.create(b.context,
+                          EnumValue,
+                          name,
+                          loc,
+                          is_public,
+                          ref,
+                          b.ast_idx,
+                          assignLoc,
+                          false,
+                          initValue);
+}
+
+public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
+                                               Decl* esv,
+                                               EnumTypeDecl* etd,
+                                               u32 index) {
+    Decl* d = etd.asDecl();
+
+    // Type is always an Type[Enum]
+    QualType a = b.createEnumAssocTypeAccess(esv.getType(), etd);
+
+    // name is Enum__<name> for now. The first letter is always capital-cased, even if not const
+    string_buffer.Buf* out = string_buffer.create(128, false, 0);
+    out.add(d.getName());
+    out.add("__");
+    out.add(ast.idx2name(esv.getNameIdx()));
+    u32 name_idx = b.astPool.add(out.str(), out.size(), true);
+    out.free();
+
+    TypeRefHolder ref.init();
+    ref.setBuiltin(Char, 0);    // just set as a builtin, not used
+
+    // create init-expr { 10, 20, 30 }, collected from different ECDs
+    EnumConstantDecl** constants = etd.getConstants();
+    ExprList values.init();
+    for (u32 i = 0; i < etd.getNumConstants(); i++) {
+        EnumConstantDecl* c = constants[i];
+        const Expr* init = c.getInit();
+        InitListExpr* i2 = (InitListExpr*)init;
+        Expr** init_values = i2.getValues();
+        values.add(init_values[index]);
+    }
+    InitListExpr* ile = b.actOnInitList(0, 0, values.getExprs(), etd.getNumConstants());
+    ile.setIsArray();
+    Expr* initValue = (Expr*)(ile);
+    initValue.setCtc();
+    initValue.setType(a);
+    values.free();
+
+    // create Enum__name variable
+    // use same ref as VarDecl, since refs will use that
+    VarDecl* vd = b.actOnGlobalVarDecl(name_idx, esv.getLoc(), esv.isPublic(), &ref, 0, false, initValue);
+    Decl* vdd = (Decl*)vd;
+    vdd.setType(a);
+    vdd.setChecked();
+
+    return vd;
+}
+
+public fn QualType Builder.createEnumAssocTypeAccess(Builder* b,
+                                                     QualType elem_type,
+                                                     EnumTypeDecl* etd) {
+    // create elem_type[Enum] Type
+    Decl* d = (Decl*)etd;
+    ArrayType* at = ArrayType.create(b.context, elem_type, true, etd.getNumConstants(), true, d.getType());
+    QualType qt = QualType.create((Type*)at);
+    qt.setCanonicalType(qt);
+    return qt;
+}
+
+// note: may NOT be called in check_only mode (since etd.getAssocDecl() returns nil then
+public fn void Builder.createEnumAssocValueAccess(Builder* b,
+                                                  Expr** e_ptr,
+                                                  EnumTypeDecl* etd,
+                                                  VarDecl* vd,
+                                                  QualType elem_type,
+                                                  MemberExpr* m,
+                                                  bool needs_deref) {
+    // Create identifier[enum]
+    // [enum] is the lhs of the MemberExpr
+    //e.dump();
+
+    // IdentifierExpr points to vd
+    IdentifierExpr* i = IdentifierExpr.create(b.context, 0, 0, 0);
+    i.setKind(Var);
+    Decl* d = (Decl*)vd;
+    i.setDecl(d);
+    Expr* ii = (Expr*)i;
+    ii.setType(d.getType());
+    ii.setLValue();
+    //ii.dump();
+
+    // Index expr
+    // TODO handle case where base is an Expr
+    Expr* idx = m.getBaseExpr();
+    if (!idx) {
+        // create IdentifierExpr based on name (analyser has set Decl)
+        u32 name_idx = m.getNameIdx(0);
+        IdentifierExpr* idx2 = IdentifierExpr.create(b.context, 0, name_idx, 0);
+        idx2.setDecl(m.getBaseDecl());
+        idx2.setKind(Var);
+        idx = (Expr*)idx2;
+        //idx.setType();
+        idx.setRValue();
+    }
+    if (needs_deref) {
+        idx = b.actOnUnaryOperator(0, Deref, idx);
+        // TODO analyse? (not really needed)
+    }
+    //idx.dump();
+
+    // ArraySubscriptExpr
+    ArraySubscriptExpr* ase = ArraySubscriptExpr.create(b.context, 0, 0, ii, idx);
+    Expr* ee = (Expr*)ase;
+    ee.setType(elem_type);
+    ee.setLValue(); // TODO can be RValue?
+    // TODO setCtc/ctv
+    //ee.dump();
+
+    // create AlternateExpr
+    Expr* alt = b.actOnAlternate(*e_ptr, ee);
+    alt.copyFlags(ee);   // TODO should be done inside AlternateExpr.create()
+    *e_ptr = alt;
 }
 
 public fn Stmt* Builder.actOnDeclStmt(Builder* b, VarDecl** decl, u32 count)
@@ -796,14 +940,16 @@ public fn EnumConstantDecl* Builder.actOnEnumConstant(Builder* b,
     return EnumConstantDecl.create(b.context, name, loc, is_public, b.ast_idx, init_expr);
 }
 
-public fn Decl* Builder.actOnEnumType(Builder* b,
+public fn EnumTypeDecl* Builder.actOnEnumType(Builder* b,
                                         u32 name,
                                         SrcLoc loc,
                                         bool is_public,
                                         bool is_incr,
                                         QualType implType,
                                         EnumConstantDecl** constants,
-                                        u32 num_constants)
+                                        u32 num_constants,
+                                        VarDecl** assoc_values,
+                                        u16 num_assoc_values)
 {
     is_public |= b.is_interface;
     EnumTypeDecl* d = EnumTypeDecl.create(b.context,
@@ -814,10 +960,12 @@ public fn Decl* Builder.actOnEnumType(Builder* b,
                                           implType,
                                           is_incr,
                                           constants,
-                                          num_constants);
+                                          num_constants,
+                                          assoc_values,
+                                          num_assoc_values);
     b.ast.addTypeDecl(d.asDecl());
     b.addSymbol(name, d.asDecl());
-    return (Decl*)d;
+    return d;
 }
 
 public fn Stmt* Builder.actOnAsmStmt(Builder* b,
@@ -1052,12 +1200,12 @@ public fn Expr* Builder.actOnRange(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs)
     return (Expr*)RangeExpr.create(b.context, loc, lhs, rhs);
 }
 
-public fn Expr* Builder.actOnInitList(Builder* b,
-                                      SrcLoc loc,
-                                      SrcLoc endLoc,
-                                      Expr** values,
-                                      u32 num_values) {
-    return (Expr*)InitListExpr.create(b.context, loc, endLoc, values, num_values);
+public fn InitListExpr* Builder.actOnInitList(Builder* b,
+                                              SrcLoc loc,
+                                              SrcLoc endloc,
+                                              Expr** values,
+                                              u32 num_values) {
+    return InitListExpr.create(b.context, loc, endloc, values, num_values);
 }
 
 public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b,

@@ -262,6 +262,14 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     QualType implType = p.builder.actOnBuiltinType(tokKindToBuiltinKind(p.tok.kind));
     p.consumeToken();
 
+    bool has_assoc_values = false;
+    // TODO BB FIX memleak op parse error (assoc_values)
+    DeclList assoc_values.init();
+    if (p.tok.kind == LParen) {
+        has_assoc_values = true;
+        p.parseEnumAssocAttributes(&assoc_values);
+    }
+
     u32 num_attr = p.parseOptionalAttributes();
 
     p.expectAndConsume(LBrace);
@@ -288,8 +296,17 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
             Expr* init_expr = nil;
             if (p.tok.kind == Equal) {
+                if (has_assoc_values) p.error("expected enum-associated value");
                 p.consumeToken();
                 init_expr = p.parseExpr(); // p.parseConstantExpr()
+            } else if (p.tok.kind == Colon) {
+                if (!has_assoc_values) p.error("expected enum-associated value");
+                p.consumeToken();
+                init_expr = p.parseInitList();
+            } else {
+                if (has_assoc_values) {
+                    p.error("missing enum-associated value");
+                }
             }
 
             EnumConstantDecl* constant = p.builder.actOnEnumConstant(const_name,
@@ -309,17 +326,110 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     p.expectAndConsume(RBrace);
 
-    Decl* d = p.builder.actOnEnumType(name,
-                                      loc,
-                                      is_public,
-                                      is_incr,
-                                      implType,
-                                      (EnumConstantDecl**)constants.getDecls(),
-                                      constants.size());
-
+    EnumTypeDecl* d = p.builder.actOnEnumType(name,
+                                              loc,
+                                              is_public,
+                                              is_incr,
+                                              implType,
+                                              (EnumConstantDecl**)constants.getDecls(),
+                                              constants.size(),
+                                              (VarDecl**)assoc_values.getDecls(),
+                                              (u16)assoc_values.size());
+    assoc_values.free();
     constants.free();
 
-    p.applyAttributes(d, num_attr);
+    p.applyAttributes((Decl*)d, num_attr);
+}
+
+fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
+    p.expectAndConsume(LParen);
+
+    if (p.tok.kind == RParen) p.error("expected type");
+
+    // VarDeclList args
+    while (p.tok.kind != RParen) {
+        VarDecl* decl = p.parseEnumAttribute();
+        decl.setOffset(params.count);  // set argument number
+        params.add(decl.asDecl());
+
+        if (p.tok.kind != Comma) break;
+        p.consumeToken();
+
+    }
+
+    p.expectAndConsume(RParen);
+}
+
+fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
+    if (p.tok.kind == KW_local) p.error("keyword 'local' is not allowed here");
+
+    bool is_public = false;
+    if (p.tok.kind == KW_public) {
+        is_public = true;
+        p.consumeToken();
+    }
+
+    TypeRefHolder ref.init();
+    // Note: dont check arrays in this phase, but in Analyser
+    if (p.tok.kind == KW_fn) {
+        p.consumeToken(); // fn
+
+        TypeRefHolder rtype.init();
+        p.parseSingleTypeSpecifier(&rtype);
+
+        DeclList params.init();
+
+        bool is_variadic = p.parseFunctionParams(&params, is_public, false);
+
+        Decl* fd = p.builder.actOnFunctionType(&rtype,
+                                               (VarDecl**)params.getDecls(),
+                                               params.size(),
+                                               is_variadic,
+                                               EnumValue);
+        // TODO attributes?
+        //u32 num_attr = p.parseOptionalAttributes();
+        //p.applyAttributes((Decl*)fd, num_attr);
+        params.free();
+
+        ref.setFunction((Decl*)fd);
+
+        if (p.tok.kind == LSquare) {
+            p.error("array types are not allowed here");
+        }
+    }  else {
+        p.parseTypeSpecifier(&ref);
+    }
+
+    if (p.tok.kind != Identifier) p.error("expected name");
+
+    SrcLoc loc = p.tok.loc;
+    u32 name = p.tok.name_idx;
+    if (!p.checkName(name, p.is_interface)) {
+        p.error("an enum-associated value name must start with a lower case character");
+    }
+    if (p.tok.reserved) {
+        p.diags.error(loc, "reserved word '%s' cannot be used as enum-associated value name", p.pool.idx2str(name));
+    }
+    p.consumeToken();
+
+    Expr* initValue = nil;
+    SrcLoc assignLoc = 0;
+
+    if (p.tok.kind == Equal) {
+        // TBD allowed?
+        bool accept_default = true;  // TODO BB
+        if (!accept_default) p.error("default enum-associated values are not allowed in type definitions");
+        assignLoc = p.tok.loc;
+        p.consumeToken();
+        initValue = p.parseInitValue(false);
+    }
+
+    VarDecl* param = p.builder.actOnEnumValue(name, loc, is_public, &ref, assignLoc, initValue);
+
+    u32 num_attr = p.parseOptionalAttributes();
+    p.applyAttributes((Decl*)param, num_attr);
+
+    return param;
 }
 
 fn void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {

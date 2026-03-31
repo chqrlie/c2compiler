@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+type Callback fn void (i32 a, void* b);
+
+fn void cb1(i32 a, void* b) { }
+fn void cb2(i32 a, void* b) { }
+
+public type Enum1 enum u8 (Callback cb) {
+    A : { cb1 },
+    B : { cb2 },
+}
+
+public type Enum2 enum u8 (fn void(i32, void*) cb, void* arg) {
+    A : { cb1, nil },
+    B : { cb2, nil },
+}
+

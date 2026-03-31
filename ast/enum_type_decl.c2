@@ -24,14 +24,18 @@ type EnumTypeDeclBits struct {
     u32 : NumDeclBits;
     u32 is_incremental : 1;
     u32 is_regular : 1;
+    u32 has_assoc_values : 1;
     u32 num_constants : 12;
 }
 
 public type EnumTypeDecl struct @(opaque) {
     Decl base;
     QualType implType;
-    u32 num_enum_functions;
+    u16 num_enum_functions;
+    u16 num_assoc_values;   // columns
     FunctionDecl** enum_functions;
+    VarDecl** assoc_values;     // TODO make tail-allocated?
+    VarDecl** assoc_decls;      // created during analysis
     EnumConstantDecl*[0] constants; // tail-allocated, for non-incremental enums
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 }
@@ -44,7 +48,9 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
                                               QualType implType,
                                               bool is_incremental,
                                               EnumConstantDecl** constants,
-                                              u32 num_constants)
+                                              u32 num_constants,
+                                              VarDecl** assoc_values,
+                                              u16 num_assoc_values)
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     if (is_incremental) size += sizeof(EnumConstantDecl**);
@@ -53,9 +59,11 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     QualType qt = QualType.create((Type*)etype);
     d.base.init(EnumType, name, loc, is_public, qt, ast_idx);
     d.base.enumTypeDeclBits.is_incremental = is_incremental;
+    d.base.enumTypeDeclBits.has_assoc_values = (num_assoc_values != 0);
     d.base.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
     d.num_enum_functions = 0;
+    d.num_assoc_values = num_assoc_values;
     d.enum_functions = nil;
 
     if (is_incremental) {
@@ -67,6 +75,19 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         for (u32 i=0; i<num_constants; i++) {
             constants[i].asDecl().setType(qt);
         }
+    }
+
+    if (num_assoc_values) {
+        u32 assoc_size = num_assoc_values * sizeof(VarDecl*);
+        d.assoc_values = c.alloc(assoc_size);
+        size += assoc_size;
+        string.memcpy(d.assoc_values, assoc_values, assoc_size);
+        d.assoc_decls = c.alloc(assoc_size);
+        size += assoc_size;
+        string.memset(d.assoc_decls, 0, assoc_size);
+    } else {
+        d.assoc_values = nil;
+        d.assoc_decls = nil;
     }
 #if AstStatistics
     Stats.addDecl(EnumType, size);
@@ -99,6 +120,10 @@ public fn bool EnumTypeDecl.isIncremental(const EnumTypeDecl* d) {
     return d.base.enumTypeDeclBits.is_incremental;
 }
 
+public fn bool EnumTypeDecl.hasAssocValues(const EnumTypeDecl* d) {
+    return d.base.enumTypeDeclBits.has_assoc_values;
+}
+
 public fn u32 EnumTypeDecl.getNumConstants(const EnumTypeDecl* d) {
     return d.base.enumTypeDeclBits.num_constants;
 }
@@ -129,6 +154,34 @@ public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Contex
     d.base.enumTypeDeclBits.num_constants = count;
 }
 
+public fn u32 EnumTypeDecl.getNumAssocs(const EnumTypeDecl* d) {
+    return d.num_assoc_values;
+}
+
+public fn VarDecl** EnumTypeDecl.getAssocValues(EnumTypeDecl* d) {
+    return d.assoc_values;
+}
+
+public fn VarDecl* EnumTypeDecl.getAssocValue(const EnumTypeDecl* d, u32 idx) {
+    return d.assoc_values[idx];
+}
+
+public fn u32 EnumTypeDecl.findAssocValue(const EnumTypeDecl* d, u32 name_idx) {
+    for (u32 i = 0; i < d.num_assoc_values; i++) {
+        VarDecl* vd = d.assoc_values[i];
+        if (vd.getNameIdx() == name_idx) return i;
+    }
+    return u32.max;
+}
+
+public fn VarDecl** EnumTypeDecl.getAssocDecls(EnumTypeDecl* d) {
+    return d.assoc_decls;
+}
+
+public fn VarDecl* EnumTypeDecl.getAssocDecl(const EnumTypeDecl* d, u32 idx) {
+    return d.assoc_decls[idx];
+}
+
 public fn EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_idx) {
     EnumConstantDecl** constants = d.constants;
     if (d.isIncremental()) constants = d.incr_constants[0];
@@ -145,7 +198,7 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
     return d.constants[idx];
 }
 
-public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
+public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u16 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     FunctionDecl** dest = c.alloc(size);
     string.memcpy(dest, funcs, size);
@@ -178,12 +231,32 @@ fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) 
     out.color(col_Attr);
     if (d.isIncremental()) out.add(" incremental");
     if (d.isRegular()) out.add(" regular");
+    if (d.hasAssocValues()) out.add(" assoc_values");
     d.base.printAttrs(out);
     d.base.printName(out);
     out.space();
     d.implType.print(out);
     out.newline();
 
+    if (d.num_assoc_values) {
+        out.indent(indent+1);
+        out.add("associated values:\n");
+        for (u32 i = 0; i < d.num_assoc_values; i++) {
+            d.assoc_values[i].print(out, indent + 2);
+        }
+        out.indent(indent+1);
+        out.color(col_Calc);
+        out.add("associated decls:\n");
+        for (u32 i = 0; i < d.num_assoc_values; i++) {
+            if (d.assoc_decls[i]) {
+                d.assoc_decls[i].print(out, indent + 2);
+            } else {
+                out.indent(indent+2);
+                out.color(col_Error);
+                out.add("-\n");
+            }
+        }
+    }
     EnumConstantDecl** constants = d.constants;
     if (d.isIncremental()) constants = d.incr_constants[0];
     for (u32 i=0; i<d.base.enumTypeDeclBits.num_constants; i++) {

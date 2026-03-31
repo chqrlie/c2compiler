@@ -1,0 +1,13 @@
+// @warnings{no-unused-variable no-unused-enum-assoc-value no-unused-enum-constant}
+module test;
+
+type Enum enum u8 (i32 a) {
+    A : { 1 },
+    B : { 2 },
+}
+
+public fn i32 main() {
+    Enum e = A;
+    return 0;
+}
+

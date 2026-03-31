@@ -1,0 +1,13 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+const i32 Var1 = Enum.a[C];
+const i32 Var2 = Enum.b[C]; // @error{initializer element is not a compile-time constant}
+
+type Enum enum u8 (i32 a, const i32 b) {
+    A : { 10, 100 },
+    B : { 20, 200 },
+    C : { 30, 300 },
+}
+

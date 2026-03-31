@@ -100,6 +100,10 @@ public fn const char* Module.getFirstFilename(const Module* m) @(unused) {
     return nil;
 }
 
+public fn AST* Module.getFirstAST(const Module* m) {
+    return m.files[0];
+}
+
 public fn void Module.visitASTs(const Module* m, ASTVisitor visitor, void* arg) {
     for (u32 i=0; i<m.num_files; i++) {
         visitor(arg, m.files[i]);

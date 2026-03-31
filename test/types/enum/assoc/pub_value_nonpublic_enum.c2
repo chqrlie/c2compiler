@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (public i32 a) {  // @error{public enum-associated value' with non-public enum type}
+    A : { 1 },
+}
+

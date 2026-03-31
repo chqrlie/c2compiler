@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (i32 a, const char* name) {
+    A : { .a = 1, .name = "a" }, // @error{field designator cannot initialize an enum associated value}
+#if 0
+    A : { .a = 1, .name = "a" },
+    B : { 2, .name = "b" },   // TODO allow partial?
+    C : { .a = 3, "c" },   // TODO allow partial?
+#endif
+}
+

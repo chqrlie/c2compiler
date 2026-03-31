@@ -1,0 +1,33 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public i32 a, const char* name, const Internal intr, Enum next) {
+    A : { 10, "a",   I2, B },
+    B : { 15, "bb",  I3, C },
+    C : { 20, "ccc", I1, A },
+}
+
+type Internal enum u8 {
+    I1,
+    I2,
+    I3,
+}
+
+public fn i32 main() {
+    Enum e = B;
+
+    i32* aa = Enum.a;
+    const char** names = Enum.name;
+    const Internal* is = Enum.intr;
+
+    i32 a = e.a;
+    const char* name = e.name;
+    Internal i = e.intr;
+
+    i32 bb = Enum.a[C];  // weird, but works
+    aa[Enum.C] = 25;
+    e.a = 30;
+    Enum next = e.next.next.next;
+    return 0;
+}
+

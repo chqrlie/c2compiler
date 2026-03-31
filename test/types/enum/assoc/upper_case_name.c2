@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public i32 Name) { // @error{an enum-associated value name must start with a lower case character}}
+    A : { 10 }
+}
+

@@ -218,6 +218,7 @@ fn void Compiler.build(Compiler* c,
     c.attr_handler = attr_handler.create(diags, target.getWarnings());
     c.builder = ast_builder.create(c.context,
                                    diags,
+                                   c.astPool,
                                    c.auxPool,
                                    c2_idx,
                                    c.main_idx,

@@ -334,6 +334,10 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
             break;
         case StructMember:
             break;
+        case EnumValue:
+            u32 off = vd.getOffset();
+            assert(off < eval.num_args);
+            return eval.args[off];
         }
         return Value.error("variable cannot be evaluated");
     default:
@@ -377,6 +381,8 @@ fn Value Evaluator.set_decl_value(Evaluator* eval, const Decl* d, Value v) {
             if (off < elemsof(eval.args)) return eval.args[off] = v;
             break;
         case StructMember:
+            break;
+        case EnumValue:
             break;
         }
         break;

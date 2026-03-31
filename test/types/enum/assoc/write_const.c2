@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (const i32 a) {
+    A : { 10 },
+    B : { 20 },
+}
+
+fn void test1(Enum e) {
+    e.a = 10;    // @error{cannot assign to variable with const-qualified type 'const i32'}
+}
+

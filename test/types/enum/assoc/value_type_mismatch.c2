@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (i32 a, const char* name) {
+    A : { "a",   // @error{invalid type conversion from 'const char[2]' to 'i32'}
+                1 }, // @error{incompatible integer to pointer conversion: 'i32' to 'const char*'}
+    B : { 1,  2 },  // @error{incompatible integer to pointer conversion: 'i32' to 'const char*'}
+}
+

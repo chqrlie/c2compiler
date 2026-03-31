@@ -553,6 +553,7 @@ fn void Parser.parseWarnings(Parser* p) {
             warnings.no_unused_public = disable;
             warnings.no_unused_label = disable;
             warnings.no_unused_enum_constant = disable;
+            warnings.no_unused_enum_assoc_value = disable;
             break;
         case "unused-variable":
             warnings.no_unused_variable = disable;
@@ -580,6 +581,9 @@ fn void Parser.parseWarnings(Parser* p) {
             break;
         case "unused-enum-constant":
             warnings.no_unused_enum_constant = disable;
+            break;
+        case "unused-enum-assoc-value":
+            warnings.no_unused_enum_assoc_value = disable;
             break;
         case "unreachable-code":
             warnings.no_unreachable_code = disable;

@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (i32 a,
+    i32 a) {   // @error{redefinition of 'a'}
+    A : { 10, 1 },
+}
+

@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public i32 a) {
+    A : { 10 },
+    B : { 15 },
+    C : { 20 },
+}
+
+type Internal enum u8 {
+    I1,
+    I2,
+    I3,
+}
+
+fn void test1(Enum e) {
+    e.a();  // @error{called object type i32 is not a function or function pointer}
+}
+

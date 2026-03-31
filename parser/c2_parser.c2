@@ -814,7 +814,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         }
 
         bool has_embed = p.builder.hasEmbedAttr();
-        Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
+        Decl* d = (Decl*)p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
         p.applyAttributes(d, num_attr);
 
         if (p.tok.kind != Comma)

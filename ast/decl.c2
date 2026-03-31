@@ -21,7 +21,7 @@ import string_buffer;
 
 import stdio;
 
-// TODO better order
+// TODO better order (most used first)
 public type DeclKind enum u8 {
     Function,
     Import,

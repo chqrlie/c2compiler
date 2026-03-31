@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (i32 a) {
+    A,  // @error{missing enum-associated value}
+    B,
+}
+

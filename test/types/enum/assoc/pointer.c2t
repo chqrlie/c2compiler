@@ -1,0 +1,33 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+
+// @file{file1}
+module test;
+
+
+public type Enum enum u8 (i32 a) {
+    A : { 10 },
+    B : { 20 },
+}
+
+fn i32 test1(Enum* e) {
+    return e.a;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef u8 test_Enum;
+enum test_Enum {
+   test_Enum_A,
+   test_Enum_B,
+};
+
+static int test_Enum__a[2] = { 10, 20 };
+static int test_test1(test_Enum* e);
+
+static int test_test1(test_Enum* e)
+{
+   return test_Enum__a[*e];
+}
+

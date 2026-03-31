@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 (i32 min) {   // @error{enum-associated name 'min' is reserved}
+    A : { 1 },
+}
+
+type Enum2 enum u8 (i32 max) {   // @error{enum-associated name 'max' is reserved}
+    A : { 1 },
+}
+

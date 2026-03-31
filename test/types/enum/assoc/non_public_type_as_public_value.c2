@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public Enum2 next) {  // @error{public declaration using non-public type 'test.Enum2'}
+    A : { B },
+    B : { C },
+    C : { A },
+}
+
+type Enum2 enum u8 { AA, BB, CC }
+

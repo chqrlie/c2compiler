@@ -625,9 +625,9 @@ fn Expr* Parser.parseInitList(Parser* p) {
     // check for missing comma between array inits. eg: {} {}
     if (p.tok.kind == LBrace) p.expect(Comma); // always gives error
 
-    SrcLoc endLoc = p.tok.loc + 1;
+    SrcLoc endLoc = p.tok.loc;
     p.expectAndConsume(RBrace);
-    Expr* e = p.builder.actOnInitList(loc, endLoc, values.getExprs(), values.size());
+    Expr* e = (Expr*)p.builder.actOnInitList(loc, endLoc, values.getExprs(), values.size());
     values.free();
     return e;
 }

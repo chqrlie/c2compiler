@@ -1,0 +1,184 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+
+fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
+    u32 num_assocs = etd.getNumAssocs();
+    VarDecl** values = etd.getAssocValues();
+
+    bool enum_public = etd.asDecl().isPublic();
+
+    // first analyse associated value 'column headers'
+    bool has_error = false;
+    bool savedPublic = ma.usedPublic;
+    VarDecl** decls = etd.getAssocDecls();
+    for (u32 i=0; i<num_assocs; i++) {
+        VarDecl* vd = values[i];
+        Decl* d = (Decl*)vd;
+
+        // save+restore public status
+        ma.usedPublic = d.isPublic();
+        TypeRef* ref = vd.getTypeRef();
+        QualType res = ma.analyseTypeRef(ref);
+        ma.usedPublic = savedPublic;
+
+        if (res.isInvalid()) {
+            has_error = true;
+            continue;
+        }
+
+        // TODO level?
+        if (ref.isVolatile(0)) {
+            ma.error(ref.getLoc(), "enum-associated values cannot be volatile");
+            has_error = true;
+            continue;
+        }
+        if (d.isPublic()) {
+            setTypePublicUsed(res);
+
+            if (!enum_public) {
+                ma.error(ref.getLoc(), "public enum-associated value' with non-public enum type");
+                has_error = true;
+                continue;
+            }
+        }
+
+        QualType canon = res.getCanonicalType();
+        // TODO allow enum types
+#if 0
+        if (canon.isArray()) {
+            ma.error(ref.getLoc(), "array types are not allowed here");
+            has_error = true;
+            continue;
+        }
+#endif
+
+        if (canon.isVoid()) {
+            ma.error(ref.getLoc(), "parameter has invalid type 'void'");
+            has_error = true;
+            continue;
+        }
+
+        u32 name_idx = vd.getNameIdx();
+        for (u32 j = 0; j < i; j++) {
+            VarDecl* prev = values[j];
+            u32 name_idx2 = prev.getNameIdx();
+            if (name_idx == name_idx2) {
+                has_error = true;
+                ma.error(vd.asDecl().getLoc(), "redefinition of '%s'", prev.getName());
+            }
+        }
+        if (name_idx == ma.min_idx || name_idx == ma.max_idx) {
+            has_error = true;
+            ma.error(vd.asDecl().getLoc(), "enum-associated name '%s' is reserved", vd.getName());
+        }
+        Decl* fn_decl = etd.findFunction(name_idx);
+        if (fn_decl) {
+            has_error = true;
+            ma.error(fn_decl.getLoc(), "redefinition of '%s'", fn_decl.getFullName());
+            ma.note(vd.asDecl().getLoc(), "previous definition is here");
+        }
+
+        if (vd.hasInit()) {
+            Expr* init = vd.getInit();
+            has_error = true;
+            ma.error(init.getLoc(), "default values are not allowed here");
+            continue;
+#if 0
+            if (vd.hasAutoAttr()) {
+                ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
+            }
+            Expr** initExpr = vd.getInit2();
+            ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false, true);
+#endif
+        }
+
+        // TODO BB dont allow init/auto-attr/etc?
+        d.setType(res);
+        d.setChecked();
+    }
+
+    if (has_error) return;
+
+    // analyse associated values per enum constant
+    u32 num_constants = etd.getNumConstants();
+    EnumConstantDecl** ecds = etd.getConstants();
+    ma.usedPublic = false;  // Note: will always be hidden
+    for (u32 i = 0; i < num_constants; i++) {
+        has_error |= !ma.analyseEnumConstantAssocValues(ecds[i], num_assocs, values);
+    }
+
+    // create global Decl for Enum associated value here, store pointer to it in Enum
+    if (!has_error && !ma.check_only) {
+        for (u32 i=0; i<num_assocs; i++) {
+            Decl* d = (Decl*)values[i];
+            VarDecl* assoc_value = ma.builder.createEnumAssocDecl(d, etd, i);
+            decls[i] = assoc_value;
+            //assoc_value.asDecl().dump();
+            // TODO also add as global to Module
+        }
+    }
+
+    ma.usedPublic = savedPublic;
+}
+
+fn bool Analyser.analyseEnumConstantAssocValues(Analyser* ma,
+                                                EnumConstantDecl* ecd,
+                                                u32 num_assocs,
+                                                VarDecl** columns) {
+    Expr* init = ecd.getInit();
+    assert(init.isInitList());
+    InitListExpr* ile = (InitListExpr*)init;
+    u32 num_values = ile.getNumValues();
+    Expr** values = ile.getValues();
+    ile.setIsEnumAssoc();
+    // Note: set the type to Void (not used anyway)
+    init.setType(getVoidQT());
+
+    bool is_ok = true;
+    for (u32 i=0; i<num_values; i++) {
+        Expr* value = values[i];
+
+        if (i >= num_assocs) {
+            ma.error(value.getLoc(), "too many initializers for values");
+            return false;
+        }
+        if (value.isFieldDesignatedInit()) {
+            ma.error(value.getLoc(), "field designator cannot initialize an enum associated value");
+            return false;
+        }
+        if (value.isArrayDesignatedInit()) {
+            ma.error(value.getLoc(), "array designator cannot initialize an enum associated value");
+            return false;
+        }
+
+        Decl* col_decl = (Decl*)columns[i];
+        bool ok = ma.analyseInitExpr(&values[i], col_decl.getType(), value.getLoc(), false, false);
+        if (!ok) {
+            is_ok = false;
+            continue;
+        }
+    }
+    if (num_values < num_assocs) {
+        Decl* col_decl = (Decl*)columns[num_values];
+        ma.error(ile.getEndLoc(), "missing initializer for enum-associated value '%s'", col_decl.getName());
+        return false;
+    }
+    return is_ok;
+}
+

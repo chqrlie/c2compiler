@@ -49,7 +49,7 @@ public fn void Finder.check(Finder* s, Decl* d) {
         break;
     case EnumConstant:
         d.dump();
-        assert(0); // TODO
+        //assert(0); // TODO
         break;
     case FunctionType:
         FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
@@ -108,6 +108,8 @@ fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
 }
 
 fn void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
+    // Note: enum-associated values are not a real dependency between enums
+    if (etd.hasAssocValues()) return;
     u32 num_constants = etd.getNumConstants();
     EnumConstantDecl** constants = etd.getConstants();
     for (u32 i=0; i<num_constants; i++) {

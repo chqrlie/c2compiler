@@ -1,0 +1,15 @@
+// @warnings{no-unused-variable no-unused-enum-constant}
+module test;
+
+type Enum enum u8 (i32 a,    // @warning{unused enum-associated value 'test.Enum.a'}
+                   i32 b) {  // @warning{unused enum-associated value 'test.Enum.b'}
+    A : { 1, 11 },
+    B : { 2, 22 },
+}
+
+public fn i32 main() {
+    Enum e = A;
+    //return e.b;
+    return 0;
+}
+

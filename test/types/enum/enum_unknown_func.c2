@@ -20,10 +20,10 @@ public fn Kind Ref.getKind(const Ref* r) {
 
 fn void test1(Ref left) {
     Kind k = Kind.A;
-    const char* s2 = k.str2();  // @error{enum 'test.Kind' has no function 'str2'}
+    const char* s2 = k.str2();  // @error{enum 'test.Kind' has no function or associated value 'str2'}
 }
 
 fn void test2(Ref left) {
-    const char* str = left.getKind().str2(); // @error{enum 'test.Kind' has no function 'str2'}
+    const char* str = left.getKind().str2(); // @error{enum 'test.Kind' has no function or associated value 'str2'}
 }
 

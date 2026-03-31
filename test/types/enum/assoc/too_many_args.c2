@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+public type Enum enum u8 (public i32 a, const char* name) {
+    A : { 1, "a",   3 },  // @error{too many initializers for values}
+    B : { 2, "bb" },
+    C : { 3, "ccc", 5 },  // @error{too many initializers for values}
+}
+

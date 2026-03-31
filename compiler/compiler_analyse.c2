@@ -208,6 +208,8 @@ fn bool Compiler.check_exports(Compiler* c) {
 }
 
 fn void Compiler.analyse_component(Compiler* c, component.Component* comp) {
+    c.builder.setComponent(comp);
+
     // sort modules
     module_sorter.sort(comp, c.diags);
 

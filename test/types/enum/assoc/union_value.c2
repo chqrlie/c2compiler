@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+i32 number = 10;
+
+type Enum enum u8 (Union info) {
+    A : { { .c = 'a' } },
+    B : { { .ptr = &number } },
+}
+
+type Union union {
+    char c;
+    void* ptr;
+}
+

@@ -251,6 +251,9 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         case StructMember:
             kind = StructMember;
             break;
+        case EnumValue:
+            kind = IdentifierKind.Var;
+            break;
         }
         break;
     }
@@ -426,6 +429,10 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
             case StaticTypeFunc:
             case EnumConstant:
                 break;
+            case EnumAssocValue:
+            case EnumConstantValue:
+                assert(0);  // TODO
+                break;
             }
             const Decl* d = m.getFullDecl();
             if (d.isVariable()) {
@@ -507,7 +514,6 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     // if base is array with enum index_type -> resolve index with enum scope
     bool is_enum_index = false;
     QualType index_type = QualType_Invalid;
-    QualType qidx;
     QualType otype = orig.getType();
     otype = otype.getCanonicalType();
     if (otype.isArray()) {
@@ -515,6 +521,8 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
         is_enum_index = at.isEnumIndex();
         index_type = at.getIndexType();
     }
+    // TODO if it is an EnumAssocValue and Index is CTC, make ArraySubScript CTC and/or CTV
+    QualType qidx;
     if (is_enum_index && ma.checkEnumArg(sub.getIndex2(), index_type)) {
         qidx = index_type;
     } else {
@@ -546,6 +554,10 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
                     return QualType_Invalid;
                 }
             }
+        }
+
+        if (is_enum_index) {
+            // TODO make CTC or CTV if LHS is also CTC and enum-assoc values is const
         }
     }
 

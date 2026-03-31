@@ -160,23 +160,67 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     // no need to update baseType
                 } else {    // search for enum-function
                     Decl* ef = etd.findFunction(name_idx);
-                    if (!ef) {
-                        ma.error(loc, "enum '%s' has no function '%s'", d.getFullName(), name);
+                    if (ef) {
+                        // Note: not always CallExpr here, but use CallKind enum since same meaning
+                        ck = (valtype == NValue) ? StaticTypeFunc : TypeFunc;
+                        if (valtype == NValue) {
+                            ck = CallKind.StaticTypeFunc;
+                            m.setKind(StaticTypeFunc);
+                        } else {
+                            ck = CallKind.TypeFunc;
+                            m.setKind(TypeFunc);
+                        }
+                        d = ef;
+                        baseType = ef.getType();
+                        if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
+                        valtype = RValue;
+                        break;
+                    }
+
+                    // check for associated value
+                    u32 idx = etd.findAssocValue(name_idx);
+                    if (idx == u32.max) {
+                        ma.error(loc, "enum '%s' has no function or associated value '%s'", d.getFullName(), name);
                         return QualType_Invalid;
                     }
-                    //FunctionDecl* fd = (FunctionDecl*)ef);
-                    // Note: not always CallExpr here, but use CallKind enum since same meaning
-                    ck = (valtype == NValue) ? StaticTypeFunc : TypeFunc;
-                    if (valtype == NValue) {
-                        ck = CallKind.StaticTypeFunc;
-                        m.setKind(StaticTypeFunc);
-                    } else {
-                        ck = CallKind.TypeFunc;
-                        m.setKind(TypeFunc);
+
+                    VarDecl* vd = etd.getAssocValue(idx);
+                    Decl* vdd = (Decl*)vd;
+                    vdd.setUsed();
+                    // TODO setUsedPublic()
+                    // always set e.a (a -> AssocValue)
+
+                    QualType qt = vdd.getType();
+                    e.setLValue();
+
+                    //Note: getAssocDecl will be nil in check_only mode!
+                    if (valtype == NValue) {    // Enum.a -> decl
+                        // Return type: X[Enum]
+                        e.setCtc();
+                        m.setKind(EnumAssocValue);
+                        assert(!baseType.isPointer());  // can happen?
+                        if (ma.check_only) {
+                            // generate X[Enum] type
+                            qt = ma.builder.createEnumAssocTypeAccess(vdd.getType(), etd);
+                        } else  {
+                            vdd = (Decl*)etd.getAssocDecl(idx);
+                            qt = vdd.getType(); // will be X[Enum]
+                        }
+                        m.setDecl(vdd, i);  // always point to AssocValue
+                    } else { // e.a -> decl[e]
+                        // Return type: X
+                        // TODO if e is CTV, e.a is also CTV
+                        m.setKind(EnumConstantValue);
+                        m.setDecl(vdd, i);  // always point to AssocValue
+                        if (ma.check_only) {
+                            // nothing to do
+                        } else  {
+                            VarDecl* ad = etd.getAssocDecl(idx);
+                            ma.builder.createEnumAssocValueAccess(e_ptr, etd, ad, vdd.getType(), m, baseType.isPointer());
+                        }
                     }
-                    d = ef;
-                    baseType = ef.getType();
-                    if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
+                    return qt;
+
                 }
                 valtype = RValue;
                 break;
