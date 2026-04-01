@@ -87,7 +87,6 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         return false;
     case Compound:
         CompoundStmt* c = (CompoundStmt*)s;
-        const u32 num_stmts = c.getCount();
         gen.emitStmts(c.getStmts(), c.getCount());
         return true;
     case Decl:

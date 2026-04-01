@@ -518,6 +518,8 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         fd.setAttrUnusedParams();
         break;
     case Section:
+    case CName:
+    case CDef:
         b.storeAttr(d, a);
         break;
     case NoReturn:
@@ -529,10 +531,6 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
     case Weak:
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         fd.setAttrWeak();
-        break;
-    case CName:
-    case CDef:
-        b.storeAttr(d, a);
         break;
     case Constructor:
         fd.setAttrConstructor();
@@ -640,21 +638,15 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         d.setAttrUnused();
         break;
     case Section:
-        b.storeAttr(d, a);
-        break;
     case Aligned:
+    case CName:
+    case CDef:
+    case Embed:
         b.storeAttr(d, a);
         break;
     case Weak:
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         vd.setAttrWeak();
-        break;
-    case CName:
-    case CDef:
-        b.storeAttr(d, a);
-        break;
-    case Embed:
-        b.storeAttr(d, a);
         break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to variables",
@@ -666,7 +658,7 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
 public fn bool Builder.hasOpaqueAttr(Builder* b) {
     for (u32 i=0; i<b.num_attrs; i++) {
         const Attr* a = &b.attrs[i];
-        if (b.attrs[i].kind == Opaque) return true;
+        if (a.kind == Opaque) return true;
     }
     return false;
 }
@@ -674,7 +666,7 @@ public fn bool Builder.hasOpaqueAttr(Builder* b) {
 public fn bool Builder.hasEmbedAttr(Builder* b) {
     for (u32 i=0; i<b.num_attrs; i++) {
         const Attr* a = &b.attrs[i];
-        if (b.attrs[i].kind == Embed) return true;
+        if (a.kind == Embed) return true;
     }
     return false;
 }
@@ -768,6 +760,7 @@ fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
         b.actOnStructAttr(d, a);
         break;
     case EnumType:
+    case AliasType:
         b.actOnTypeAttr(d, a);
         break;
     case FunctionType:
@@ -777,9 +770,6 @@ fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
 
         FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
         b.applyAttribute((Decl*)ftd.getDecl(), a);
-        break;
-    case AliasType:
-        b.actOnTypeAttr(d, a);
         break;
     case Variable:
         b.actOnVarAttr(d, a);
@@ -795,7 +785,6 @@ public fn void Builder.applyAttributes(Builder* b, Decl* d, u32 count) {
     assert(count <= b.num_attrs);
     for (u32 i = 0; i < count; i++) {
         const Attr* a = &b.attrs[b.num_attrs - count + i];
-
         if (a.kind == Unknown) {
             if (!b.attr_handler.handle(d, a)) b.storeAttr(d, a);
         } else {

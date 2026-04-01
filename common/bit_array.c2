@@ -32,21 +32,21 @@ public fn void BitArray.reset(BitArray* a, u32 cap) {
 public fn void BitArray.set(BitArray* a, u32 idx) {
     //assert(idx < a.cap);
     u32 word = idx / 64;
-    idx -= word * 64;
-    a.data[word] |= ((u64)1 << idx);
+    u32 bit = idx & 63;
+    a.data[word] |= ((u64)1 << bit);
 }
 
 public fn void BitArray.clear(BitArray* a, u32 idx) {
     //assert(idx < MaxBits);
     u32 word = idx / 64;
-    idx -= word * 64;
-    a.data[word] &= ~((u64)1 << idx);
+    u32 bit = idx & 63;
+    a.data[word] &= ~((u64)1 << bit);
 }
 
 public fn bool BitArray.get(const BitArray* a, u32 idx) {
     //assert(idx < MaxBits);
     u32 word = idx / 64;
-    idx -= word * 64;
-    return (a.data[word] >> idx) & 0x1;
+    u32 bit = idx & 63;
+    return (a.data[word] >> bit) & 0x1;
 }
 
