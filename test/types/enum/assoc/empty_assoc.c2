@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-public type Enum enum u8 () { // @error{expected type}
+public type Enum enum u8 () { // @error{expected list of enum-associated value declarations}
     A
 }
 

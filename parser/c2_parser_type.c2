@@ -263,7 +263,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.consumeToken();
 
     bool has_assoc_values = false;
-    // TODO BB FIX memleak op parse error (assoc_values)
+    // TODO BB FIX memleak on parse error (assoc_values)
     DeclList assoc_values.init();
     if (p.tok.kind == LParen) {
         has_assoc_values = true;
@@ -296,16 +296,16 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
             Expr* init_expr = nil;
             if (p.tok.kind == Equal) {
-                if (has_assoc_values) p.error("expected enum-associated value");
+                if (has_assoc_values) p.error("expected ':' and enum-associated values");
                 p.consumeToken();
                 init_expr = p.parseExpr(); // p.parseConstantExpr()
             } else if (p.tok.kind == Colon) {
-                if (!has_assoc_values) p.error("expected enum-associated value");
+                if (!has_assoc_values) p.error("expected '=' or ',' after enum constant");
                 p.consumeToken();
                 init_expr = p.parseInitList();
             } else {
                 if (has_assoc_values) {
-                    p.error("missing enum-associated value");
+                    p.error("missing list of enum-associated values");
                 }
             }
 
@@ -344,7 +344,8 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
     p.expectAndConsume(LParen);
 
-    if (p.tok.kind == RParen) p.error("expected type");
+    // TODO error message is obscure: list of associate values cannot be empty
+    if (p.tok.kind == RParen) p.error("expected list of enum-associated value declarations");
 
     // VarDeclList args
     while (p.tok.kind != RParen) {
@@ -354,7 +355,6 @@ fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
 
         if (p.tok.kind != Comma) break;
         p.consumeToken();
-
     }
 
     p.expectAndConsume(RParen);

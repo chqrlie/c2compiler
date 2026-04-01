@@ -159,11 +159,11 @@ fn bool Analyser.analyseEnumConstantAssocValues(Analyser* ma,
             return false;
         }
         if (value.isFieldDesignatedInit()) {
-            ma.error(value.getLoc(), "field designator cannot initialize an enum associated value");
+            ma.error(value.getLoc(), "field designator cannot initialize an enum-associated value");
             return false;
         }
         if (value.isArrayDesignatedInit()) {
-            ma.error(value.getLoc(), "array designator cannot initialize an enum associated value");
+            ma.error(value.getLoc(), "array designator cannot initialize an enum-associated value");
             return false;
         }
 

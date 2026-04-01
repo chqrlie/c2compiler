@@ -187,7 +187,7 @@ public fn const char* VarDecl.getEnumAssocValueName(const VarDecl* d, const char
     local char[2][128] tmp_buf;
     local u32 tmp_id = 0;
     u32 tmp_size = elemsof(tmp_buf[0]);
-    char* tmp = tmp_buf[tmp_id++ & 3];
+    char* tmp = tmp_buf[tmp_id++ & 1];
     stdio.snprintf(tmp, tmp_size, "%s.%s", enum_name, d.getName());
     return tmp;
 }
@@ -197,7 +197,7 @@ public fn const char* VarDecl.getName(const VarDecl* d) {
 }
 
 public fn u32 VarDecl.getNameIdx(const VarDecl* d) {
-    return (d.base.name_idx);
+    return d.base.name_idx;
 }
 
 public fn Decl* VarDecl.asDecl(VarDecl* d) {

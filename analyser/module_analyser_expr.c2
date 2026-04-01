@@ -252,7 +252,7 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
             kind = StructMember;
             break;
         case EnumValue:
-            kind = IdentifierKind.Var;
+            kind = Var;
             break;
         }
         break;

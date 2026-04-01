@@ -28,7 +28,7 @@ type InitListKind enum u8 {
 
 type InitListExprBits struct {
     u32 : NumExprBits;
-    u32 kind : 2;   // InitListKind
+    InitListKind kind : 2;   // InitListKind
     u32 has_designators : 1;    // ArrayDesignators for array, FieldDesignators for structs
 }
 
@@ -71,7 +71,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
 }
 
 fn InitListKind InitListExpr.getKind(const InitListExpr* e) {
-    return (InitListKind)e.base.base.initListExprBits.kind;
+    return e.base.base.initListExprBits.kind;
 }
 
 public fn bool InitListExpr.isArray(const InitListExpr* e) {
@@ -79,11 +79,11 @@ public fn bool InitListExpr.isArray(const InitListExpr* e) {
 }
 
 public fn void InitListExpr.setIsArray(InitListExpr* e) {
-    e.base.base.initListExprBits.kind = InitListKind.Array;
+    e.base.base.initListExprBits.kind = Array;
 }
 
 public fn void InitListExpr.setIsEnumAssoc(InitListExpr* e) {
-    e.base.base.initListExprBits.kind = InitListKind.EnumAssocValues;
+    e.base.base.initListExprBits.kind = EnumAssocValues;
 }
 
 public fn bool InitListExpr.hasDesignators(const InitListExpr* e) {

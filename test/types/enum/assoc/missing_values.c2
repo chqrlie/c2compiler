@@ -2,7 +2,7 @@
 module test;
 
 type Enum enum u8 (i32 a) {
-    A,  // @error{missing enum-associated value}
+    A,  // @error{missing list of enum-associated values}
     B,
 }
 

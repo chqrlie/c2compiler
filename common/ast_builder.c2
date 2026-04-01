@@ -1202,10 +1202,10 @@ public fn Expr* Builder.actOnRange(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs)
 
 public fn InitListExpr* Builder.actOnInitList(Builder* b,
                                               SrcLoc loc,
-                                              SrcLoc endloc,
+                                              SrcLoc endLoc,
                                               Expr** values,
                                               u32 num_values) {
-    return InitListExpr.create(b.context, loc, endloc, values, num_values);
+    return InitListExpr.create(b.context, loc, endLoc, values, num_values);
 }
 
 public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b,

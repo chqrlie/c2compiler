@@ -65,6 +65,8 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     d.num_enum_functions = 0;
     d.num_assoc_values = num_assoc_values;
     d.enum_functions = nil;
+    d.assoc_values = nil;
+    d.assoc_decls = nil;
 
     if (is_incremental) {
         assert(num_constants == 0);
@@ -85,9 +87,6 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         d.assoc_decls = c.alloc(assoc_size);
         size += assoc_size;
         string.memset(d.assoc_decls, 0, assoc_size);
-    } else {
-        d.assoc_values = nil;
-        d.assoc_decls = nil;
     }
 #if AstStatistics
     Stats.addDecl(EnumType, size);
