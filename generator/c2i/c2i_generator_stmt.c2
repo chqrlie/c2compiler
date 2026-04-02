@@ -21,7 +21,7 @@ import string_buffer;
 fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     string_buffer.Buf* out = gen.out;
 
-    if (newline) out.indent(indent);
+    if (out.endsWith('\n')) out.indent(indent);
 
     gen.indent = indent;
     switch (s.getKind()) {
@@ -49,43 +49,25 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitStmt(i.getCond(), 0, false);
         out.add(") ");
         Stmt* thenStmt = i.getThen();
-        gen.emitStmt(thenStmt, indent, false);
-        if (!thenStmt.isCompound()) {
-            if (!out.endsWith('\n')) {
-                if (!out.endsWith('}')) out.add1(';');
-            }
-        }
+        gen.emitStmt(thenStmt, indent, true);
         Stmt* elseStmt = i.getElse();
         if (elseStmt) {
             if (thenStmt.isCompound()) {
+                out.trim(1);  // put the else after the `}`
                 out.space();
             } else {
-                if (!out.endsWith('\n')) out.newline();
                 out.indent(indent);
             }
             out.add("else ");
-            gen.emitStmt(elseStmt, indent, false);
-            if (!elseStmt.isCompound()) {
-                if (!out.endsWith('\n')) {
-                    if (!out.endsWith('}')) out.add1(';');
-                }
-            }
+            gen.emitStmt(elseStmt, indent, true);
         }
-        if (!out.endsWith('\n')) out.newline();
         break;
     case While:
         WhileStmt* w = (WhileStmt*)s;
         out.add("while (");
         gen.emitStmt(w.getCond(), 0, false);
         out.add(") ");
-        Stmt* body = w.getBody();
-        gen.emitStmt(body, indent, false);
-        if (!body.isCompound()) {
-            if (!out.endsWith('\n')) {
-                if (!out.endsWith('}')) out.add1(';');
-            }
-        }
-        if (!out.endsWith('\n')) out.newline();
+        gen.emitStmt(w.getBody(), indent, true);
         break;
     case For:
         ForStmt* f = (ForStmt*)s;
@@ -106,14 +88,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitExpr(out, cont);
         }
         out.add(") ");
-        Stmt* body = f.getBody();
-        gen.emitStmt(body, indent, false);
-        if (!body.isCompound()) {
-            if (!out.endsWith('\n')) {
-                if (!out.endsWith('}')) out.add1(';');
-            }
-        }
-        if (!out.endsWith('\n')) out.newline();
+        gen.emitStmt(f.getBody(), indent, true);
         break;
     case Switch:
         gen.emitSwitchStmt((SwitchStmt*)s, indent);
@@ -130,13 +105,11 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case Label:
         out.unindent();
         LabelStmt* ls = (LabelStmt*)s;
-        Stmt* stmt = ls.getStmt();
         out.add(ls.getName());
         out.add1(':');
         out.newline();
-        if (stmt) {
-            gen.emitStmt(stmt, indent, true);
-        }
+        Stmt* stmt = ls.getStmt();
+        if (stmt) gen.emitStmt(stmt, indent, true);
         break;
     case Goto:
         GotoStmt* g = (GotoStmt*)s;
@@ -155,8 +128,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         }
 
         out.indent(indent);
-        out.add1('}');
-        if (newline) out.newline();
+        out.add("}\n");
         break;
     case Decl:
         DeclStmt* ds = (DeclStmt*)s;

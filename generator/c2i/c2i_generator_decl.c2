@@ -222,7 +222,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Dec
         out.add(ecd.asDecl().getName());
         Expr* initExpr = ecd.getInit();
         if (initExpr) {
-            out.add (" = ");
+            out.add(" = ");
             gen.emitExpr(out, initExpr);
         }
         out.add(",\n");
@@ -298,15 +298,12 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, const Decl* d, u32 indent) {
     StructTypeDecl* std = (StructTypeDecl*)d;
+    const char* stype = std.isStruct() ? "struct" : "union";
     if (indent == 0) {
-        out.add("type ");
-        out.add(d.getName());
-        if (std.isStruct()) out.add(" struct");
-        else out.add(" union");
+        out.print("type %s %s", d.getName(), stype);
     } else {
         out.indent(indent);
-        if (std.isStruct()) out.add("struct");
-        else out.add("union");
+        out.add(stype);
         if (d.getNameIdx()) {
             out.space();
             out.add(d.getName());

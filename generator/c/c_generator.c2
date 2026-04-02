@@ -420,15 +420,15 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     StructTypeDecl* std = (StructTypeDecl*)d;
+    const char* stype = std.isStruct() ? "struct" : "union";
     if (std.isGlobal()) {
-        if (std.isStruct()) out.add("struct ");
-        else out.add("union ");
+        out.add(stype);
+        out.space();
         gen.emitCName(out, d);
         if (!std.hasAttrNoTypeDef()) out.add1('_'); // either generate 'struct stat_' or 'struct stat'
     } else {
         out.indent(indent);
-        if (std.isStruct()) out.add("struct");
-        else out.add("union");
+        out.add(stype);
     }
     out.add(" {\n");
 
