@@ -1,0 +1,16 @@
+// @warnings{no-unused-variable no-unused-enum-constant}
+module test;
+
+public type Enum enum u8    // @warning{type 'test.Enum' is not used public}
+                  (i32 a @(unused),
+                   public i32 b) {     // @warning{enum-associated value 'test.Enum.b' is not used public}
+    A : { 1, 10 },
+    B : { 2, 20 },
+}
+
+public fn i32 main() {
+    Enum e = A;
+    i32 b = e.b;
+    return 0;
+}
+
