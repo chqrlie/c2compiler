@@ -1,0 +1,22 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+
+// @file{file1}
+module mod1;
+
+public type Enum enum u8 (public i32 a, i32 b) {
+    A : { 10, 1 },
+    B : { 20, 2 },
+}
+
+// @file{file2}
+module mod2;
+
+import mod1 local;
+
+fn void test1(Enum e) {
+    i32 a = e.a;
+    i32 b = e.b;    // @error{enum-associated value 'b' is not public}
+}
+

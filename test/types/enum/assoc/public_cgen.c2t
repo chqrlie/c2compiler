@@ -1,0 +1,45 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build fast
+
+// @file{file1}
+module mod1;
+
+public type Enum enum u8 (public i32 a, i32 b) {
+    A : { 10, 1 },
+    B : { 20, 2 },
+}
+
+// @file{file2}
+module mod2;
+
+import mod1 local;
+
+fn void test1(Enum e) {
+    i32 a = e.a;
+}
+
+// @expect{atleast, cgen/mod1.h}
+
+typedef u8 mod1_Enum;
+enum mod1_Enum {
+   mod1_Enum_A,
+   mod1_Enum_B,
+};
+
+extern int mod1_Enum__a[2];
+
+// @expect{atleast, cgen/mod1.c}
+
+int mod1_Enum__a[2] = { 10, 20 };
+static int mod1_Enum__b[2] = { 1, 2 };
+
+// @expect{atleast, cgen/mod2.c}
+
+static void mod2_test1(mod1_Enum e);
+
+static void mod2_test1(mod1_Enum e)
+{
+   int a = mod1_Enum__a[e];
+}
+

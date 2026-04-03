@@ -568,6 +568,14 @@ public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
         if (d.isPublic()) {
             d.setUsedPublic();
         } else {
+            // check if Enum-associated value
+            if (d.isVariable()) {
+                ast.VarDecl* vd = (ast.VarDecl*)d;
+                if (vd.isEnumValue()) {
+                    s.diags.error(loc, "enum-associated value '%s' is not public", d.getName());
+                    return false;
+                }
+            }
             s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
             return false;
         }

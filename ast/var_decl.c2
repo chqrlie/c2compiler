@@ -236,6 +236,10 @@ fn bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == StructMember;
 }
 
+public fn bool VarDecl.isEnumValue(const VarDecl* d) {
+    return d.getKind() == EnumValue;
+}
+
 fn bool VarDecl.isBitField(const VarDecl* d) {
     return d.base.varDeclBits.is_bitfield;
 }
