@@ -1,0 +1,27 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+
+// @file{file1}
+module test;
+
+type Foo enum u8 (const char* name) {
+    A :  { "a" },
+    B :  { "b" },
+}
+
+fn Foo get() {
+    return B;
+}
+
+fn void test1() {
+    const char* name = get().name;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_test1(void)
+{
+   const char* name = test_Foo__name[test_get()];
+}
+
