@@ -49,6 +49,7 @@ type Options struct {
     bool print_timing;
     bool show_targets;
     bool show_plugins;
+    bool terse_mode;
     bool no_plugins;
     bool use_ir_backend;
     bool trace_calls;
@@ -214,6 +215,7 @@ const char[] Usage_help =
     "  --showplugins     print available plugins\n"
     "  --target [triple] cross compile for a specified architecture\n"
     "  --targets         show available targets in recipe\n"
+    "  --terse           prevent compiler logging messages\n"
     "  --test            test mode (do not check for main() function)\n"
     "  --trace-calls     generate code that traces function calls\n"
     "  --version         print version\n";
@@ -300,6 +302,9 @@ fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* co
         break;
     case "targets":
         opts.show_targets = true;
+        break;
+    case "terse":
+        opts.terse_mode = true;
         break;
     case "test":
         comp_opts.test_mode = true;
@@ -535,7 +540,8 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     c.plugins = plugin_mgr.create(c.auxPool, c.opts.print_timing, c.opts.log_verbose, c.opts.no_plugins);
 
     if (c.opts.build_file) {
-        console.log("using build-file %s", c.opts.build_file);
+        if (!c.opts.terse_mode)
+            console.log("using build-file %s", c.opts.build_file);
         c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.opts.build_file);
         if (!c.build_info) exit(EXIT_FAILURE);
 
@@ -613,11 +619,13 @@ fn bool Context.build_target(Context* c,
     if (c.opts.force_warnings) target.enableWarnings();
 
     if (c.opts.output_name) {
-        console.log("building %s as %s", target_name, c.opts.output_name);
+        if (!c.opts.terse_mode)
+            console.log("building %s as %s", target_name, c.opts.output_name);
         target_name = c.opts.output_name;
         target.setNameIdx(c.auxPool.addStr(target_name, true));
     } else {
-        console.log("building %s", target_name);
+        if (!c.opts.terse_mode)
+            console.log("building %s", target_name);
     }
 
     c.comp_opts.trace_calls = c.opts.trace_calls;
