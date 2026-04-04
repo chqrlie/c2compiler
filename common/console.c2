@@ -19,6 +19,7 @@ import color local;
 
 import stdarg local;
 import stdio local;
+import string local;
 
 bool use_color = false;
 bool show_debug = false;
@@ -38,9 +39,13 @@ public fn void setTiming(bool enable) {
     show_timing = enable;
 }
 
+char[BUF_SIZE] last_buf;
+u32 last_x = 0;
+
 public fn void debug(const char* format @(printf_format), ...) {
     if (!show_debug) return;
 
+    last_buf[0] = '\0';
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
@@ -59,12 +64,24 @@ public fn void log(const char* format @(printf_format), ...) {
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
+    // combine log with previous log line if possible
+    u32 i = 0;
+    while (buf[i] && buf[i] != ' ' && buf[i] == last_buf[i]) i++;
+    u32 len2 = 1 + (u32)strlen(buf + i);
+    if (i > 0 && last_x + len2 < 80) {
+        printf("\033[A\033[%dC,%s\n", last_x, buf + i);
+        last_x += len2;
+        return;
+    }
     printf("%s\n", buf);
+    strcpy(last_buf, buf);
+    last_x = (u32)strlen(buf);
 }
 
 public fn void warn(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
+    last_buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
@@ -78,6 +95,7 @@ public fn void warn(const char* format @(printf_format), ...) {
 public fn void error(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
+    last_buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
@@ -91,6 +109,7 @@ public fn void error(const char* format @(printf_format), ...) {
 public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
+    last_buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
@@ -103,6 +122,7 @@ public fn void error_diag(const char* loc, const char* format @(printf_format), 
 
 public fn void log_time(const char* item, u64 duration) {
     if (!show_timing) return;
+    last_buf[0] = '\0';
     if (use_color) {
         printf("%s%s took %d usec%s\n", color.Blue.str(), item, duration, color.Normal.str());
     } else {
