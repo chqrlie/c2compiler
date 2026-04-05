@@ -300,7 +300,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
                 p.consumeToken();
                 init_expr = p.parseExpr(); // p.parseConstantExpr()
             } else if (p.tok.kind == Colon) {
-                if (!has_assoc_values) p.error("expected '=' or ',' after enum constant");
+                if (!has_assoc_values) p.error("no enum-associated values were defined, so expected none");
                 p.consumeToken();
                 init_expr = p.parseInitList();
             } else {
