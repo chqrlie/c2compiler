@@ -304,6 +304,10 @@ public fn bool Expr.isNamedArgument(const Expr* e) {
     return e.getKind() == NamedArgument;
 }
 
+public fn bool Expr.isAlternate(const Expr* e) {
+    return e.getKind() == Alternate;
+}
+
 public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }
 
 public fn bool Expr.isCtc(const Expr* e) { return e.base.exprBits.is_ctc; }

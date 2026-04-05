@@ -125,7 +125,7 @@ ssize_t getline(char** __lineptr, size_t* __n, FILE* __stream);
 int fputs(const char* __s, FILE* __stream);
 int puts(const char* __s);
 int ungetc(int __c, FILE* __stream);
-int fread(void* __ptr, size_t __size, size_t __n, FILE* __stream);
+size_t fread(void* __ptr, size_t __size, size_t __n, FILE* __stream);
 size_t fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __s);
 int fseek(FILE* __stream, long __off, int __whence);
 long ftell(FILE* __stream);

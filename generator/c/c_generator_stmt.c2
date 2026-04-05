@@ -319,10 +319,8 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
 
     const u32 num_cases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
-    u32 lab = 2;
-    u32* lab_p = sw.isString() ? &lab : nil;
     for (u32 i = 0; i < num_cases; i++) {
-        gen.emitCase(cases[i], indent, lab_p);
+        gen.emitCase(cases[i], indent);
     }
     out.indent(indent);
     out.add("}\n");
@@ -333,53 +331,41 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     }
 }
 
-fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
+fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     string_buffer.Buf* out = gen.out;
     const char* brace = c.hasDecls() ? " {" : "";
 
-    out.indent(indent);
     if (c.isDefault()) {
+        out.indent(indent);
         out.print("default:%s\n", brace);
     } else {
-        out.add("case ");
-        if (lab) {  /* string case */
-            Expr* e = c.getCond(0);
-            if (e.isImplicitCast()) {
-                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
-                e = ic.getInner();
-            }
-            if (e.isNil()) {
-                out.print("0:%s // nil\n", brace);
-            } else
-            if (e.isStringLiteral()) {
-                StringLiteral* lit = (StringLiteral*)e;
-                const char *str = lit.getText();
-                u32 slen = (lit.getSize() - 1) & 0xFF;
-                u32 num = 1;
-                if (slen) {
-                    num = *lab;
-                    *lab += 1;
+        u32 num_conds = c.getNumConds();
+        for (u32 i = 0; i < num_conds; i++) {
+            out.indent(indent);
+            out.add("case ");
+            Expr* cond = c.getCond(i);
+            // TODO: if compiler does not handle case ranges, expand as
+            //       individual cases or generate alternative code
+            gen.emitExpr(out, cond);
+            out.add1(':');
+            if (i + 1 == num_conds) out.add(brace);
+            if (cond.isAlternate()) {
+                // output string label if present
+                out.add(" // ");
+                AlternateExpr* a = (AlternateExpr*)cond;
+                Expr* e = a.getOriginal();
+                if (e.isImplicitCast()) {
+                    const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
+                    e = ic.getInner();
                 }
-                out.print("%d:%s // \"", num, brace);
-                out.encodeBytes(str, slen, '"');
-                out.add("\"\n");
-            } else {
-                e.dump();
-                assert(0);
-            }
-        } else {
-            u32 num_conds = c.getNumConds();
-            for (u32 i = 0; i < num_conds; i++) {
-                if (i) {
-                    out.add(":\n");
-                    out.indent(indent);
-                    out.add("case ");
+                if (e.isStringLiteral()) {
+                    gen.emitStringLiteral(out, (StringLiteral*)e, raw: true);
+                } else
+                if (e.isNil()) {
+                    out.add("nil");
                 }
-                // TODO: if compiler does not handle case ranges, expand as
-                //       individual cases or generate alternative code
-                gen.emitExpr(out, c.getCond(i));
             }
-            out.print(":%s\n", brace);
+            out.newline();
         }
     }
 

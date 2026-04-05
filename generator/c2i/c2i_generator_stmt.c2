@@ -240,13 +240,13 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     const u32 num_cases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
     for (u32 i = 0; i < num_cases; i++) {
-        gen.emitCase(cases[i], indent, nil);
+        gen.emitCase(cases[i], indent);
     }
     out.indent(indent);
     out.add("}\n");
 }
 
-fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
+fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     out.indent(indent);
