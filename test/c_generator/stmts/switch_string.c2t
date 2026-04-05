@@ -14,12 +14,16 @@ fn i32 test1(char* str) {
     case "aaa":
     case "bbb":
         return 3;
-    case nil:
+    case "ccc", "ddd":
         return 4;
+    case nil:
+        return 5;
+    case "":
+        return 6;
     default:
         break;
     }
-    return 6;
+    return 7;
 }
 
 fn void test2(char* str) {
@@ -47,7 +51,7 @@ static void test_test2(char* str);
 
 static int test_test1(char* str)
 {
-   switch (c2_strswitch(str, "\001a\002aa\003aaa\003bbb")) {
+   switch (c2_strswitch(str, "\001a\002aa\003aaa\003bbb\003ccc\003ddd")) {
    case 2: // "a"
       return 1;
    case 3: // "aa"
@@ -55,12 +59,17 @@ static int test_test1(char* str)
    case 4: // "aaa"
    case 5: // "bbb"
       return 3;
-   case 0: // nil
+   case 6: // "ccc"
+   case 7: // "ddd"
       return 4;
+   case 0: // nil
+      return 5;
+   case 1: // ""
+      return 6;
    default:
       break;
    }
-   return 6;
+   return 7;
 }
 
 static void test_test2(char* str)

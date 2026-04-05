@@ -159,35 +159,44 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     // TODO: handle complete coverage
     if (!defaultCase) flow |= FlowNext;
 
-    if (!(flow & FlowError) && is_string) {
+    if (!(flow & FlowError) && is_string && !ma.check_only) {
         // Create alternate expression for c2_strswitch(s)
         // create call expression `c2_helper.c2_strswitch("expression", "case string")
         // TODO: handle declaration expressions
         string_buffer.Buf* casestr = string_buffer.create(128, false, 0);
+        u32 str_index = 2;
 
         for (u32 i = 0; i < numCases; i++) {
             SwitchCase* c = cases[i];
             if (c.isDefault())
                 continue;
-            Expr* e = c.getCond(0);
-            if (e.isImplicitCast()) {
-                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
-                e = ic.getInner();
-            }
-            if (e.isNil())
-                continue;
-            if (e.isStringLiteral()) {
-                StringLiteral* lit = (StringLiteral*)e;
-                const char *str = lit.getText();
-                u8 slen = (lit.getSize() - 1) & 0xFF;
-                if (slen) {
-                    // only encode non emty strings, empty string has index 1
-                    casestr.add1(slen);
-                    casestr.add2(str, slen);
+            u32 num_conds = c.getNumConds();
+            Expr** conds = c.getConds();
+            for (u32 j = 0; j < num_conds; j++) {
+                Expr* e = conds[j];
+                if (e.isImplicitCast()) {
+                    const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
+                    e = ic.getInner();
                 }
-            } else {
-                e.dump();
-                assert(0);
+                u32 index = 0;  // nil string has index 0
+                if (e.isStringLiteral()) {
+                    StringLiteral* lit = (StringLiteral*)e;
+                    const char *str = lit.getText();
+                    index = 1;  // empty string has index 1
+                    u8 slen = (lit.getSize() - 1) & 0xFF;
+                    if (slen) {
+                        // encode non emty strings, increment str_index
+                        index = str_index++;
+                        casestr.add1(slen);
+                        casestr.add2(str, slen);
+                    }
+                } else
+                if (!e.isNil()) {
+                    e.dump();
+                    assert(0);
+                }
+                Expr* num = ma.builder.actOnIntegerLiteral(e.getLoc(), 0, index, Default);
+                conds[j] = ma.builder.actOnAlternate(e, num);
             }
         }
 
