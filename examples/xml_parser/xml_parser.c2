@@ -127,12 +127,12 @@ fn u32 XmlParser.parseNode(XmlParser* p) {
 
     while (1) {
         switch (p.token.getKind()) {
-        case XmlBegin: fallthrough;
+        case XmlBegin:
         case XmlEnd:
             p.fatal("unexpected xml tag");
             break;
-        case CdataBegin: fallthrough;
-        case CdataEnd: fallthrough;
+        case CdataBegin:
+        case CdataEnd:
         case DtdBegin:
             p.fatal("TODO Cdata/Dtd");
             break;
@@ -150,9 +150,9 @@ fn u32 XmlParser.parseNode(XmlParser* p) {
         case ElemBeginClose:
             p.parseEndTag(node);
             return off;
-        case ElemEndClose: fallthrough;
-        case Equals: fallthrough;
-        case Name: fallthrough;
+        case ElemEndClose:
+        case Equals:
+        case Name:
         case Value:
             p.fatal("syntax error");
             break;
@@ -180,12 +180,12 @@ fn bool XmlParser.parseTag(XmlParser* p, Node* node) {
     // <name has been parsed already
     while (1) {
         switch (p.token.getKind()) {
-        case XmlBegin: fallthrough;
+        case XmlBegin:
         case XmlEnd:
             p.fatal("unexpected xml tag");
             break;
-        case CdataBegin: fallthrough;
-        case CdataEnd:   fallthrough;
+        case CdataBegin:
+        case CdataEnd:
         case DtdBegin:
             p.fatal("TODO");
             break;
@@ -211,8 +211,8 @@ fn bool XmlParser.parseTag(XmlParser* p, Node* node) {
             else node.attr_off = off;
             lastAttr = attr;
             break;
-        case Value: fallthrough;
-        case Text:  fallthrough;
+        case Value:
+        case Text:
         case Eof:
             p.fatal("unexpected eof");
             break;
@@ -245,21 +245,21 @@ fn void XmlParser.parseXml(XmlParser* p) {
         case XmlEnd:
             p.consumeToken();
             return;
-        case CdataBegin: fallthrough;
-        case CdataEnd: fallthrough;
-        case DtdBegin: fallthrough;
-        case ElemBegin: fallthrough;
-        case ElemEnd: fallthrough;
-        case ElemBeginClose: fallthrough;
-        case ElemEndClose: fallthrough;
+        case CdataBegin:
+        case CdataEnd:
+        case DtdBegin:
+        case ElemBegin:
+        case ElemEnd:
+        case ElemBeginClose:
+        case ElemEndClose:
         case Equals:
             p.fatal("syntax error");
             break;
         case Name:
             p.parseAttribute();
             break;
-        case Value: fallthrough;
-        case Text: fallthrough;
+        case Value:
+        case Text:
         case Eof:
             p.fatal("unexpected eof");
             break;
@@ -346,7 +346,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 result.setLocation(t.loc);
                 result.setKind(TokenKind.Eof);
                 return;
-            case ' ': fallthrough;
+            case ' ':
             case '\t':
                 t.advance(1);
                 break;
@@ -394,7 +394,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
-        case ' ': fallthrough;
+        case ' ':
         case '\t':
             t.advance(1);
             break;
@@ -445,7 +445,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.advance(2);
             t.inElement = false;
             return;
-        case '\'': fallthrough;
+        case '\'':
         case '"':
             t.parseValue(result, t.current[0]);
             return;
@@ -553,7 +553,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return false;
-        case ' ': fallthrough;
+        case ' ':
         case '\t':
             t.advance(1);
             break;

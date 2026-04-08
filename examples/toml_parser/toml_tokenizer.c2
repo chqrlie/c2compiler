@@ -151,7 +151,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             t.parseComment();
             break;
-        case ' ': fallthrough;
+        case ' ':
         case '\t':
             t.advance(1);
             break;

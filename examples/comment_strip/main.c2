@@ -51,7 +51,7 @@ fn void strip_comments(const char* input, utils.StringBuffer* out)
             lines++;
         } else {
             switch (*cp) {
-            case ' ': fallthrough;
+            case ' ':
             case '\t':
                 break;
             case '/':

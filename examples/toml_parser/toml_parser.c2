@@ -46,12 +46,12 @@ fn void Blocks.dump(const Blocks* b) {
         u32 nameOffset = getValue(n.nameOffset);
         NodeKind kind = getKind(n.nameOffset);
         switch (kind) {
-        case Table: fallthrough;
+        case Table:
         case TableArray:
             printf("  [%3u]  %s name %3u   next %3u   child %3u  (%s)\n",
                 i, node2str(kind), nameOffset, n.nextNode, n.child, &b.names[nameOffset]);
             break;
-        case ValueArray: fallthrough;
+        case ValueArray:
         case Value:
             ValueType t = getRawType(n.rawValue);
             u32 offset = getRawValue(n.rawValue);
@@ -262,7 +262,7 @@ fn u32 Parser.parseValue(Parser* p) {
         value = addType(p.tok.number, ValueType.Number);
         p.consumeToken();
         break;
-    case Kw_true: fallthrough;
+    case Kw_true:
     case Kw_false:
         value = addType(p.tok.number, ValueType.Boolean);
         p.consumeToken();
@@ -574,7 +574,7 @@ public fn ValueIter Reader.getValueIter(const Reader* r, const char* key) {
     const Node* node = r.findNode(key);
     if (node) {
         switch (getKind(node.nameOffset)) {
-        case Table: fallthrough;
+        case Table:
         case TableArray:
             break;
         case ValueArray:
