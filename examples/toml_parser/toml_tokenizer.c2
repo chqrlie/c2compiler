@@ -70,7 +70,7 @@ fn void Location.init(Location* l, u32 line, u32 col) {
 }
 
 fn const char* Location.str(Location* l) {
-    local char[32] msg;
+    static char[32] msg;
     sprintf(msg, "line %d:%d", l.line, l.column);
     return msg;
 }

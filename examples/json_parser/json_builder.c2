@@ -19,8 +19,8 @@ import stdlib local;
 import stdio local;
 
 fn const char* indent(u32 i) {
-    local const char[] indents = "                            ";
-    local const u32 max = 28;
+    static const char[] indents = "                            ";
+    static const u32 max = 28;
     return &indents[max - i*2];
 }
 

@@ -25,7 +25,7 @@ type Location struct {
 }
 
 fn const char* Location.str(const Location* loc) {
-    local char[32] msg;
+    static char[32] msg;
     sprintf(msg, "at line %d:%d", loc.line, loc.column);
     return msg;
 }
