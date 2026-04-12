@@ -75,38 +75,6 @@ fn QualType Analyser.invalidFuncCompare(Analyser* ma, BinaryOperator* b) {
     return QualType_Invalid;
 }
 
-const u32[BinaryOpcode] Binop_lhs = {
-    RHS,        // Multiply
-    RHS,        // Divide
-    RHS,        // Remainder
-    RHS,        // Add
-    RHS,        // Subtract
-    RHS,        // ShiftLeft
-    RHS,        // ShiftRight
-    RHS,        // LessThan
-    RHS,        // GreaterThan
-    RHS,        // LessEqual
-    RHS,        // GreaterEqual
-    RHS,        // Equal
-    RHS,        // NotEqual
-    RHS,        // And
-    RHS,        // Xor
-    RHS,        // Or
-    RHS,        // LAnd
-    RHS,        // LOr
-    LHS,        // Assign
-    LHS|RHS,    // MulAssign
-    LHS|RHS,    // DivAssign
-    LHS|RHS,    // RemAssign
-    LHS|RHS,    // AddAssign
-    LHS|RHS,    // SubAssign
-    LHS|RHS,    // ShlAssign
-    LHS|RHS,    // ShrASsign
-    LHS|RHS,    // AndAssign
-    LHS|RHS,    // XorAssign
-    LHS|RHS,    // OrAssign
-}
-
 /*
     // convert aliasType + enum to impl for check
     // ignoring Floats for now
@@ -658,7 +626,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     bool need_lhs_rvalue = true;
     if (opcode >= Assign) need_lhs_rvalue = false;
 
-    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, Binop_lhs[opcode]);
+    QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, opcode.side);
     if (ltype.isInvalid()) return QualType_Invalid;
 
     if (!need_lhs_rvalue) { // so we need an lvalue

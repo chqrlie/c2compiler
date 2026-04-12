@@ -22,19 +22,11 @@ const u32 MaxDepth = 8;
 const u32 MinText = 256;
 const u32 MinNodes = 32;
 
-type NodeKind enum u8 {
-    Unknown,
-    Scalar,
-    Map,
-    Sequence,
-}
-
-// NOTE: keep in sync with NodeKind
-const char*[NodeKind] node_names = {
-    [Unknown]  = "UNK",
-    [Scalar]   = "SCA",
-    [Map]      = "MAP",
-    [Sequence] = "SEQ",
+type NodeKind enum u8 (const char* const name) {
+    Unknown  : { "UNK" },
+    Scalar   : { "SCA" },
+    Map      : { "MAP" },
+    Sequence : { "SEQ" },
 }
 
 public type Node struct @(opaque) {

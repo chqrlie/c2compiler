@@ -241,20 +241,20 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
 }
 
 const char*[BuiltinKind] builtinType_cnames = {
-    "char",
-    "i8",
-    "i16",
-    "int",
-    "i64",
-    "u8",
-    "u16",
-    "u32",
-    "u64",
-    "float",
-    "double",
-    "ssize_t",
-    "size_t",
-    "bool",
+    [Char]    = "char",
+    [Int8]    = "i8",
+    [Int16]   = "i16",
+    [Int32]   = "int",
+    [Int64]   = "i64",
+    [UInt8]   = "u8",
+    [UInt16]  = "u16",
+    [UInt32]  = "u32",
+    [UInt64]  = "u64",
+    [Float32] = "float",
+    [Float64] = "double",
+    [ISize]   = "ssize_t",
+    [USize]   = "size_t",
+    [Bool]    = "bool",
 }
 
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt, bool bitfield = false) {

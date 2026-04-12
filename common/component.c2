@@ -29,30 +29,18 @@ import stdio;
 import stdlib local;
 import string;
 
-public type Kind enum u8 {
+public type Kind enum u8 (const char* const name) {
     // for main component
-    Internal,
-    Image,
-    Executable,
-    StaticLibrary,
-    DynamicLibrary,
-    SourceLibrary,
+    Internal           : { "internal" },
+    Image              : { "image" },
+    Executable         : { "executable" },
+    StaticLibrary      : { "static library" },
+    DynamicLibrary     : { "dynamic library" },
+    SourceLibrary      : { "source library" },
     // for external libraries
-    ExternalStaticLib, // must be first external kind
-    ExternalDynamicLib,
-    ExternalSourceLib,
-}
-
-const char*[Kind] kind_names = {
-    "internal",
-    "image",
-    "executable",
-    "static library",
-    "dynamic library",
-    "source library",
-    "external static library",
-    "external dynamic library",
-    "external source library",
+    ExternalStaticLib  : { "external static library" }, // must be first external kind
+    ExternalDynamicLib : { "external dynamic library" },
+    ExternalSourceLib  : { "external source library" },
 }
 
 public type Component struct @(opaque) {
@@ -212,7 +200,7 @@ public fn void Component.print(const Component* c, bool show_funcs) {
 
 public fn void Component.printModules(const Component* c) {
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s [%s]", c.getName(), kind_names[c.kind]);
+    out.print("--- %s [%s]", c.getName(), c.kind.name);
     out.add(" ---\n");
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
@@ -231,7 +219,7 @@ public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
 
     string_buffer.Buf* out = string_buffer.create(4096, color.useColor(), 1);
-    out.print("--- %s [%s] ---\n", c.getName(), kind_names[c.kind]);
+    out.print("--- %s [%s] ---\n", c.getName(), c.kind.name);
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         out.color(color.Cyan);
@@ -323,7 +311,7 @@ public fn Kind Component.getKind(const Component* c) {
 }
 
 public fn const char* Component.getKindName(const Component* c) @(unused) {
-    return kind_names[c.kind];
+    return c.kind.name;
 }
 
 public fn Component* List.find(const List* l, u32 name_idx) {

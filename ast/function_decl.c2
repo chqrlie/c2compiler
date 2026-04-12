@@ -22,14 +22,14 @@ import string_buffer;
 
 import string;
 
-public type CallKind enum u8 (const char* name) {
+public type CallKind enum u8 (const char* const name) {
     Invalid         : { "Invalid" },
     Normal          : { "Normal" },
     TypeFunc        : { "SF" },
     StaticTypeFunc  : { "SSF", },
 }
 
-public type DefKind enum u8 (const char* name) {
+public type DefKind enum u8 (const char* const name) {
     Global          : { "global" },        // fn void (..) { .. }
     Type            : { "type" },          // type A fn ..
     StructMember    : { "struct-member" }, // (in struct) fn void(..) member;

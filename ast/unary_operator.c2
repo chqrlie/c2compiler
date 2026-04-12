@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type UnaryOpcode enum u8 (const char* name) {
+public type UnaryOpcode enum u8 (const char* const name) {
     PostInc : { "++" }, // a++
     PostDec : { "--" }, // a--
     PreInc  : { "++" }, // ++a

@@ -19,58 +19,31 @@ import src_loc local;
 import string_pool;
 
 // note: keep Attr prefix because Kind already exists a lot
-public type AttrKind enum u8 {
-    Unknown,
-    Export,         // Type | Func | Var
-    Packed,         // Struct
-    Unused,         // Type | Func | Var
-    UnusedParams,   // Type | Func
-    Section,        //        Func | Var, needs string arg
-    NoReturn,       //        Func
-    Inline,         //        Func
-    PrintfFormat,   //             | Var, function param only
-    ScanfFormat,    //             | Var, function param only
-    Aligned,        // Type | Func | Var, needs number arg
-    Weak,           //        Func | Var
-    Opaque,         // Struct
-    CName,          // Type | Func | Var, only in interface, needs string arg
-    CDef,           // Type | Func | Var, only in interface, needs string arg
-    NoTypeDef,      // Type, only interface files
-    Constructor,    //        Func
-    Destructor,     //        Func
-    Pure,           //        Func
-    AutoFile,       //               Var, function param only
-    AutoLine,       //               Var, function param only
-    AutoFunc,       //               Var, function param only
-    Embed,          //               Var, globals only
-    Deprecated,     //        Func
-}
-
-const char*[AttrKind] attrKind_names = {
-    "?",
-    "export",
-    "packed",
-    "unused",
-    "unused_params",
-    "section",
-    "noreturn",
-    "inline",
-    "printf_format",
-    "scanf_format",
-    "aligned",
-    "weak",
-    "opaque",
-    "cname",
-    "cdef",
-    "no_typedef",
-    "constructor",
-    "destructor",
-    "pure",
-    "auto_file",
-    "auto_line",
-    "auto_func",
-    "embed",
-    "deprecated",
+public type AttrKind enum u8 (const char* const name, const AttrReq required_arg) {
+    Unknown      : { "?",             NoArg },
+    Export       : { "export",        NoArg },  // Type | Func | Var
+    Packed       : { "packed",        NoArg },  // Struct
+    Unused       : { "unused",        NoArg },  // Type | Func | Var
+    UnusedParams : { "unused_params", NoArg },  // Type | Func
+    Section      : { "section",       String }, //        Func | Var, needs string arg
+    NoReturn     : { "noreturn",      NoArg },  //        Func
+    Inline       : { "inline",        NoArg },  //        Func
+    PrintfFormat : { "printf_format", NoArg },  //             | Var, function param only
+    ScanfFormat  : { "scanf_format",  NoArg },  //             | Var, function param only
+    Aligned      : { "aligned",       Number }, // Type | Func | Var, needs number arg
+    Weak         : { "weak",          NoArg },  //        Func | Var
+    Opaque       : { "opaque",        NoArg },  // Struct
+    CName        : { "cname",         String }, // Type | Func | Var, only in interface, needs string arg
+    CDef         : { "cdef",          String }, // Type | Func | Var, only in interface, needs string arg
+    NoTypeDef    : { "no_typedef",    NoArg },  // Type, only interface files
+    Constructor  : { "constructor",   NoArg },  //        Func
+    Destructor   : { "destructor",    NoArg },  //        Func
+    Pure         : { "pure",          NoArg },  //        Func
+    AutoFile     : { "auto_file",     NoArg },  //               Var, function param only
+    AutoLine     : { "auto_line",     NoArg },  //               Var, function param only
+    AutoFunc     : { "auto_func",     NoArg },  //               Var, function param only
+    Embed        : { "embed",         String }, //               Var, globals only
+    Deprecated   : { "deprecated",    String }, //        Func
 }
 
 public type AttrValueKind enum u8 {
@@ -100,7 +73,7 @@ static_assert(32, sizeof(Attr));
 
 // Note: only meant for printing (since not allocated in StringPool)
 public fn const char* Attr.kind2name(const Attr* a) {
-    return attrKind_names[a.kind];
+    return a.kind.name;
 }
 
 public type AttrRegistry struct {
@@ -111,7 +84,7 @@ public fn void AttrRegistry.init(AttrRegistry* ar, string_pool.Pool* pool) {
     // skip unknown attribute
     ar.name_indexes[0] = 0;
     for (AttrKind kind = (AttrKind)1; kind <= AttrKind.max; kind++) {
-        ar.name_indexes[kind] = pool.addStr(attrKind_names[kind], true);
+        ar.name_indexes[kind] = pool.addStr(kind.name, true);
     }
 }
 
@@ -121,33 +94,6 @@ public fn AttrKind AttrRegistry.find(AttrRegistry* ar, u32 name_idx) {
         if (name_idx == ar.name_indexes[kind]) return kind;
     }
     return Unknown;
-}
-
-const AttrReq[AttrKind] Required_arg = {
-    [Unknown]      = NoArg,
-    [Export]       = NoArg,
-    [Packed]       = NoArg,
-    [Unused]       = NoArg,
-    [UnusedParams] = NoArg,
-    [Section]      = String,
-    [NoReturn]     = NoArg,
-    [Inline]       = NoArg,
-    [PrintfFormat] = NoArg,
-    [ScanfFormat]  = NoArg,
-    [Aligned]      = Number,
-    [Weak]         = NoArg,
-    [Opaque]       = NoArg,
-    [CName]        = String,
-    [CDef]         = String,
-    [NoTypeDef]    = NoArg,
-    [Constructor]  = NoArg,
-    [Destructor]   = NoArg,
-    [Pure]         = NoArg,
-    [AutoFile]     = NoArg,
-    [AutoLine]     = NoArg,
-    [AutoFunc]     = NoArg,
-    [Embed]        = String,
-    [Deprecated]   = String,
 }
 
 public type AttrReq enum u8 {
@@ -164,7 +110,7 @@ fn bool isPowerOf2(u32 val) {
 }
 
 public fn AttrReq Attr.checkArgument(const Attr* a) {
-    switch (Required_arg[a.kind]) {
+    switch (a.kind.required_arg) {
     case NoArg:
         if (a.value_kind != None) return NoArg;
         break;

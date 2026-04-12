@@ -39,7 +39,7 @@ fn void Data.dump(const Data* d, bool verbose) {
         for (u32 i=1; i<node_count; i++) {
             const Node* n = &d.nodes[i];
             printf("  [%2d] %s  next %3d  name %3d  value/child %3d\n",
-                    i, node_names[n.kind], n.next_idx, n.name_idx, n.text_idx);
+                    i, n.kind.name, n.next_idx, n.name_idx, n.text_idx);
         }
     }
 
@@ -50,7 +50,7 @@ fn void Data.dump_node(const Data* d, const Node* n, i32 indent) {
     // TEMP crude way
     for (i32 i=0; i<indent; i++) printf("   ");
 
-    printf("[%2d] %s", d.node2idx(n), node_names[n.kind]);
+    printf("[%2d] %s", d.node2idx(n), n.kind.name);
     printf("  name: ");
     if (n.name_idx) printf("%s", &d.text[n.name_idx]);
     else printf("-");

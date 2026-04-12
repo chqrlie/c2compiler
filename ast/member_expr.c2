@@ -27,7 +27,7 @@ public type MemberConversion enum u8 {
     Deref,      // Foo* -> Foo (ie *f)
 }
 
-public type MemberKind enum u8 (const char* name) {
+public type MemberKind enum u8 (const char* const name) {
     Unresolved         : { "Unresolved" },
     Module             : { "Module" },
     StructMember       : { "StructMember" }, // struct-var.member

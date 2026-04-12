@@ -31,51 +31,28 @@ import stdio local;
 import stdlib;
 import string;
 
-type Kind enum u8 {
+type Kind enum u8 (const char* const name @(unused)) {
     // global
-    Plugin,
-    PluginOptions,
-    Text,           // can also be a text number (eg '10')
-    Executable,
-    Lib,
-    Image,
-    File,
-    End,
-    Warnings,
-    Backend,
-    DisableAsserts,
-    NoLibc,
-    Config,
-    Export,
-    Use,
-    AsmFile,
-    Optional,
-    Set,
-    SetUse,
-    Eof,
-}
-
-const char*[Kind] kind_names = {
-    "plugin",
-    "[plugin_options]",
-    "text",
-    "executable",
-    "lib",
-    "image",
-    "file",
-    "end",
-    "$warnings",
-    "$backend",
-    "$disable-asserts",
-    "$nolibc",
-    "$config",
-    "$export",
-    "$use",
-    "$asm",
-    "$optional",
-    "set",
-    "(set)",
-    "eof",
+    Plugin          : { "plugin" },
+    PluginOptions   : { "[plugin_options]" },
+    Text            : { "text" },           // can also be a text number (eg '10')
+    Executable      : { "executable" },
+    Lib             : { "lib" },
+    Image           : { "image" },
+    File            : { "file" },
+    End             : { "end" },
+    Warnings        : { "$warnings" },
+    Backend         : { "$backend" },
+    DisableAsserts  : { "$disable-asserts" },
+    NoLibc          : { "$nolibc" },
+    Config          : { "$config" },
+    Export          : { "$export" },
+    Use             : { "$use" },
+    AsmFile         : { "$asm" },
+    Optional        : { "$optional" },
+    Set             : { "set" },
+    SetUse          : { "(set)" },
+    Eof             : { "eof" },
 }
 
 type Token struct {
@@ -213,7 +190,7 @@ fn void Parser.consumeToken(Parser* p) {
 #if 0
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
-    printf("  %s   %s", locstr, kind_names[p.token.kind]);
+    printf("  %s   %s", locstr, p.token.kind.name);
     switch (p.token.kind) {
     case PluginOptions:
     case Text:

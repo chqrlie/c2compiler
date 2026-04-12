@@ -57,22 +57,10 @@ public fn void Diags.setWarningAsError(Diags* diags, bool are_errors) {
     diags.promote_warnings = are_errors;
 }
 
-type Category enum u8 {
-    Note,
-    Warning,
-    Error,
-}
-
-const char*[Category] category_names = {
-    "note",
-    "warning",
-    "error",
-}
-
-Color[Category] category_colors = {
-    Color.Grey,
-    Color.Bmagenta,
-    Color.Bred,
+type Category enum u8 (const char* const name, const Color color) {
+    Note    : { "note",    Color.Grey },
+    Warning : { "warning", Color.Bmagenta },
+    Error   : { "error",   Color.Bred },
 }
 
 public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
@@ -168,8 +156,8 @@ fn void Diags.internal(Diags* diags,
         out.print("%s:%d:%d: ", loc.filename, loc.line, loc.column);
     }
 
-    out.color(category_colors[category]);
-    out.add(category_names[category]);
+    out.color(category.color);
+    out.add(category.name);
     out.add(": ");
     out.color(color.Normal);
 

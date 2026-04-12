@@ -16,12 +16,12 @@
 module ast;
 
 import ast_context;
-import string_buffer;
 import src_loc local;
+import string_buffer;
 
 import stdio;
 
-public type VarDeclKind enum u8 (const char* name) {
+public type VarDeclKind enum u8 (const char* const name) {
     GlobalVar       : { "global" },
     LocalVar        : { "local" },
     FunctionParam   : { "parameter" },

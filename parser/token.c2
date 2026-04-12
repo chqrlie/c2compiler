@@ -20,7 +20,7 @@ import src_loc local;
 
 import string;
 
-public type Kind enum u8 (public const char* name) {
+public type Kind enum u8 (public const char* const name) {
     None                 : { "none" },
     Identifier           : { "identifier" },  // abc
     IntegerLiteral       : { "integer" },     // 123

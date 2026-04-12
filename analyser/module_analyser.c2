@@ -41,8 +41,6 @@ import stdlib;
 import string;
 
 const u32 MaxDepth = 8;
-const u32 LHS = 0x01;
-const u32 RHS = 0x02;
 
 public type Analyser struct @(opaque) {
     diagnostics.Diags* diags;

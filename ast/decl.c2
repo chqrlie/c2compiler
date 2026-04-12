@@ -22,7 +22,7 @@ import string_buffer;
 import stdio;
 
 // TODO better order (most used first)
-public type DeclKind enum u8 (const char* name) {
+public type DeclKind enum u8 (const char* const name) {
     Function      : { "FunctionDecl" },
     Import        : { "ImportDecl" },
     StructType    : { "StructTypeDecl" },
@@ -33,7 +33,7 @@ public type DeclKind enum u8 (const char* name) {
     Variable      : { "VarDecl" },
 }
 
-public type DeclCheckState enum u8 (const char* name) {
+public type DeclCheckState enum u8 (const char* const name) {
     Unchecked   : { "unchecked" },
     InProgress  : { "in-progress" },
     Checked     : { "checked" },

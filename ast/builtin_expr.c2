@@ -20,7 +20,7 @@ import string_buffer;
 import src_loc local;
 import value_type local;
 
-public type BuiltinExprKind enum u8 (const char* name) {
+public type BuiltinExprKind enum u8 (const char* const name) {
     Sizeof      : { "sizeof" },
     Elemsof     : { "elemsof" },
     EnumMin     : { "enum_min" },

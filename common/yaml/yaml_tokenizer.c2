@@ -24,41 +24,24 @@ type Location struct {
     u32 column;
 }
 
-type TokenKind enum u8 {
-    None,
-    Plain_Scalar,
-    Single_Quoted_Scalar,
-    Double_Quoted_Scalar,
-    Colon,
-    Dash,
-    Indent,
-    Dedent,
-    Doc_Start,
-    Doc_End,
-    Directive,
-    Eof,
-    Error,
-}
-
-// NOTE: keep in sync with TokenKind
-const char*[TokenKind] token_names = {
-    [None]                 = "none",
-    [Plain_Scalar]         = "scalar",
-    [Single_Quoted_Scalar] = "'scalar'",
-    [Double_Quoted_Scalar] = "\"scalar\"",
-    [Colon]                = ":",
-    [Dash]                 = "-",
-    [Indent]               = "indent",
-    [Dedent]               = "dedent",
-    [Doc_Start]            = "---",
-    [Doc_End]              = "...",
-    [Directive]            = "%",
-    [Eof]                  = "eof",
-    [Error]                = "error",
+type TokenKind enum u8 (const char* const name) {
+    None                 : { "none" },
+    Plain_Scalar         : { "scalar" },
+    Single_Quoted_Scalar : { "'scalar'" },
+    Double_Quoted_Scalar : { "\"scalar\"" },
+    Colon                : { ":" },
+    Dash                 : { "-" },
+    Indent               : { "indent" },
+    Dedent               : { "dedent" },
+    Doc_Start            : { "---" },
+    Doc_End              : { "..." },
+    Directive            : { "%" },
+    Eof                  : { "eof" },
+    Error                : { "error" },
 }
 
 fn const char* Token.str(const Token* tok) {
-    return token_names[tok.kind];
+    return tok.kind.name;
 }
 
 type Token struct {

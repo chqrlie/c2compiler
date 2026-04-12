@@ -20,7 +20,7 @@ import string_buffer;
 
 import string;
 
-public type TypeRefKind enum u8 (const char* name) {
+public type TypeRefKind enum u8 (const char* const name) {
     Builtin   : { "builtin" },
     Void      : { "void" },
     User      : { "user" },

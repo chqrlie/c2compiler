@@ -18,7 +18,7 @@ module ast;
 import src_loc local;
 import string_buffer;
 
-public type ExprKind enum u8 (const char* name) {
+public type ExprKind enum u8 (const char* const name) {
     IntegerLiteral        : { "IntegerLiteral" },
     FloatLiteral          : { "FloatLiteral" },
     BooleanLiteral        : { "BooleanLiteral" },
@@ -67,7 +67,7 @@ public type ExprKind enum u8 (const char* name) {
     NValue is either LValue nor RValue (eg. module / Type)
 */
 
-public type ValType enum u8 (const char* name) {
+public type ValType enum u8 (const char* const name) {
     NValue : { "nvalue" }, // cannot be used except in sizeof, etc (eg. Type, mod.Type, static Struct/Enum func)
     RValue : { "rvalue" }, // can only be used as RHS of assignement
     LValue : { "lvalue" }, // can be used as LHS / RHS of assignment

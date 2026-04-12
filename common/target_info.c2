@@ -18,40 +18,65 @@ module target_info;
 import stdio local;
 import string local;
 
-public type Arch enum u8 { Unknown, I686, Arm, X86_64, Amd64, Arm64, Riscv_32, Riscv_64 }
-public type System enum u8 { Unknown, Linux, Darwin, Cygwin, FreeBSD, OpenBSD }
-public type Vendor enum u8 { Unknown, Apple }
-public type Abi enum u8 { Unknown, GNU, GNU_EABI, MACHO, WIN32, Rv32G, BSD }
+public type Arch enum u8 (const char* const name) {
+    Unknown  : { "unknown" },
+    I686     : { "i686" },
+    Arm      : { "arm" },
+    X86_64   : { "x86_64" },
+    Amd64    : { "amd64" },
+    Arm64    : { "arm64" },
+    Riscv_32 : { "riscv32" },
+    Riscv_64 : { "riscv64" },
+}
 
-const char*[System] system_names = { "unknown", "linux", "darwin", "cygwin", "freebsd", "openbsd" }
-const char*[Arch] arch_names = { "unknown", "i686", "arm", "x86_64", "amd64", "arm64", "riscv32", "riscv64" }
-const char*[Vendor] vendor_names = { "unknown", "apple" }
-const char*[Abi] abi_names = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32", "bsd" }
+public type System enum u8 (const char* const name) {
+    Unknown  : { "unknown" },
+    Linux    : { "linux" },
+    Darwin   : { "darwin" },
+    Cygwin   : { "cygwin" },
+    FreeBSD  : { "freebsd" },
+    OpenBSD  : { "openbsd" },
+}
+
+public type Vendor enum u8 (const char* const name) {
+    Unknown  : { "unknown" },
+    Apple    : { "apple" },
+}
+
+public type Abi enum u8 (const char* const name) {
+    Unknown  : { "unknown" },
+    GNU      : { "gnu" },
+    GNU_EABI : { "gnueabi" },
+    MACHO    : { "macho" },
+    WIN32    : { "win32" },
+    Rv32G    : { "rv32" },
+    BSD      : { "bsd" }
+}
 
 public fn System str2sys(const char* name) {
     for (System i = System.min; i <= System.max; i++) {
-        if (strcasecmp(system_names[i], name) == 0) return i;
+        if (strcasecmp(i.name, name) == 0) return i;
     }
     return Unknown;
 }
 
 public fn Arch str2arch(const char* name) {
     for (Arch i = Arch.min; i <= Arch.max; i++) {
-        if (strcasecmp(arch_names[i], name) == 0) return i;
+        if (strcasecmp(i.name, name) == 0) return i;
     }
     return Unknown;
 }
 
 public fn Vendor str2vendor(const char* name) {
     for (Vendor i = Vendor.min; i <= Vendor.max; i++) {
-        if (strcasecmp(vendor_names[i], name) == 0) return i;
+        if (strcasecmp(i.name, name) == 0) return i;
     }
     return Unknown;
 }
 
 public fn Abi str2abi(const char* name) {
     for (Abi i = Abi.min; i <= Abi.max; i++) {
-        if (strcasecmp(abi_names[i], name) == 0) return i;
+        if (strcasecmp(i.name, name) == 0) return i;
     }
     return Unknown;
 }
@@ -90,10 +115,7 @@ public fn void Info.init(Info* info) {
     }
 
     snprintf(info.triple, elemsof(info.triple), "%s-%s-%s-%s",
-             arch_names[info.arch],
-             vendor_names[info.vendor],
-             system_names[info.sys],
-             abi_names[info.abi]);
+             info.arch.name, info.vendor.name, info.sys.name, info.abi.name);
 }
 
 public fn const char* Info.str(const Info* info) {
@@ -101,10 +123,10 @@ public fn const char* Info.str(const Info* info) {
 }
 
 public fn const char* Info.getSystemName(const Info* info) {
-    return system_names[info.sys];
+    return info.sys.name;
 }
 
 public fn const char* Info.getArchName(const Info* info) {
-    return arch_names[info.arch];
+    return info.arch.name;
 }
 

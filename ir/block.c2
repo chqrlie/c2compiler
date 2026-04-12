@@ -17,7 +17,7 @@ module ir;
 
 import string;
 
-public type BlockKind enum u8 (const char* name) {
+public type BlockKind enum u8 (const char* const name) {
     Unspecified     : { "" },
     FnStart         : { "start" },
     WhileCond       : { "while_cond" },

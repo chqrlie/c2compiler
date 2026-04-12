@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 
 // Note: dont change positions, since they are used to check interval
-public type BuiltinKind enum u8 (public const char* name,
+public type BuiltinKind enum u8 (public const char* const name,
                                  const bool promotable,
                                  const bool is_signed,
                                  const bool is_unsigned,

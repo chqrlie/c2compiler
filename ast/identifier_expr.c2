@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type IdentifierKind enum u8 (const char* name) {
+public type IdentifierKind enum u8 (const char* const name) {
     Unresolved    : { "Unresolved" },
     Module        : { "Module" },
     Function      : { "Function" },
