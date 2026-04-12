@@ -24,7 +24,7 @@ public fn const char* getPrefixedName(const Decl* d) {
     case Function:
         const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
-            local char[64] fullname;
+            static char[64] fullname;
             snprintf(fullname, elemsof(fullname), "%s.%s", fd.getPrefixName(), d.getName());
             return fullname;
         }

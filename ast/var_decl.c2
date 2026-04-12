@@ -177,8 +177,8 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 }
 
 public fn const char* VarDecl.getEnumAssocValueName(const VarDecl* d, const char* enum_name) {
-    local char[2][128] tmp_buf;
-    local u32 tmp_id = 0;
+    static char[2][128] tmp_buf;
+    static u32 tmp_id = 0;
     u32 tmp_size = elemsof(tmp_buf[0]);
     char* tmp = tmp_buf[tmp_id++ & 1];
     stdio.snprintf(tmp, tmp_size, "%s.%s", enum_name, d.getName());

@@ -443,7 +443,7 @@ fn void Generator.emitInitListExpr(Generator* gen, string_buffer.Buf* out, InitL
     }
     // restart output on multiple lines
     bool align_columns = false;
-    local u32[] cols = { 32, 30, 20, 16, 10, 8, 5, 4, 2, 1 }
+    static u32[] cols = { 32, 30, 20, 16, 10, 8, 5, 4, 2, 1 }
     u32 j = 0;
     start_column = gen.indent * out.indent_step;
     while (num_cols > 1 && start_column + num_cols * (max_len + 2) > 110) {

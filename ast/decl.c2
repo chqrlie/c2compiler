@@ -302,8 +302,8 @@ public fn const char* Decl.getSection(const Decl* d) {
 }
 
 public fn const char* Decl.getFullName(const Decl* d) {
-    local char[4][128] tmp_buf; // allow up to 4 consecutive calls with different output
-    local u32 tmp_id = 0;
+    static char[4][128] tmp_buf; // allow up to 4 consecutive calls with different output
+    static u32 tmp_id = 0;
     u32 tmp_size = elemsof(tmp_buf[0]);
     char* tmp = tmp_buf[tmp_id++ & 3];
 

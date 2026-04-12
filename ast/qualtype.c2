@@ -445,8 +445,8 @@ public fn bool QualType.needsCtvInit(const QualType qt) {
 }
 
 public fn const char* QualType.diagName(const QualType qt) {
-    local char[4][128] msgs;
-    local u32 msg_id = 0;
+    static char[4][128] msgs;
+    static u32 msg_id = 0;
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
@@ -461,8 +461,8 @@ public fn const char* QualType.diagName(const QualType qt) {
 }
 
 public fn const char* QualType.diagNameBare(const QualType qt) {
-    local char[4][128] msgs;
-    local u32 msg_id = 0;
+    static char[4][128] msgs;
+    static u32 msg_id = 0;
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 

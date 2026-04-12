@@ -122,8 +122,8 @@ public fn const char* Ref.getKindName(const Ref* r) {
 }
 
 public fn const char* Ref.str(const Ref* r) @(unused) {
-    local char[4][24] buf;
-    local u32 idx;
+    static char[4][24] buf;
+    static u32 idx;
     idx = (idx+1) % 4;
     char* tmp = buf[idx++];
     u32 tmp_size = elemsof(buf[0]);

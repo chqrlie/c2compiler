@@ -882,8 +882,8 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
 
 public fn const char* Value.str(const Value* v) {
     // TODO: not thread safe
-    local char[4][32] text;
-    local u8 index = 0;
+    static char[4][32] text;
+    static u8 index = 0;
     char* out = text[index];
     u32 out_size = elemsof(text[0]);
     index = (index+1) % 4;
