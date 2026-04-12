@@ -261,7 +261,7 @@ fn void Parser.expectError(Parser* p, Kind kind) {
         // otherwise position is either first token or end of empty file
         loc = p.tok.loc;
     }
-    p.errorAt(loc, "expected '%s'", kind.str());
+    p.errorAt(loc, "expected '%s'", kind.name);
 }
 
 fn void Parser.expectIdentifier(Parser* p) {
@@ -420,10 +420,10 @@ fn void Parser.parseTopLevel(Parser* p) {
         p.parseVarDecl(is_public);
         break;
     invalid_c:
-        p.error("invalid keyword '%s' in extern C code", p.tok.kind.str());
+        p.error("invalid keyword '%s' in extern C code", p.tok.kind.name);
         //noreturn;
     invalid_c2:
-        p.error("invalid '%s' definition in C2 code", p.tok.kind.str());
+        p.error("invalid '%s' definition in C2 code", p.tok.kind.name);
         //noreturn;
     }
 }
@@ -648,7 +648,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, 
 */
 fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default) {
     if (p.tok.kind == KW_local || p.tok.kind == KW_static || p.tok.kind == KW_tlocal)
-        p.error("keyword '%s' is not allowed here", p.tok.kind.str());
+        p.error("keyword '%s' is not allowed here", p.tok.kind.name);
 
     TypeRefHolder ref.init();
     // Note: dont check arrays in this phase, but in Analyser
@@ -756,7 +756,7 @@ fn void Parser.parseArrayEntry(Parser* p) {
 
 fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     if (p.tok.kind == KW_local || p.tok.kind == KW_static)
-        p.error("keyword '%s' cannot be used at file scope", p.tok.kind.str());
+        p.error("keyword '%s' cannot be used at file scope", p.tok.kind.name);
 
     bool has_tlocal = (p.tok.kind == KW_tlocal);
     if (has_tlocal) p.consumeToken();
@@ -956,7 +956,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
 
     if (tok.kind.isKeyword())
         out.color(color.Green);
-    out.print("%12s", tok.kind.str());
+    out.print("%12s", tok.kind.name);
     if (tok.kind.isKeyword())
         out.color(color.Normal);
     char[256] locstr;

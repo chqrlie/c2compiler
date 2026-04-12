@@ -136,7 +136,7 @@ public fn void Instr.clear(Instr* i) {
 
 public fn const char* Instr.getKindName(const Instr* i) {
     InstrKind k = i.getKind();
-    return k.str();
+    return k.str;
 }
 
 public fn bool Instr.isArch(const Instr* i) {

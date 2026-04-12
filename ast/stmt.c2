@@ -18,40 +18,22 @@ module ast;
 import src_loc local;
 import string_buffer;
 
-public type StmtKind enum u8 {
-    Return,
-    Expr,
-    If,
-    While,
-    For,
-    Switch,
-    Break,
-    Continue,
-    Fallthrough,
-    Label,
-    Goto,
-    Compound,
-    Decl,
-    Asm,
-    Assert,
-}
-
-const char*[StmtKind] stmtKind_names = {
-    "ReturnStmt",
-    "ExprStmt",
-    "IfStmt",
-    "WhileStmt",
-    "ForStmt",
-    "SwitchStmt",
-    "BreakStmt",
-    "ContinueStmt",
-    "FallthroughStmt",
-    "LabelStmt",
-    "GotoStmt",
-    "CompoundStmt",
-    "DeclStmt",
-    "Asm",
-    "AssertStmt",
+public type StmtKind enum u8 (const char* name) {
+    Return       : { "ReturnStmt" },
+    Expr         : { "ExprStmt" },
+    If           : { "IfStmt" },
+    While        : { "WhileStmt" },
+    For          : { "ForStmt" },
+    Switch       : { "SwitchStmt" },
+    Break        : { "BreakStmt" },
+    Continue     : { "ContinueStmt" },
+    Fallthrough  : { "FallthroughStmt" },
+    Label        : { "LabelStmt" },
+    Goto         : { "GotoStmt" },
+    Compound     : { "CompoundStmt" },
+    Decl         : { "DeclStmt" },
+    Asm          : { "Asm" },
+    Assert       : { "AssertStmt" },
 }
 
 type StmtBits struct {
@@ -224,6 +206,6 @@ fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
 fn void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
-    out.add(stmtKind_names[s.getKind()]);
+    out.add(s.getKind().name);
 }
 

@@ -27,29 +27,15 @@ public type MemberConversion enum u8 {
     Deref,      // Foo* -> Foo (ie *f)
 }
 
-public type MemberKind enum u8 {
-    Unresolved,
-    Module,
-    StructMember,          // struct-var.member
-    TypeFunc,
-    StaticTypeFunc,
-    EnumConstant,           // Enum.A
-    EnumAssocValue,         // Enum.name
-    EnumConstantValue,      // e.name
-}
-
-fn const char* MemberKind.str(MemberKind k) {
-    switch (k) {
-    case Unresolved:        return "Unresolved";
-    case Module:            return "Module";
-    case StructMember:      return "StructMember";
-    case TypeFunc:          return "TypeFunc";
-    case StaticTypeFunc:    return "StaticTypeFunc";
-    case EnumConstant:      return "EnumConstant";
-    case EnumAssocValue:    return "EnumAssocValue";
-    case EnumConstantValue: return "EnumConstantValue";
-    }
-    return "";
+public type MemberKind enum u8 (const char* name) {
+    Unresolved         : { "Unresolved" },
+    Module             : { "Module" },
+    StructMember       : { "StructMember" }, // struct-var.member
+    TypeFunc           : { "TypeFunc" },
+    StaticTypeFunc     : { "StaticTypeFunc" },
+    EnumConstant       : { "EnumConstant" },  // Enum.A
+    EnumAssocValue     : { "EnumAssocValue" },  // Enum.name
+    EnumConstantValue  : { "EnumConstantValue" },  // e.name
 }
 
 type MemberExprBits struct {
@@ -310,7 +296,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     MemberKind kind = e.getKind();
     if (kind == Unresolved) out.color(col_Error);
     else out.color(col_Attr);
-    out.add(kind.str());
+    out.add(kind.name);
     out.color(col_Attr);
     if (e.isBitfield()) out.add(" bitfield");
     if (e.isTypeFunc()) out.add(" TF");
@@ -352,7 +338,7 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     const MemberExprBits* bits = &m.base.base.memberExprBits;
     MemberKind k = bits.kind;
     out.print("  bits: kind %s, conv %d, bitf %d\n",
-              k.str(), bits.conversion, bits.is_bitfield);
+              k.name, bits.conversion, bits.is_bitfield);
     u32 start = 0;
     if (m.hasExpr()) {
         out.indent(1);

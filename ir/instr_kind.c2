@@ -15,104 +15,55 @@
 
 module ir;
 
-public type InstrKind enum u8 {
-    None,   // used when removing instructions
+public type InstrKind enum u8 (const char* str) {
+    None        : { "none" },   // used when removing instructions
 
     // Arithmetic and Bits
-    Add,
-    Sub,
-    Div,
-    Rem,
-    Mul,
-    IDiv,
-    And,
-    Or,
-    Xor,
-    Shr,
-    Shl,
-
+    Add         : { "add" },
+    Sub         : { "sub" },
+    Div         : { "div" },
+    Rem         : { "rem" },
+    Mul         : { "mul" },
+    IDiv        : { "idiv" },
+    And         : { "and" },
+    Or          : { "or" },
+    Xor         : { "xor" },
+    Shr         : { "shl" },
+    Shl         : { "shr" },
     // Comparisons
-    CmpNe,
-    CmpEq,
-    CmpLt,
-    CmpGt,
-    CmpLe,
-    CmpGe,
+    CmpNe       : { "icmp ne" },
+    CmpEq       : { "icmp eq" },
+    CmpLt       : { "icmp lt" },
+    CmpGt       : { "icmp gt" },
+    CmpLe       : { "icmp le" },
+    CmpGe       : { "icmp ge" },
     // Memory
-    Load1,
-    Load2,
-    Load4,
-    Load8,
-    Store1,
-    Store2,
-    Store4,
-    Store8,
+    Load1       : { "load1" },
+    Load2       : { "load2" },
+    Load4       : { "load4" },
+    Load8       : { "load8" },
+    Store1      : { "store1" },
+    Store2      : { "store2" },
+    Store4      : { "store4" },
+    Store8      : { "store8" },
     // Stack Allocation
-    Alloc1,
-    Alloc2,
-    Alloc4,
-    Alloc8,
+    Alloc1      : { "alloc1" },
+    Alloc2      : { "alloc2" },
+    Alloc4      : { "alloc4" },
+    Alloc8      : { "alloc8" },
     // Jump instructions
-    Jmp,
-    JmpIf,
-    Ret,
-    Halt,
-    Call,
-    Copy,
+    Jmp         : { "jmp" },
+    JmpIf       : { "jmp_if" },
+    Ret         : { "ret" },
+    Halt        : { "halt" },
+    Call        : { "call" },
+    Copy        : { "copy" },
     // Pseudo instructions (must be converted before converting to ASM)
-    Arch,   // arch dependent
-    Param,
-    Arg,
-    Switch,
-    Phi,
-    Comment, // KEEP THIS THE LAST OPERATION!
-}
-
-public fn const char* InstrKind.str(InstrKind k) @(unused) {
-    switch (k) {
-    case None:      return "none";
-    case Add:       return "add";
-    case Sub:       return "sub";
-    case Div:       return "div";
-    case Rem:       return "rem";
-    case Mul:       return "mul";
-    case IDiv:      return "idiv";
-    case And:       return "and";
-    case Or:        return "or";
-    case Xor:       return "xor";
-    case Shl:       return "shl";
-    case Shr:       return "shr";
-    case CmpNe:     return "icmp ne";
-    case CmpEq:     return "icmp eq";
-    case CmpLt:     return "icmp lt";
-    case CmpGt:     return "icmp gt";
-    case CmpLe:     return "icmp le";
-    case CmpGe:     return "icmp ge";
-    case Load1:     return "load1";
-    case Load2:     return "load2";
-    case Load4:     return "load4";
-    case Load8:     return "load8";
-    case Store1:    return "store1";
-    case Store2:    return "store2";
-    case Store4:    return "store4";
-    case Store8:    return "store8";
-    case Alloc1:    return "alloc1";
-    case Alloc2:    return "alloc2";
-    case Alloc4:    return "alloc4";
-    case Alloc8:    return "alloc8";
-    case Jmp:       return "jmp";
-    case JmpIf:     return "jmp_if";
-    case Ret:       return "ret";
-    case Halt:      return "halt";
-    case Call:      return "call";
-    case Copy:      return "copy";
-    case Arch:      return "(arch)";
-    case Param:     return "param";
-    case Arg:       return "arg";
-    case Switch:    return "switch";
-    case Phi:       return "phi";
-    case Comment:   return "comment";
-    }
-    return "";
+    Arch        : { "(arch)" }, // arch dependent
+    Param       : { "param" },
+    Arg         : { "arg" },
+    Switch      : { "switch" },
+    Phi         : { "phi" },
+    Comment     : { "comment" }, // KEEP THIS THE LAST OPERATION!
 }
 

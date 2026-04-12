@@ -19,146 +19,29 @@ import ast_context;
 import string_buffer;
 
 // Note: dont change positions, since they are used to check interval
-public type BuiltinKind enum u8 {
-    Char,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    Float32,
-    Float64,
-    ISize,
-    USize,
-    Bool,
-}
-
-const char*[BuiltinKind] builtinType_names = {
-    [Char] = "char",
-    [Int8] = "i8",
-    [Int16] = "i16",
-    [Int32] = "i32",
-    [Int64] = "i64",
-    [UInt8] = "u8",
-    [UInt16] = "u16",
-    [UInt32] = "u32",
-    [UInt64] = "u64",
-    [Float32] = "f32",
-    [Float64] = "f64",
-    [ISize] = "isize",
-    [USize] = "usize",
-    [Bool] = "bool",
-}
-
-const bool[BuiltinKind] BuiltinType_promotable = {
-    [Char] = true,
-    [Int8] = true,
-    [Int16] = true,
-    [Int32] = false,
-    [Int64] = false,
-    [UInt8] = true,
-    [UInt16] = true,
-    [UInt32] = false,
-    [UInt64] = false,
-    [Float32] = false,
-    [Float64] = false,
-    [ISize] = false,
-    [USize] = false,
-    [Bool] = true,
-}
-
-const bool[BuiltinKind] BuiltinType_signed = {
-    [Char] = false,
-    [Int8] = true,
-    [Int16] = true,
-    [Int32] = true,
-    [Int64] = true,
-    [UInt8] = false,
-    [UInt16] = false,
-    [UInt32] = false,
-    [UInt64] = false,
-    [Float32] = true,
-    [Float64] = true,
-    [ISize] = true,
-    [USize] = false,
-    [Bool] = false,
-}
-
-const bool[BuiltinKind] BuiltinType_unsigned = {
-    [Char] = true,
-    [Int8] = false,
-    [Int16] = false,
-    [Int32] = false,
-    [Int64] = false,
-    [UInt8] = true,
-    [UInt16] = true,
-    [UInt32] = true,
-    [UInt64] = true,
-    [Float32] = false,
-    [Float64] = false,
-    [ISize] = false,
-    [USize] = true,
-    [Bool] = false,
-}
-
-const bool[BuiltinKind] BuiltinType_integer = {
-    [Char] = true,
-    [Int8] = true,
-    [Int16] = true,
-    [Int32] = true,
-    [Int64] = true,
-    [UInt8] = true,
-    [UInt16] = true,
-    [UInt32] = true,
-    [UInt64] = true,
-    [Float32] = false,
-    [Float64] = false,
-    [ISize] = true,
-    [USize] = true,
-    [Bool] = false,
-}
-
-// Default builtin type sizes (adjusted for 32-bit in globals)
-const u32[BuiltinKind] BuiltinType_default_sizes = {
-    [Char] = 1,
-    [Int8] = 1,
-    [Int16] = 2,
-    [Int32] = 4,
-    [Int64] = 8,
-    [UInt8] = 1,
-    [UInt16] = 2,
-    [UInt32] = 4,
-    [UInt64] = 8,
-    [Float32] = 4,
-    [Float64] = 8,
-    [ISize] = 8,       // adjusted in global
-    [USize] = 8,       // adjusted in global
-    [Bool] = 1,
-}
-
-// Default builtin type widths (adjusted for 32-bit in globals)
-const u32[BuiltinKind] BuiltinType_default_widths = {
-    [Char] = 8,
-    [Int8] = 8,
-    [Int16] = 16,
-    [Int32] = 32,
-    [Int64] = 64,
-    [UInt8] = 8,
-    [UInt16] = 16,
-    [UInt32] = 32,
-    [UInt64] = 64,
-    [Float32] = 0,
-    [Float64] = 0,
-    [ISize] = 64,       // adjusted in global
-    [USize] = 64,       // adjusted in global
-    [Bool] = 1,
-}
-
-public fn const char* BuiltinKind.str(BuiltinKind kind) {
-    return builtinType_names[kind];
+public type BuiltinKind enum u8 (public const char* name,
+                                 const bool promotable,
+                                 const bool is_signed,
+                                 const bool is_unsigned,
+                                 const bool is_integer,
+                                 const u8 default_size,
+                                 const u8 default_width)
+{
+    // Note: default_size/width is adjusted for 32-bit in globals
+    Char        : { "char",  true,  false, true,  true,  1,  8 },
+    Int8        : { "i8",    true,  true,  false, true,  1,  8 },
+    Int16       : { "i16",   true,  true,  false, true,  2, 16 },
+    Int32       : { "i32",   false, true,  false, true,  4, 32 },
+    Int64       : { "i64",   false, true,  false, true,  8, 64 },
+    UInt8       : { "u8",    true,  false, true,  true,  1,  8 },
+    UInt16      : { "u16",   true,  false, true,  true,  2, 16 },
+    UInt32      : { "u32",   false, false, true,  true,  4, 32 },
+    UInt64      : { "u64",   false, false, true,  true,  8, 64 },
+    Float32     : { "f32",   false, true,  false, false, 4,  0 },
+    Float64     : { "f64",   false, true,  false, false, 8,  0 },
+    ISize       : { "isize", false, true,  false, true,  8, 64 },
+    USize       : { "usize", false, false, true,  true,  8, 64 },
+    Bool        : { "bool",  true,  false, false, false, 1,  1 },
 }
 
 type BuiltinTypeBits struct {
@@ -204,15 +87,15 @@ fn bool BuiltinType.isBool(const BuiltinType* b) {
 }
 
 public fn const char* BuiltinType.kind2str(const BuiltinType* b) {
-    return builtinType_names[b.getKind()];
+    return b.getKind().name;
 }
 
 public fn bool BuiltinType.isPromotableIntegerType(const BuiltinType* b) {
-    return BuiltinType_promotable[b.getKind()];
+    return b.getKind().promotable;
 }
 
 public fn bool BuiltinType.isInteger(const BuiltinType* b) {
-    return BuiltinType_integer[b.getKind()];
+    return b.getKind().is_integer;
 }
 
 public fn bool BuiltinType.isIntegerOrBool(const BuiltinType* b) {
@@ -224,11 +107,11 @@ public fn bool BuiltinType.isFloatingPoint(const BuiltinType* b) {
 }
 
 public fn bool BuiltinType.isSigned(const BuiltinType* b) {
-    return BuiltinType_signed[b.getKind()];
+    return b.getKind().is_signed;
 }
 
 public fn bool BuiltinType.isUnsigned(const BuiltinType* b) {
-    return BuiltinType_unsigned[b.getKind()];
+    return b.getKind().is_unsigned;
 }
 
 public fn u32 BuiltinType.getAlignment(const BuiltinType* b) {
@@ -240,7 +123,7 @@ public fn u32 BuiltinType.getWidth(const BuiltinType* b) {
 }
 
 fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
-    out.add(builtinType_names[b.getKind()]);
+    out.add(b.getKind().name);
 }
 
 fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {

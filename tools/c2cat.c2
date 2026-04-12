@@ -97,13 +97,13 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     }
 
     if (tok.kind >= LParen && tok.kind < KW_bool) {
-        const char* str = tok.kind.str();
+        const char* str = tok.kind.name;
         out.add(str);
         ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     if (tok.kind.isTypeKeyword()) {
-        const char* str = tok.kind.str();
+        const char* str = tok.kind.name;
         out.color(col_type);
         out.add(str);
         out.color(col_normal);
@@ -111,7 +111,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         return;
     }
     if (tok.kind.isQualifier()) {
-        const char* str = tok.kind.str();
+        const char* str = tok.kind.name;
         out.color(col_type);
         out.add(str);
         out.color(col_normal);
@@ -119,7 +119,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         return;
     }
     if (tok.kind.isKeyword()) {
-        const char* str = tok.kind.str();
+        const char* str = tok.kind.name;
         out.color(col_keyword);
         out.add(str);
         out.color(col_normal);
@@ -127,7 +127,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         return;
     }
     if (tok.kind >= Feat_if && tok.kind <= Feat_endif) {
-        const char* str = tok.kind.str();
+        const char* str = tok.kind.name;
         out.color(col_feature);
         out.add(str);
         out.color(col_normal);
@@ -233,7 +233,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         break;
     default:
         out.color(col_error);
-        out.print("token %s\n", tok.kind.str());
+        out.print("token %s\n", tok.kind.name);
         ctx.offset = tok.loc + 1;
         break;
     }
@@ -271,7 +271,7 @@ public fn i32 c2cat(const char* filename, bool use_color)
 
     while (!tok.done) {
         tokenizer.lex(&tok);
-        //printf("%4d %s\n", tok.loc, tok.kind.str());
+        //printf("%4d %s\n", tok.loc, tok.kind.name);
 
         ctx.update_state(&tok);
 

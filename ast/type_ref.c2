@@ -20,21 +20,11 @@ import string_buffer;
 
 import string;
 
-public type TypeRefKind enum u8 {
-    Builtin,
-    Void,
-    User,
-    Function,
-}
-
-fn const char* TypeRefKind.str(TypeRefKind k) {
-    switch (k) {
-    case Builtin:   return "builtin";
-    case Void:      return "void";
-    case User:      return "user";
-    case Function:  return "function";
-    }
-    return nil;
+public type TypeRefKind enum u8 (const char* name) {
+    Builtin   : { "builtin" },
+    Void      : { "void" },
+    User      : { "user" },
+    Function  : { "function" },
 }
 
 type TypeRefBits struct {
@@ -456,7 +446,7 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
 
     switch (r.flags.kind) {
     case Builtin:
-        out.add(builtinType_names[r.getBuiltinKind()]);
+        out.add(r.getBuiltinKind().name);
         break;
     case Void:
         out.add("void");
@@ -503,7 +493,7 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
 
     switch (r.flags.kind) {
     case Builtin:
-        out.add(builtinType_names[r.getBuiltinKind()]);
+        out.add(r.getBuiltinKind().name);
         break;
     case Void:
         out.add("void");
@@ -558,7 +548,7 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
     out.add("flags:");
     if (r.flags.qualifiers) out.print(" qualifiers=%d", r.flags.qualifiers);
     if (r.flags.num_ptrs) out.print(" ptrs=%d", r.flags.num_ptrs);
-    out.print(" kind=%s", r.flags.kind.str());
+    out.print(" kind=%s", r.flags.kind.name);
     out.print(" has_prefix=%d", r.flags.has_prefix);
     out.newline();
     out.indent(1);

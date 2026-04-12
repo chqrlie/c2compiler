@@ -47,7 +47,7 @@ public fn void Info.init(Info* info, string_pool.Pool* pool) {
         while (*p == ' ') p++;
     }
     for (Kind k = KW_bool; k <= KW_while; k++) {
-        const char *s = k.str();
+        const char *s = k.name;
         idx = pool.add(s, string.strlen(s), true);
         assert(idx < elemsof(info.indexes));
         info.indexes[idx] = k;

@@ -61,7 +61,7 @@ fn bool validTestType(QualType t) {
 
 fn QualType Analyser.invalidBinOp1(Analyser* ma, BinaryOperator* b, Expr* sub, QualType qt) {
     ma.error(sub.getLoc(), "invalid operand type '%s' for binary expression '%s'",
-             qt.diagName(), b.getOpcode().str());
+             qt.diagName(), b.getOpcode().name);
     return QualType_Invalid;
 }
 
@@ -643,7 +643,7 @@ fn bool Analyser.checkAmbiguousOperators(Analyser* ma, BinaryOpcode opcode, Expr
         BinaryOpcode op1 = b.getOpcode();
         if (incompatible_opcodes(opcode, op1)) {
             ma.error(sub.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
-                     opcode.str(), op1.str());
+                     opcode.name, op1.name);
             return false;
         }
     }

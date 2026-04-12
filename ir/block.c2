@@ -17,61 +17,31 @@ module ir;
 
 import string;
 
-public type BlockKind enum u8 {
-    Unspecified,
-    FnStart,
-    WhileCond,
-    WhileBody,
-    WhileJoin,
-    ForCond,
-    ForBody,
-    ForCont,
-    ForJoin,
-    IfTrue,
-    IfFalse,
-    IfJoin,
-    AndTrue,
-    LogicJoin,
-    OrFalse,
-    CondTrue,
-    CondFalse,
-    CondJoin,
-    Label,
-    SwitchCond,
-    SwitchCase,
-    SwitchJoin,
-    SwitchDefault,
-    PhiSplit,
-}
-
-public fn const char* BlockKind.str(BlockKind k) @(unused) {
-    switch (k) {
-    case Unspecified: return "";
-    case FnStart:     return "start";
-    case WhileCond:   return "while_cond";
-    case WhileBody:   return "while_body";
-    case WhileJoin:   return "while_join";
-    case ForCond:     return "for_cond";
-    case ForBody:     return "for_body";
-    case ForCont:     return "for_cont";
-    case ForJoin:     return "for_join";
-    case IfTrue:      return "if_true";
-    case IfFalse:     return "if_false";
-    case IfJoin:      return "if_join";
-    case AndTrue:     return "and_true";
-    case LogicJoin:   return "logic_join";
-    case OrFalse:     return "or_false";
-    case CondTrue:    return "cond_true";
-    case CondFalse:   return "cond_false";
-    case CondJoin:    return "cond_join";
-    case Label:       return "label";
-    case SwitchCond:  return "switch_cond";
-    case SwitchCase:  return "switch_case";
-    case SwitchJoin:  return "switch_join";
-    case SwitchDefault:  return "switch_default";
-    case PhiSplit:     return "phi_split";
-    }
-    return "";
+public type BlockKind enum u8 (const char* name) {
+    Unspecified     : { "" },
+    FnStart         : { "start" },
+    WhileCond       : { "while_cond" },
+    WhileBody       : { "while_body" },
+    WhileJoin       : { "while_join" },
+    ForCond         : { "for_cond" },
+    ForBody         : { "for_body" },
+    ForCont         : { "for_cont" },
+    ForJoin         : { "for_join" },
+    IfTrue          : { "if_true" },
+    IfFalse         : { "if_false" },
+    IfJoin          : { "if_join" },
+    AndTrue         : { "and_true" },
+    LogicJoin       : { "logic_join" },
+    OrFalse         : { "or_false" },
+    CondTrue        : { "cond_true" },
+    CondFalse       : { "cond_false" },
+    CondJoin        : { "cond_join" },
+    Label           : { "label" },
+    SwitchCond      : { "switch_cond" },
+    SwitchCase      : { "switch_case" },
+    SwitchJoin      : { "switch_join" },
+    SwitchDefault   : { "switch_default" },
+    PhiSplit        : { "phi_split" },
 }
 
 public type Block struct {
@@ -96,8 +66,7 @@ fn BlockKind Block.getKind(const Block* b) {
 }
 
 public fn const char* Block.getKindName(const Block* b) {
-    BlockKind k = b.getKind();
-    return k.str();
+    return b.getKind().name;
 }
 
 public fn void Block.setInstructions(Block* b, u32 start, u32 count) {

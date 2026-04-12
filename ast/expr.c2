@@ -18,60 +18,32 @@ module ast;
 import src_loc local;
 import string_buffer;
 
-public type ExprKind enum u8 {
-    IntegerLiteral,
-    FloatLiteral,
-    BooleanLiteral,
-    CharLiteral,
-    StringLiteral,
-    Nil,
-    Identifier,
-    Type,
-    Call,
-    InitList,
-    FieldDesignatedInit,
-    ArrayDesignatedInit,
-    BinaryOperator,
-    UnaryOperator,
-    ConditionalOperator,
-    Builtin,
-    ArraySubscript,
-    Member,
-    Paren,
-    BitOffset,
-    ExplicitCast,
-    ImplicitCast,
-    Range,
-    NamedArgument,
-    Alternate,
-}
-
-const char*[ExprKind] exprKind_names = {
-    "IntegerLiteral",
-    "FloatLiteral",
-    "BooleanLiteral",
-    "CharLiteral",
-    "StringLiteral",
-    "Nil",
-    "Identifier",
-    "TypeExpr",
-    "Call",
-    "InitList",
-    "FieldDesignatedInit",
-    "ArrayDesignatedInit",
-    "BinaryOperator",
-    "UnaryOperator",
-    "ConditionalOp",
-    "Builtin",
-    "ArraySubscript",
-    "Member",
-    "Paren",
-    "BitOffset",
-    "ExplicitCast",
-    "ImplicitCast",
-    "RangeExpr",
-    "NamedArgument",
-    "Alternate",
+public type ExprKind enum u8 (const char* name) {
+    IntegerLiteral        : { "IntegerLiteral" },
+    FloatLiteral          : { "FloatLiteral" },
+    BooleanLiteral        : { "BooleanLiteral" },
+    CharLiteral           : { "CharLiteral" },
+    StringLiteral         : { "StringLiteral" },
+    Nil                   : { "Nil" },
+    Identifier            : { "Identifier" },
+    Type                  : { "TypeExpr" },
+    Call                  : { "Call" },
+    InitList              : { "InitList" },
+    FieldDesignatedInit   : { "FieldDesignatedInit" },
+    ArrayDesignatedInit   : { "ArrayDesignatedInit" },
+    BinaryOperator        : { "BinaryOperator" },
+    UnaryOperator         : { "UnaryOperator" },
+    ConditionalOperator   : { "ConditionalOp" },
+    Builtin               : { "Builtin" },
+    ArraySubscript        : { "ArraySubscript" },
+    Member                : { "Member" },
+    Paren                 : { "Paren" },
+    BitOffset             : { "BitOffset" },
+    ExplicitCast          : { "ExplicitCast" },
+    ImplicitCast          : { "ImplicitCast" },
+    Range                 : { "RangeExpr" },
+    NamedArgument         : { "NamedArgument" },
+    Alternate             : { "Alternate" },
 }
 
 /*
@@ -95,16 +67,10 @@ const char*[ExprKind] exprKind_names = {
     NValue is either LValue nor RValue (eg. module / Type)
 */
 
-public type ValType enum u8 {
-    NValue, // cannot be used except in sizeof, etc (eg. Type, mod.Type, static Struct/Enum func)
-    RValue, // can only be used as RHS of assignement
-    LValue, // can be used as LHS / RHS of assignment
-}
-
-const char*[ValType] valType_names = {
-    "nvalue",
-    "rvalue",
-    "lvalue",
+public type ValType enum u8 (const char* name) {
+    NValue : { "nvalue" }, // cannot be used except in sizeof, etc (eg. Type, mod.Type, static Struct/Enum func)
+    RValue : { "rvalue" }, // can only be used as RHS of assignement
+    LValue : { "lvalue" }, // can be used as LHS / RHS of assignment
 }
 
 type ExprBits struct {
@@ -798,7 +764,7 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
 fn void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Expr);
-    out.add(exprKind_names[e.getKind()]);
+    out.add(e.getKind().name);
 }
 
 fn void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
@@ -808,6 +774,6 @@ fn void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
     if (e.base.exprBits.is_ctc) out.add(" CTC");
     if (e.base.exprBits.is_ctv) out.add(" CTV");
     out.space();
-    out.add(valType_names[e.getValType()]);
+    out.add(e.getValType().name);
 }
 

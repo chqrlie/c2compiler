@@ -19,22 +19,13 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ImplicitCastKind enum u8 {
-    ArrayToPointerDecay,
-    LValueToRValue,
-    PointerToBoolean,
-    PointerToInteger,
-    IntegralCast,
-    BitCast,    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
-}
-
-const char*[ImplicitCastKind] implicitCastKind_names = {
-    "ArrayToPointerDecay",
-    "LValueToRValue",
-    "PointerToBoolean",
-    "PointerToInteger",
-    "IntegralCast",
-    "BitCast",
+public type ImplicitCastKind enum u8 (const char* name) {
+    ArrayToPointerDecay : { "ArrayToPointerDecay" },
+    LValueToRValue      : { "LValueToRValue" },
+    PointerToBoolean    : { "PointerToBoolean" },
+    PointerToInteger    : { "PointerToInteger" },
+    IntegralCast        : { "IntegralCast" },
+    BitCast             : { "BitCast" },    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
 }
 
 type ImplicitCastBits struct {
@@ -108,7 +99,7 @@ fn void ImplicitCastExpr.print(const ImplicitCastExpr* e, string_buffer.Buf* out
     e.base.printTypeBits(out);
     out.space();
     out.color(col_Calc);
-    out.add(implicitCastKind_names[e.getKind()]);
+    out.add(e.getKind().name);
     out.newline();
     e.inner.print(out, indent + 1);
 }

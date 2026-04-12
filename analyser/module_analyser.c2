@@ -618,7 +618,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
         } else {
             buf.add("expected ");
             lhs.printLiteral(&buf);
-            buf.print(" %s ", opcode.str());
+            buf.print(" %s ", opcode.name);
             rhs.printLiteral(&buf);
             if (!isTrueLiteral(lhs)) {
                 ma.printLiteral(&buf, ", ", lhs, val1, true);

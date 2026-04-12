@@ -22,38 +22,21 @@ import string_buffer;
 import stdio;
 
 // TODO better order (most used first)
-public type DeclKind enum u8 {
-    Function,
-    Import,
-    StructType,
-    EnumType,
-    EnumConstant,
-    FunctionType,
-    AliasType,
-    Variable,
+public type DeclKind enum u8 (const char* name) {
+    Function      : { "FunctionDecl" },
+    Import        : { "ImportDecl" },
+    StructType    : { "StructTypeDecl" },
+    EnumType      : { "EnumTypeDecl" },
+    EnumConstant  : { "EnumConstantDecl" },
+    FunctionType  : { "FunctionType" },
+    AliasType     : { "AliasTypeDecl" },
+    Variable      : { "VarDecl" },
 }
 
-const char*[DeclKind] declKind_names = {
-    "FunctionDecl",
-    "ImportDecl",
-    "StructTypeDecl",
-    "EnumTypeDecl",
-    "EnumConstantDecl",
-    "FunctionType",
-    "AliasTypeDecl",
-    "VarDecl",
-}
-
-public type DeclCheckState enum u8 {
-    Unchecked,
-    InProgress,
-    Checked,
-}
-
-const char*[DeclCheckState] declCheckState_names = {
-    "unchecked",
-    "in-progress",
-    "checked",
+public type DeclCheckState enum u8 (const char* name) {
+    Unchecked   : { "unchecked" },
+    InProgress  : { "in-progress" },
+    Checked     : { "checked" },
 }
 
 type DeclBits struct {
@@ -124,11 +107,6 @@ public fn u32 Decl.getGenIdx(const Decl* d) {
 public fn DeclKind Decl.getKind(const Decl* d) { return d.declBits.kind; }
 
 public fn DeclCheckState Decl.getCheckState(const Decl* d) { return d.declBits.check_state; }
-/*
-public fn const char* Decl.getCheckStateName(const Decl* d) {
-    return declCheckState_names[d.declBits.check_state)];
-}
-*/
 
 public fn bool Decl.isChecked(const Decl* d) {
     return d.getCheckState() == Checked;
@@ -390,7 +368,7 @@ fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
 fn void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
-    out.add(declKind_names[d.getKind()]);
+    out.add(d.getKind().name);
     if (print_type) {
         out.space();
         d.qt.printQuoted(out);
@@ -413,7 +391,7 @@ fn void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     DeclCheckState cs = d.getCheckState();
     if (cs != Checked) {
         out.space();
-        out.add(declCheckState_names[cs]);
+        out.add(cs.name);
     }
     if (d.declBits.attr_unused) {
         out.add(" unused");

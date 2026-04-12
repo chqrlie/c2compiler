@@ -21,20 +21,12 @@ import src_loc local;
 
 import stdio;
 
-public type VarDeclKind enum u8 {
-    GlobalVar,
-    LocalVar,
-    FunctionParam,
-    StructMember,
-    EnumValue,
-}
-
-const char*[VarDeclKind] varDeclNames = {
-    " global",
-    " local",
-    " parameter",
-    " member",
-    " enum-value",
+public type VarDeclKind enum u8 (const char* name) {
+    GlobalVar       : { "global" },
+    LocalVar        : { "local" },
+    FunctionParam   : { "parameter" },
+    StructMember    : { "member" },
+    EnumValue       : { "enum-value" },
 }
 
 type AutoAttr enum u32 {
@@ -395,7 +387,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     }
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
-    out.add(varDeclNames[k]);
+    out.add(k.name);
     if (d.base.varDeclBits.is_bitfield) {
         BitFieldLayout* layout = d.getBitfieldLayout();
         out.print(" bitfield(%d, %d)", layout.bit_offset, layout.bit_width);

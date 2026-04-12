@@ -534,7 +534,7 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
     if (kind == c.native_kind) return true;
 
     if (explicit) {
-        c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.str());
+        c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.name);
         return false;
     } else {
         return c.conversionError("invalid type conversion from");
@@ -617,7 +617,7 @@ fn bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const T
     // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
     if (kind == c.native_kind) return true;
 
-    c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", c.native_kind.str());
+    c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", c.native_kind.name);
 
     return false;
 }
@@ -631,7 +631,7 @@ fn bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const T
     // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
     if (kind == c.native_kind) return true;
 
-    c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.str());
+    c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.name);
 
     return false;
 }

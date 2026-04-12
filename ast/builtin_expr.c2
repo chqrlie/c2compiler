@@ -20,23 +20,13 @@ import string_buffer;
 import src_loc local;
 import value_type local;
 
-public type BuiltinExprKind enum u8 {
-    Sizeof,
-    Elemsof,
-    EnumMin,
-    EnumMax,
-    OffsetOf,
-    ToContainer,
-}
-
-// Keep in sync
-const char*[BuiltinExprKind] builtin_names = {
-    "sizeof",
-    "elemsof",
-    "enum_min",
-    "enum_max",
-    "offsetof",
-    "to_container",
+public type BuiltinExprKind enum u8 (const char* name) {
+    Sizeof      : { "sizeof" },
+    Elemsof     : { "elemsof" },
+    EnumMin     : { "enum_min" },
+    EnumMax     : { "enum_max" },
+    OffsetOf    : { "offsetof" },
+    ToContainer : { "to_container" },
 }
 
 type BuiltinExprBits struct {
@@ -175,7 +165,7 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 inde
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.color(col_Value);
-    out.print(" %s", builtin_names[e.getKind()]);
+    out.print(" %s", e.getKind().name);
     out.color(col_Calc);
     out.print(" %s", e.value.str());
     out.newline();
@@ -202,7 +192,7 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 inde
 }
 
 fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
-    out.add(builtin_names[e.getKind()]);
+    out.add(e.getKind().name);
     out.lparen();
     e.inner.printLiteral(out);
     switch (e.getKind()) {

@@ -19,30 +19,17 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type UnaryOpcode enum u8 {
-    PostInc,        // a++
-    PostDec,        // a--
-    PreInc,         // ++a
-    PreDec,         // --a
-    AddrOf,         // &a
-    Deref,          // *a
-    Plus,           // +a
-    Minus,          // -a
-    Not,            // ~a
-    LNot,           // !a
-}
-
-const char*[UnaryOpcode] unaryOpcode_names = {
-    "++",
-    "--",
-    "++",
-    "--",
-    "&",
-    "*",
-    "+",
-    "-",
-    "~",
-    "!",
+public type UnaryOpcode enum u8 (const char* name) {
+    PostInc : { "++" }, // a++
+    PostDec : { "--" }, // a--
+    PreInc  : { "++" }, // ++a
+    PreDec  : { "--" }, // --a
+    AddrOf  : { "&" },  // &a
+    Deref   : { "*" },  // *a
+    Plus    : { "+" },  // +a
+    Minus   : { "-" },  // -a
+    Not     : { "~" },  // ~a
+    LNot    : { "!" },  // !a
 }
 
 type UnaryOperatorBits struct {
@@ -107,7 +94,7 @@ fn SrcLoc UnaryOperator.getEndLoc(const UnaryOperator* e) {
 }
 
 public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
-    return unaryOpcode_names[e.getOpcode()];
+    return e.getOpcode().name;
 }
 
 public fn bool UnaryOperator.isAddrOf(const UnaryOperator* e) {
@@ -119,13 +106,13 @@ fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 
     e.base.printTypeBits(out);
     out.space();
     out.color(col_Value);
-    out.add(unaryOpcode_names[e.getOpcode()]);
+    out.add(e.getOpcode().name);
     out.newline();
     e.inner.print(out, indent + 1);
 }
 
 fn void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
-    const char* opcode = unaryOpcode_names[e.getOpcode()];
+    const char* opcode = e.getOpcode().name;
     if (e.isBefore()) {
         out.add(opcode);
         e.inner.printLiteral(out);

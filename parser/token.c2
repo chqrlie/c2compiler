@@ -20,149 +20,151 @@ import src_loc local;
 
 import string;
 
-public type Kind enum u8 {
-    None,
-    Identifier,         // abc
-    IntegerLiteral,     // 123
-    FloatLiteral,       // 3.1415
-    CharLiteral,        // 'c'
-    StringLiteral,      // "abc"
-    LParen,             // (
-    RParen,             // )
-    LSquare,            // [
-    RSquare,            // ]
-    LBrace,             // {
-    RBrace,             // }
-    Exclaim,            // !
-    ExclaimEqual,       // !=
-    Star,               // *
-    StarEqual,          // *=
-    Amp,                // &
-    AmpAmp,             // &&
-    AmpEqual,           // &=
-    Pipe,               // |
-    PipePipe,           // ||
-    PipeEqual,          // |=
-    Equal,              // =
-    EqualEqual,         // ==
-    Semicolon,          // ;
-    Colon,              // :
-    At,                 // @
-    Caret,              // ^
-    CaretEqual,         // ^=
-    Question,           // ?
-    Dot,                // .
-    Ellipsis,           // ...
-    Comma,              // ,
-    Plus,               // +
-    PlusPlus,           // ++
-    PlusEqual,          // +=
-    Minus,              // -
-    MinusMinus,         // --
-    MinusEqual,         // -=
-    Tilde,              // ~
-    Slash,              // /
-    SlashEqual,         // /=
-    Percent,            // %
-    PercentEqual,       // %=
-    Less,               // <
-    LessLess,           // <<
-    LessEqual,          // <=
-    LessLessEqual,      // <<=
-    Greater,            // >
-    GreaterGreater,     // >>
-    GreaterEqual,       // >=
-    GreaterGreaterEqual, // >>=
+public type Kind enum u8 (public const char* name) {
+    None                 : { "none" },
+    Identifier           : { "identifier" },  // abc
+    IntegerLiteral       : { "integer" },     // 123
+    FloatLiteral         : { "float" },       // 3.1415
+    CharLiteral          : { "character"},    // 'c'
+    StringLiteral        : { "string"},       // "abc"
+    LParen               : { "(" },
+    RParen               : { ")" },
+    LSquare              : { "[" },
+    RSquare              : { "]" },
+    LBrace               : { "{" },
+    RBrace               : { "}" },
+    Exclaim              : { "!" },
+    ExclaimEqual         : { "!=" },
+    Star                 : { "*" },
+    StarEqual            : { "*=" },
+    Amp                  : { "&" },
+    AmpAmp               : { "&&" },
+    AmpEqual             : { "&=" },
+    Pipe                 : { "|" },
+    PipePipe             : { "||" },
+    PipeEqual            : { "|=" },
+    Equal                : { "=" },
+    EqualEqual           : { "==" },
+    Semicolon            : { ";" },
+    Colon                : { ":" },
+    At                   : { "@" },
+    Caret                : { "^" },
+    CaretEqual           : { "^=" },
+    Question             : { "?" },
+    Dot                  : { "." },
+    Ellipsis             : { "..." },
+    Comma                : { "," },
+    Plus                 : { "+" },
+    PlusPlus             : { "++" },
+    PlusEqual            : { "+=" },
+    Minus                : { "-" },
+    MinusMinus           : { "--" },
+    MinusEqual           : { "-=" },
+    Tilde                : { "~" },
+    Slash                : { "/" },
+    SlashEqual           : { "/=" },
+    Percent              : { "%" },
+    PercentEqual         : { "%=" },
+    Less                 : { "<" },
+    LessLess             : { "<<" },
+    LessEqual            : { "<=" },
+    LessLessEqual        : { "<<=" },
+    Greater              : { ">" },
+    GreaterGreater       : { ">>" },
+    GreaterEqual         : { ">=" },
+    GreaterGreaterEqual  : { ">>=" },
     // builtin-types
-    KW_bool,    // keep as first BuiltinType, since we check range
-    KW_char,
-    KW_i8,
-    KW_i16,
-    KW_i32,
-    KW_i64,
-    KW_u8,
-    KW_u16,
-    KW_u32,
-    KW_u64,
-    KW_reg8,
-    KW_reg16,
-    KW_reg32,
-    KW_reg64,
-    KW_isize,
-    KW_usize,
-    KW_f32,
-    KW_f64,
-    KW_void,        // keep as last BuiltinType, since we check range
-    // C types
-    KW_int,
-    KW_ssize_t,
-    KW_size_t,
-    KW_float,
-    KW_double,
-    KW_short,
-    KW_long,
-    KW_signed,
-    KW_unsigned,
-    // C keywords
-    KW_typedef,
+    KW_bool              : { "bool" }, // keep as first BuiltinType  since we check range
+    KW_char              : { "char" },
+    KW_i8                : { "i8" },
+    KW_i16               : { "i16" },
+    KW_i32               : { "i32" },
+    KW_i64               : { "i64" },
+    KW_u8                : { "u8" },
+    KW_u16               : { "u16" },
+    KW_u32               : { "u32" },
+    KW_u64               : { "u64" },
+    KW_reg8              : { "reg8" },
+    KW_reg16             : { "reg16" },
+    KW_reg32             : { "reg32" },
+    KW_reg64             : { "reg64" },
+    KW_isize             : { "isize" },
+    KW_usize             : { "usize" },
+    KW_f32               : { "f32" },
+    KW_f64               : { "f64" },
+    KW_void              : { "void" },
+    // keep as last BuiltinType since we check range
+    // C type
+    KW_int               : { "int" },
+    KW_ssize_t           : { "ssize_t" },
+    KW_size_t            : { "size_t" },
+    KW_float             : { "float" },
+    KW_double            : { "double" },
+    KW_short             : { "short" },
+    KW_long              : { "long" },
+    KW_signed            : { "signed" },
+    KW_unsigned          : { "unsigned" },
+    // C keyword
+    KW_typedef           : { "typedef" },
     // other keywords
-    KW_as,
-    KW_asm,
-    KW_assert,
-    KW_break,
-    KW_case,
-    KW_cast,
-    KW_const,
-    KW_continue,
-    KW_default,
-    KW_elemsof,
-    KW_else,
-    KW_enum_max,
-    KW_enum_min,
-    KW_enum,
-    KW_extern,
-    KW_fallthrough,
-    KW_false,
-    KW_fn,
-    KW_for,
-    KW_goto,
-    KW_if,
-    KW_import,
-    KW_local,
-    KW_module,
-    KW_nil,
-    KW_offsetof,
-    KW_public,
-    KW_return,
-    KW_sizeof,
-    KW_static,
-    KW_static_assert,
-    KW_struct,
-    KW_switch,
-    KW_template,
-    KW_tlocal,
-    KW_to_container,
-    KW_true,
-    KW_type,
-    KW_union,
-    KW_volatile,
-    KW_while,
+    KW_as                : { "as" },
+    KW_asm               : { "asm" },
+    KW_assert            : { "assert" },
+    KW_break             : { "break" },
+    KW_case              : { "case" },
+    KW_cast              : { "cast" },
+    KW_const             : { "const" },
+    KW_continue          : { "continue" },
+    KW_default           : { "default" },
+    KW_elemsof           : { "elemsof" },
+    KW_else              : { "else" },
+    KW_enum_max          : { "enum_max" },
+    KW_enum_min          : { "enum_min" },
+    KW_enum              : { "enum" },
+    KW_extern            : { "extern" },
+    KW_fallthrough       : { "fallthrough" },
+    KW_false             : { "false" },
+    KW_fn                : { "fn" },
+    KW_for               : { "for" },
+    KW_goto              : { "goto" },
+    KW_if                : { "if" },
+    KW_import            : { "import" },
+    KW_local             : { "local" },
+    KW_module            : { "module" },
+    KW_nil               : { "nil" },
+    KW_offsetof          : { "offsetof" },
+    KW_public            : { "public" },
+    KW_return            : { "return" },
+    KW_sizeof            : { "sizeof" },
+    KW_static            : { "static" },
+    KW_static_assert     : { "static_assert" },
+    KW_struct            : { "struct" },
+    KW_switch            : { "switch" },
+    KW_template          : { "template" },
+    KW_tlocal            : { "tlocal" },
+    KW_to_container      : { "to_container" },
+    KW_true              : { "true" },
+    KW_type              : { "type" },
+    KW_union             : { "union" },
+    KW_volatile          : { "volatile" },
+    KW_while             : { "while" },
     // only in raw mode
-    Feat_if,
-    Feat_ifdef,
-    Feat_ifndef,
-    Feat_elif,
-    Feat_else,
-    Feat_endif,
-    Feat_error,
-    Feat_warning,
-    Invalid,
-    LineComment,
-    BlockComment,
-    // Special Tokens
-    Eof,
-    Error,
+    Feat_if              : { "#if" },
+    Feat_ifdef           : { "#ifdef" },
+    Feat_ifndef          : { "#ifndef" },
+    Feat_elif            : { "#elif" },
+    Feat_else            : { "#else" },
+    Feat_endif           : { "#endif" },
+    Feat_error           : { "#error" },
+    Feat_warning         : { "#warning" },
+    Invalid              : { "invalid" },
+    LineComment          : { "l-comment" },
+    BlockComment         : { "b-comment" },
+    // Special Token
+    Eof                  : { "eof" },
+    Error                : { "error" },
 }
+
 
 public fn bool Kind.isKeyword(Kind kind) {
     return kind >= KW_bool && kind <= KW_while;
@@ -182,149 +184,6 @@ public fn bool Kind.isTypeKeyword(Kind kind) {
 
 public fn bool Kind.isCType(Kind kind) {
     return kind >= KW_int && kind <= KW_unsigned;
-}
-
-// NOTE: keep in sync with TokenKind
-const char*[Kind] token_names = {
-    [None]             = "none",
-    [Identifier]       = "identifier",
-    [IntegerLiteral]   = "integer",
-    [FloatLiteral]     = "float",
-    [CharLiteral]      = "character",
-    [StringLiteral]    = "string",
-    [LParen]           = "(",
-    [RParen]           = ")",
-    [LSquare]          = "[",
-    [RSquare]          = "]",
-    [LBrace]           = "{",
-    [RBrace]           = "}",
-    [Exclaim]          = "!",
-    [ExclaimEqual]     = "!=",
-    [Star]             = "*",
-    [StarEqual]        = "*=",
-    [Amp]              = "&",
-    [AmpAmp]           = "&&",
-    [AmpEqual]         = "&=",
-    [Pipe]             = "|",
-    [PipePipe]         = "||",
-    [PipeEqual]        = "|=",
-    [Equal]            = "=",
-    [EqualEqual]       = "==",
-    [Semicolon]        = ";",
-    [Colon]            = ":",
-    [At]               = "@",
-    [Caret]            = "^",
-    [CaretEqual]       = "^=",
-    [Question]         = "?",
-    [Dot]              = ".",
-    [Ellipsis]         = "...",
-    [Comma]            = ",",
-    [Plus]             = "+",
-    [PlusPlus]         = "++",
-    [PlusEqual]        = "+=",
-    [Minus]            = "-",
-    [MinusMinus]       = "--",
-    [MinusEqual]       = "-=",
-    [Tilde]            = "~",
-    [Slash]            = "/",
-    [SlashEqual]       = "/=",
-    [Percent]          = "%",
-    [PercentEqual]     = "%=",
-    [Less]             = "<",
-    [LessLess]         = "<<",
-    [LessEqual]        = "<=",
-    [LessLessEqual]    = "<<=",
-    [Greater]          = ">",
-    [GreaterGreater]   = ">>",
-    [GreaterEqual]     = ">=",
-    [GreaterGreaterEqual] = ">>=",
-    [KW_bool]          = "bool",
-    [KW_char]          = "char",
-    [KW_i8]            = "i8",
-    [KW_i16]           = "i16",
-    [KW_i32]           = "i32",
-    [KW_i64]           = "i64",
-    [KW_u8]            = "u8",
-    [KW_u16]           = "u16",
-    [KW_u32]           = "u32",
-    [KW_u64]           = "u64",
-    [KW_reg8]          = "reg8",
-    [KW_reg16]         = "reg16",
-    [KW_reg32]         = "reg32",
-    [KW_reg64]         = "reg64",
-    [KW_isize]         = "isize",
-    [KW_usize]         = "usize",
-    [KW_f32]           = "f32",
-    [KW_f64]           = "f64",
-    [KW_void]          = "void",
-    [KW_int]           = "int",
-    [KW_ssize_t]       = "ssize_t",
-    [KW_size_t]        = "size_t",
-    [KW_float]         = "float",
-    [KW_double]        = "double",
-    [KW_short]         = "short",
-    [KW_long]          = "long",
-    [KW_signed]        = "signed",
-    [KW_unsigned]      = "unsigned",
-    [KW_typedef]       = "typedef",
-    [KW_as]            = "as",
-    [KW_asm]           = "asm",
-    [KW_assert]        = "assert",
-    [KW_break]         = "break",
-    [KW_case]          = "case",
-    [KW_cast]          = "cast",
-    [KW_const]         = "const",
-    [KW_continue]      = "continue",
-    [KW_default]       = "default",
-    [KW_elemsof]       = "elemsof",
-    [KW_else]          = "else",
-    [KW_enum_max]      = "enum_max",
-    [KW_enum_min]      = "enum_min",
-    [KW_enum]          = "enum",
-    [KW_extern]        = "extern",
-    [KW_fallthrough]   = "fallthrough",
-    [KW_false]         = "false",
-    [KW_fn]            = "fn",
-    [KW_for]           = "for",
-    [KW_goto]          = "goto",
-    [KW_if]            = "if",
-    [KW_import]        = "import",
-    [KW_local]         = "local",
-    [KW_module]        = "module",
-    [KW_nil]           = "nil",
-    [KW_offsetof]      = "offsetof",
-    [KW_public]        = "public",
-    [KW_return]        = "return",
-    [KW_sizeof]        = "sizeof",
-    [KW_static]        = "static",
-    [KW_static_assert] = "static_assert",
-    [KW_struct]        = "struct",
-    [KW_switch]        = "switch",
-    [KW_template]      = "template",
-    [KW_tlocal]        = "tlocal",
-    [KW_to_container]  = "to_container",
-    [KW_true]          = "true",
-    [KW_type]          = "type",
-    [KW_union]         = "union",
-    [KW_volatile]      = "volatile",
-    [KW_while]         = "while",
-    [Feat_if]          = "#if",
-    [Feat_ifdef]       = "#ifdef",
-    [Feat_ifndef]      = "#ifndef",
-    [Feat_elif]        = "#elif",
-    [Feat_else]        = "#else",
-    [Feat_endif]       = "#endif",
-    [Feat_error]       = "#error",
-    [Feat_warning]     = "#warning",
-    [Invalid]          = "invalid",
-    [LineComment]      = "l-comment",
-    [BlockComment]     = "b-comment",
-    [Eof]              = "eof",
-    [Error]            = "error",
-}
-
-public fn const char* Kind.str(Kind k) {
-    return token_names[k];
 }
 
 public type Token struct {

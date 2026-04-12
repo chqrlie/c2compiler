@@ -19,77 +19,41 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BinaryOpcode enum u8 {
-    Multiply,
-    Divide,
-    Remainder,
-    Add,
-    Subtract,
-    ShiftLeft,
-    ShiftRight,
-    LessThan,
-    GreaterThan,
-    LessEqual,
-    GreaterEqual,
-    Equal,
-    NotEqual,
-    And,
-    Xor,
-    Or,
-    LAnd,
-    LOr,
-    // keep these here, we check for >= Assign to determine if we need an rvalue of lhs
-    Assign,
-    MulAssign,
-    DivAssign,
-    RemAssign,
-    AddAssign,
-    SubAssign,
-    ShlAssign,
-    ShrAssign,
-    AndAssign,
-    XorAssign,
-    OrAssign,
-}
-
-const char*[BinaryOpcode] binaryOpcode_names = {
-    "*",
-    "/",
-    "%",
-    "+",
-    "-",
-    "<<",
-    ">>",
-    "<",
-    ">",
-    "<=",
-    ">=",
-    "==",
-    "!=",
-    "&",
-    "^",
-    "|",
-    "&&",
-    "||",
-    "=",
-    "*=",
-    "/=",
-    "%=",
-    "+=",
-    "-=",
-    "<<=",
-    ">>=",
-    "&=",
-    "^=",
-    "|=",
+public type BinaryOpcode enum u8 (public const char* name) {
+    Multiply       : { "*" },
+    Divide         : { "/" },
+    Remainder      : { "%" },
+    Add            : { "+" },
+    Subtract       : { "-" },
+    ShiftLeft      : { "<<" },
+    ShiftRight     : { ">>" },
+    LessThan       : { "<" },
+    GreaterThan    : { ">" },
+    LessEqual      : { "<=" },
+    GreaterEqual   : { ">=" },
+    Equal          : { "==" },
+    NotEqual       : { "!=" },
+    And            : { "&" },
+    Xor            : { "^" },
+    Or             : { "|" },
+    LAnd           : { "&&" },
+    LOr            : { "||" },
+    // keep these here we check for >= Assign to determine if we need an rvalue of lhs
+    Assign         : { "=" },
+    MulAssign      : { "*=" },
+    DivAssign      : { "/=" },
+    RemAssign      : { "%=" },
+    AddAssign      : { "+=" },
+    SubAssign      : { "-=" },
+    ShlAssign      : { "<<=" },
+    ShrAssign      : { ">>=" },
+    AndAssign      : { "&=" },
+    XorAssign      : { "^=" },
+    OrAssign       : { "|=" },
 }
 
 public fn bool BinaryOpcode.isComparison(BinaryOpcode opcode) {
     return opcode >= LessThan && opcode <= NotEqual;
-}
-
-public fn const char* BinaryOpcode.str(BinaryOpcode opcode) {
-    return binaryOpcode_names[opcode];
 }
 
 type BinaryOperatorBits struct {
@@ -131,7 +95,7 @@ public fn Expr* BinaryOperator.getRHS(const BinaryOperator* e) { return e.rhs; }
 public fn Expr** BinaryOperator.getRHS2(BinaryOperator* e) { return &e.rhs; }
 
 public fn const char* BinaryOperator.getOpcodeStr(const BinaryOperator* e) {
-    return binaryOpcode_names[e.getOpcode()];
+    return e.getOpcode().name;
 }
 
 fn SrcLoc BinaryOperator.getStartLoc(const BinaryOperator* e) {
@@ -147,7 +111,7 @@ fn void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u3
     e.base.printTypeBits(out);
     out.space();
     out.color(col_Value);
-    out.add(binaryOpcode_names[e.getOpcode()]);
+    out.add(e.getOpcode().name);
     out.newline();
 
     e.lhs.print(out, indent + 1);
@@ -157,7 +121,7 @@ fn void BinaryOperator.print(const BinaryOperator* e, string_buffer.Buf* out, u3
 fn void BinaryOperator.printLiteral(const BinaryOperator* e, string_buffer.Buf* out) {
     e.lhs.printLiteral(out);
     out.space();
-    out.add(binaryOpcode_names[e.getOpcode()]);
+    out.add(e.getOpcode().name);
     out.space();
     e.rhs.printLiteral(out);
 }

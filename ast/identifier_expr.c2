@@ -19,29 +19,15 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type IdentifierKind enum u8 {
-    Unresolved,
-    Module,
-    Function,
-    Type,
-    Var,
-    EnumConstant,
-    StructMember,          // struct-var.member
-    Label,
-}
-
-fn const char* IdentifierKind.str(IdentifierKind k) {
-    switch (k) {
-    case Unresolved:   return "Unresolved";
-    case Module:       return "Module";
-    case Function:     return "Function";
-    case Type:         return "Type";
-    case Var:          return "Var";
-    case EnumConstant: return "EnumConstant";
-    case StructMember: return "StructMember";
-    case Label:        return "Label";
-    }
-    return "";
+public type IdentifierKind enum u8 (const char* name) {
+    Unresolved    : { "Unresolved" },
+    Module        : { "Module" },
+    Function      : { "Function" },
+    Type          : { "Type" },
+    Var           : { "Var" },
+    EnumConstant  : { "EnumConstant" },
+    StructMember  : { "StructMember" }, // struct-var.member
+    Label         : { "Label" },
 }
 
 type IdentifierExprBits struct {
@@ -126,7 +112,7 @@ fn void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u3
     IdentifierKind kind = e.getKind();
     if (kind == Unresolved) out.color(col_Error);
     else out.color(col_Attr);
-    out.add(kind.str());
+    out.add(kind.name);
     out.space();
     if (e.base.base.identifierExprBits.has_decl) {
         out.color(col_Value);

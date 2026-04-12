@@ -158,11 +158,14 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     globals.void_ptr_type.set(void_ptr);
     void_ptr.setCanonicalType(globals.void_ptr_type);
 
-    string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
+    for (u32 i = 0; i < elemsof(BuiltinKind); i++) {
+        BuiltinKind k = (BuiltinKind)i;
+        globals.builtinType_sizes[k] = BuiltinKind.default_size[k];
+        globals.builtinType_width[k] = BuiltinKind.default_width[k];
+    }
     globals.builtinType_sizes[ISize] = wordsize;
     globals.builtinType_sizes[USize] = wordsize;
 
-    string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
     globals.builtinType_width[ISize] = wordsize * 8;
     globals.builtinType_width[USize] = wordsize * 8;
 
