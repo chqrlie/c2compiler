@@ -209,7 +209,8 @@ fn QualType getStringType(u32 len) {
     return globals.string_types.get(len);
 }
 
-public fn const char* idx2name(u32 idx) {
+// only used by ref_generator and ast module
+public fn const char* idx2name(u32 idx) @(unused) {
     if (idx) return globals.names_pool.idx2str(idx);
     return nil;
 }

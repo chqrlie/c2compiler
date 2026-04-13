@@ -111,6 +111,9 @@ type Generator struct {
     StringList funcnames;
 }
 
+fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
+    return gen.astPool.idx2str(name_idx);
+}
 
 const char[] Dir = "cgen";
 const char[] LogFile = "build.log";
@@ -155,7 +158,7 @@ fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* 
     gen.emitCNameMod(out, d, gen.mod);
 }
 
-fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
+fn void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
     if (!d.getName()) return;
     if (d.isExternal() && d.getModule().isForeign()) {
         const char* cname = d.getCName();
@@ -180,7 +183,7 @@ c2_style:
         FunctionDecl* fd = (FunctionDecl*)d;
         Ref* prefix = fd.getPrefix();
         if (prefix) {
-            out.add(ast.idx2name(prefix.name_idx));
+            out.add(gen.idx2name(prefix.name_idx));
             out.add1('_');
         }
     }

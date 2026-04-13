@@ -21,6 +21,7 @@ import levenshtein;
 import module_list;
 import constants;
 import src_loc local;
+import string_pool;
 
 import stdio;
 import stdlib;
@@ -43,8 +44,9 @@ type Level struct {
 
 public type Scope struct @(opaque) {
     // global scope
-    const module_list.List* allmodules;
     diagnostics.Diags* diags;
+    string_pool.Pool* astPool;
+    const module_list.List* allmodules;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
     const ast.SymbolTable* symbols; // all symbols of the module
@@ -71,14 +73,16 @@ public type Scope struct @(opaque) {
 
 public fn Scope* create(module_list.List* allmodules,
                           diagnostics.Diags* diags,
+                          string_pool.Pool* astPool,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
                           const ast.SymbolTable* symbols,
                           bool warn_on_unused)
 {
     Scope* s = stdlib.calloc(1, sizeof(Scope));
-    s.allmodules = allmodules;
     s.diags = diags;
+    s.astPool = astPool;
+    s.allmodules = allmodules;
     s.imports = imports;
     s.mod = mod;
     s.symbols = symbols;
@@ -106,6 +110,10 @@ public fn void Scope.reset(Scope* s) {
     s.stack_max = s.stack_base = s.stack_count = first_index;
 }
 
+fn const char* Scope.idx2name(const Scope* s, u32 name_idx) {
+    return s.astPool.idx2str(name_idx);
+}
+
 fn void Scope.addImports(Scope* s) {
     // Note: this also adds the module itself (import[0])
 
@@ -117,7 +125,7 @@ fn void Scope.addImports(Scope* s) {
         // check for clash with other imports
         ast.Decl* decl = s.stack_find(name_idx);
         if (decl) {
-            s.diags.error(id.getLoc(), "duplicate import name '%s'", ast.idx2name(name_idx));
+            s.diags.error(id.getLoc(), "duplicate import name '%s'", s.idx2name(name_idx));
             assert(decl.isImport());
             ast.ImportDecl* other = (ast.ImportDecl*)decl;
             s.diags.note(other.getLoc(), "previous definition is here");
@@ -127,7 +135,7 @@ fn void Scope.addImports(Scope* s) {
         // check for clash with other symbol in this module
         decl = s.symbols.find(name_idx);
         if (decl) {
-            s.diags.error(id.getLoc(), "import redefinition of '%s'", ast.idx2name(name_idx));
+            s.diags.error(id.getLoc(), "import redefinition of '%s'", s.idx2name(name_idx));
             s.diags.note(decl.getLoc(), "previous definition is here");
             continue;
         }
@@ -262,7 +270,7 @@ public fn bool Scope.add(Scope* s, ast.Decl* d, bool set_offset = false) {
 
     ast.Decl* decl = s.stack_find(name_idx);
     if (decl) {
-        s.diags.error(d.getLoc(), "redefinition of '%s'", decl.getName());
+        s.diags.error(d.getLoc(), "redefinition of '%s'", s.idx2name(name_idx));
         s.diags.note(decl.getLoc(), "previous definition is here");
         return true;
     }
@@ -270,7 +278,7 @@ public fn bool Scope.add(Scope* s, ast.Decl* d, bool set_offset = false) {
     bool other_error = false;
     decl = s.findGlobalSymbol(name_idx, d.getLoc(), &other_error, false, false);
     if (decl) {
-        s.diags.error(d.getLoc(), "redefinition of '%s'", decl.getName());
+        s.diags.error(d.getLoc(), "redefinition of '%s'", s.idx2name(name_idx));
         s.diags.note(decl.getLoc(), "previous definition is here");
         return true;
     }
@@ -291,7 +299,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
     const char* hint = nil;
             // TODO make suggestion based on symbols in all modules
     for (u32 i=0; i<s.stack_count; i++) {
-        const char* name2 = ast.idx2name(s.stack_symbols[i]);
+        const char* name2 = s.idx2name(s.stack_symbols[i]);
         usize len2 = string.strlen(name2);
         usize dist = levenshtein.dist(name1, len1, name2, len2);
         if (dist < best_dist) {
@@ -320,7 +328,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
         const ast.SymbolTable* st = m.getSymbols();
         u32 num_syms = st.num_public + st.num_private;
         for (u32 j=0; j<num_syms; j++) {
-            const char* name2 = ast.idx2name(st.symbols[j]);
+            const char* name2 = s.idx2name(st.symbols[j]);
             usize len2 = string.strlen(name2);
             usize dist = levenshtein.dist(name1, len1, name2, len2);
             if (dist < best_dist) {
@@ -351,12 +359,11 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
     decl = s.findGlobalSymbol(name_idx, loc, &other_error, usedPublic, true);
 
     if (!decl && !other_error) {
-
+        const char* name = s.idx2name(name_idx);
         ast.ImportDecl* id  = s.imports.findAny(name_idx);
         if (id) {
-            s.diags.error(loc, "module '%s' is imported with alias '%s'", id.asDecl().getName(), id.getAliasName());
+            s.diags.error(loc, "module '%s' is imported with alias '%s'", name, id.getAliasName());
         } else {
-            const char* name = ast.idx2name(name_idx);
             const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
             if (hint) {
                 s.diags.error(loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
@@ -390,7 +397,7 @@ public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
         }
     }
     if (decl) {
-        s.diags.error(loc, "redefinition of '%s'", ast.idx2name(name_idx));
+        s.diags.error(loc, "redefinition of '%s'", s.idx2name(name_idx));
         s.diags.note(decl.getLoc(), "previous definition is here");
         return false;
     }
@@ -407,15 +414,15 @@ public fn ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
 
     d = s.imports.findAny(name_idx);
     if (d) {
-        s.diags.error(loc, "module '%s' is imported with alias '%s'", d.asDecl().getName(), d.getAliasName());
+        s.diags.error(loc, "module '%s' is imported with alias '%s'", s.idx2name(name_idx), d.getAliasName());
         return nil;
     }
 
     ast.Module* mod = s.allmodules.find(name_idx);
     if (mod) {
-        s.diags.error(loc, "module %s not imported", ast.idx2name(name_idx));
+        s.diags.error(loc, "module '%s' not imported", s.idx2name(name_idx));
     } else {
-        s.diags.error(loc, "unknown module: '%s'", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown module: '%s'", s.idx2name(name_idx));
     }
     return nil;
 }
@@ -424,7 +431,7 @@ public fn ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name
     assert(s);
     ast.Decl* d = mod.findSymbol(name_idx);
     if (!d) {
-        s.diags.error(loc, "module '%s' has no symbol '%s'", mod.getName(), ast.idx2name(name_idx));
+        s.diags.error(loc, "module '%s' has no symbol '%s'", mod.getName(), s.idx2name(name_idx));
         return nil;
     }
 
@@ -449,7 +456,7 @@ public fn ast.Decl* Scope.findType(Scope* s, u32 name_idx, SrcLoc loc, bool used
     bool other_error = false;
     decl = s.findGlobalSymbol(name_idx, loc, &other_error, usedPublic, true);
     if (!decl && !other_error) {
-        s.diags.error(loc, "unknown type '%s'", ast.idx2name(name_idx));
+        s.diags.error(loc, "unknown type '%s'", s.idx2name(name_idx));
         // TODO make suggestion based on symbols in all modules
     }
     return decl;
@@ -494,7 +501,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
         if (!d) continue;
 
         if (decl) { // already have result
-            const char* name = ast.idx2name(name_idx);
+            const char* name = s.idx2name(name_idx);
             if (!ambiguous) {
                 s.diags.error(loc, "symbol '%s' is ambiguous", name);
                 s.diags.note(decl.getLoc(), "did you mean '%s'?", decl.getFullName());

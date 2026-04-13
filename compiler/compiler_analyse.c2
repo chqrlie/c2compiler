@@ -152,15 +152,17 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     ast.Module* m = c.allmodules.find(name_idx);
     if (!m) {
         component.Component* comp = c.findModuleComponent(name_idx);
+        const char* mod_name = c.astPool.idx2str(name_idx);
         if (comp) {
             // check if comp is a direct dependency, otherwise module is a private module
             if (c.current.hasDep(comp.getNameIdx())) {
-                c.diags.error(d.getLoc(), "module '%s' is private to component %s", ast.idx2name(name_idx), comp.getName());
+                c.diags.error(d.getLoc(), "module '%s' is private to component %s", mod_name, comp.getName());
             } else {
-                c.diags.error(d.getLoc(), "module '%s' is defined in component %s that is not a dependency of component %s", ast.idx2name(name_idx), comp.getName(), c.current.getName());
+                c.diags.error(d.getLoc(), "module '%s' is defined in component %s that is not a dependency of component %s",
+                              mod_name, comp.getName(), c.current.getName());
             }
         } else {
-            c.diags.error(d.getLoc(), "unknown module: '%s'", ast.idx2name(name_idx));
+            c.diags.error(d.getLoc(), "unknown module: '%s'", mod_name);
         }
         return;
     }

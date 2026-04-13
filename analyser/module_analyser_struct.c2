@@ -193,7 +193,7 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* na
         } else {
             u32 old_index;
             if (names.find(name_idx, &old_index)) {
-                ma.error(member.getLoc(), "duplicate struct/union member '%s'", member.getName());
+                ma.error(member.getLoc(), "duplicate struct/union member '%s'", ma.idx2name(name_idx));
                 ma.note(names.getLoc(old_index), "previous declaration is here");
                 return;
             }

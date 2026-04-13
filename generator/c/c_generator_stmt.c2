@@ -242,7 +242,7 @@ fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
 
 fn void Generator.emitAsmOperand(Generator* gen, string_buffer.Buf* out, u32 name, const Expr* c, Expr* e) {
     if (name) {
-        out.print("[%s] ", ast.idx2name(name));
+        out.print("[%s] ", gen.idx2name(name));
     }
     gen.emitStringLiteral(out, (const StringLiteral*)c);
     out.add(" (");

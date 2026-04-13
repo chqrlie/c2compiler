@@ -101,6 +101,10 @@ fn void Generator.free(Generator* gen) {
     gen.locals.free();
 }
 
+fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
+    return gen.names.idx2str(name_idx);
+}
+
 fn void Generator.enterScope(Generator* gen, u32 break_block, u32 continue_block) {
     assert(gen.num_scopes < elemsof(gen.scopes));
     JumpScope* s = &gen.scopes[gen.num_scopes];
@@ -152,7 +156,7 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
                 FunctionDecl* fd = (FunctionDecl*)d;
                 ast.Ref* prefix = fd.getPrefix();
                 if (prefix) {
-                    out.add(ast.idx2name(prefix.name_idx));
+                    out.add(gen.idx2name(prefix.name_idx));
                     out.add1('_');
                 }
             } else if (d.isEnumConstant()) {

@@ -313,7 +313,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                 if (etd) {
                     if (lhs_index > rhs_index) {
                         ma.error(loc, "enum constant '%s' does not come after '%s'",
-                                 idx2name(rhs_name_idx), idx2name(lhs_name_idx));
+                                 ma.idx2name(rhs_name_idx), ma.idx2name(lhs_name_idx));
                         res = false;
                         continue;
                     }

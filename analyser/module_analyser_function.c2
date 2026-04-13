@@ -224,6 +224,7 @@ fn bool Analyser.analyseFunctionBody2(Analyser* ma, FunctionDecl* fd, Module* mo
     analyser.setMod(mod);
     scope.Scope* tmpScope = scope.create(ma.allmodules,
                                          ma.diags,
+                                         ma.astPool,
                                          fd.asDecl().getAST().getImports(),
                                          mod,
                                          mod.getSymbols(),
@@ -286,7 +287,7 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
             Decl* p = (Decl*)params[i];
             if (!p.isUsed() && p.getNameIdx()) {
                 // TODO check attribute?
-                ma.warn(p.getLoc(), "unused parameter '%s'", p.getName());
+                ma.warn(p.getLoc(), "unused parameter '%s'", ma.idx2name(p.getNameIdx()));
             }
         }
     }
@@ -297,10 +298,10 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
         const Label* l = &labels[i];
         if (l.is_label) {
             if (!l.used && !ma.warnings.no_unused_label) {
-                ma.warn(l.loc, "unused label '%s'", ast.idx2name(l.name_idx));
+                ma.warn(l.loc, "unused label '%s'", ma.idx2name(l.name_idx));
             }
         } else {
-            ma.error(l.loc, "use of undeclared label '%s'", ast.idx2name(l.name_idx));
+            ma.error(l.loc, "use of undeclared label '%s'", ma.idx2name(l.name_idx));
         }
     }
 done:

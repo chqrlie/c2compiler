@@ -80,12 +80,12 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
             u32 name_idx2 = prev.getNameIdx();
             if (name_idx == name_idx2) {
                 has_error = true;
-                ma.error(vd.asDecl().getLoc(), "redefinition of '%s'", prev.getName());
+                ma.error(vd.asDecl().getLoc(), "redefinition of '%s'", ma.idx2name(name_idx2));
             }
         }
         if (name_idx == ma.min_idx || name_idx == ma.max_idx) {
             has_error = true;
-            ma.error(vd.asDecl().getLoc(), "enum-associated name '%s' is reserved", vd.getName());
+            ma.error(vd.asDecl().getLoc(), "enum-associated name '%s' is reserved", ma.idx2name(name_idx));
         }
         Decl* fn_decl = etd.findFunction(name_idx);
         if (fn_decl) {
@@ -176,7 +176,7 @@ fn bool Analyser.analyseEnumConstantAssocValues(Analyser* ma,
     }
     if (num_values < num_assocs) {
         Decl* col_decl = (Decl*)columns[num_values];
-        ma.error(ile.getEndLoc(), "missing initializer for enum-associated value '%s'", col_decl.getName());
+        ma.error(ile.getEndLoc(), "missing initializer for enum-associated value '%s'", ma.idx2name(col_decl.getNameIdx()));
         return false;
     }
     return is_ok;

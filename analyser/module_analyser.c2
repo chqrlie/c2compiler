@@ -141,6 +141,10 @@ public fn void Analyser.free(Analyser* ma) {
     stdlib.free(ma);
 }
 
+fn const char* Analyser.idx2name(const Analyser* ma, u32 name_idx) {
+    return ma.astPool.idx2str(name_idx);
+}
+
 public fn void Analyser.check(Analyser* ma, Module* mod) {
     ma.mod = mod;
     ma.prefix_cache_name = 0;
@@ -256,7 +260,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
     // find array Decl
     Decl* d = ma.mod.findSymbol(name);
     if (!d) {
-        ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ast.idx2name(name));
+        ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ma.idx2name(name));
         return;
     }
     // check if incremental array/enum
@@ -265,8 +269,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         VarDecl* vd = (VarDecl*)d;
         TypeRef* ref = vd.getTypeRef();
         if (!ref.isIncrArray()) {
-            ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
-            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
+            ma.error(entry.loc, "'%s' is not an incremental array", ma.idx2name(name));
+            ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
             return;
         }
 
@@ -279,8 +283,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         // dont analyse yet, just check if Identifier and convert to EnumConstantDecl
         EnumTypeDecl* etd = (EnumTypeDecl*)d;
         if (!etd.isIncremental()) {
-            ma.error(entry.loc, "'%s' is not an incremental enum", ast.idx2name(name));
-            ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
+            ma.error(entry.loc, "'%s' is not an incremental enum", ma.idx2name(name));
+            ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
             return;
         }
 
@@ -295,8 +299,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         }
         etd.setIncrConstants(ma.context, (IdentifierExpr**)values, num_values);
     } else {
-        ma.error(entry.loc, "'%s' is not an incremental array/enum", ast.idx2name(name));
-        ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
+        ma.error(entry.loc, "'%s' is not an incremental array/enum", ma.idx2name(name));
+        ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
     }
 }
 
@@ -361,6 +365,7 @@ fn void Analyser.createGlobalScope(void* arg, AST* a) {
     Analyser* ma = arg;
     scope.Scope* s = scope.create(ma.allmodules,
                                   ma.diags,
+                                  ma.astPool,
                                   a.getImports(),
                                   ma.mod,
                                   ma.mod.getSymbols(),

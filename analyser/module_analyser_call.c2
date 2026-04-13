@@ -651,8 +651,8 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
     return true;
 }
 
-fn void create_template_name(char* name, u32 size, const char* orig, u16 idx) {
-    stdio.snprintf(name, size, "%s_%d_", orig, idx);
+fn void Analyser.create_template_name(Analyser* ma, char* name, u32 size, u32 orig, u16 idx) {
+    stdio.snprintf(name, size, "%s_%d_", ma.idx2name(orig), idx);
 }
 
 fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
@@ -697,6 +697,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         analyser.setMod(template_mod);
         scope.Scope* tmpScope = scope.create(ma.allmodules,
                                              ma.diags,
+                                             ma.astPool,
                                              d.getAST().getImports(),
                                              template_mod,
                                              template_mod.getSymbols(),
@@ -710,7 +711,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
         instance.setTemplateInstanceIdx(instance_idx);
         char[64] name;
-        create_template_name(name, elemsof(name), d.getName(), instance_idx);
+        ma.create_template_name(name, elemsof(name), d.getNameIdx(), instance_idx);
         instance.setInstanceName(ma.astPool.addStr(name, true));
     }
     call.setTemplateIdx(instance.getTemplateInstanceIdx());
