@@ -111,11 +111,6 @@ public type Globals struct @(opaque) {
     u32 ast_count;      // Note: first index used to indicate nil
     u32 ast_capacity;
     AST** ast_list;
-
-    u32[BuiltinKind] builtinType_sizes;
-    u32[BuiltinKind] builtinType_width;
-    BuiltinKind[BuiltinKind] builtinType_baseTypes;
-
     string_buffer.Buf* dump_buf;
 #if AstStatistics
     Stats stats;
@@ -133,67 +128,47 @@ public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
-    globals = stdlib.malloc(sizeof(Globals));
-    globals.pointers.init(c);
-    globals.string_types.init(c);
-    globals.wordsize = wordsize;
-    globals.use_color = use_color;
-    globals.names_pool = astPool;
-    globals.ast_count = 1;
-    globals.ast_capacity = 0;
-    globals.ast_list = nil;
-    globals.dump_buf = string_buffer.create(4096, use_color, 2);
+    Globals* g = stdlib.calloc(sizeof(Globals), 1);
+    g.pointers.init(c);
+    g.string_types.init(c);
+    g.wordsize = wordsize;
+    g.use_color = use_color;
+    g.names_pool = astPool;
+    g.ast_count = 1;
+    g.ast_capacity = 0;
+    g.ast_list = nil;
+    g.dump_buf = string_buffer.create(4096, use_color, 2);
 #if AstStatistics
-    globals.stats.reset();
+    g.stats.reset();
 #endif
+    globals = g;  // must be set here because BuiltinType.create calls Stats.addType
 
-    // create all Qualtypes for builtin-types, 1 extra for void-ptr
+    // create all Qualtypes for builtin-types
     for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
-        globals.builtins[kind].set((Type*)BuiltinType.create(c, kind));
+        g.builtins[kind].set((Type*)BuiltinType.create(c, kind, wordsize));
     }
 
-    globals.void_type.set((Type*)VoidType.create(c));
-    // create void* Type so its easy to check if a type is a void*
-    Type* void_ptr = ast.getPointerType(globals.void_type);
-    globals.void_ptr_type.set(void_ptr);
-    void_ptr.setCanonicalType(globals.void_ptr_type);
-
-    for (u32 i = 0; i < elemsof(BuiltinKind); i++) {
-        BuiltinKind k = (BuiltinKind)i;
-        globals.builtinType_sizes[k] = BuiltinKind.default_size[k];
-        globals.builtinType_width[k] = BuiltinKind.default_width[k];
-    }
-    globals.builtinType_sizes[ISize] = wordsize;
-    globals.builtinType_sizes[USize] = wordsize;
-
-    globals.builtinType_width[ISize] = wordsize * 8;
-    globals.builtinType_width[USize] = wordsize * 8;
-
-    for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
-        globals.builtinType_baseTypes[kind] = kind;
-    }
-    if (wordsize == 4) {
-        globals.builtinType_baseTypes[ISize] = Int32;
-        globals.builtinType_baseTypes[USize] = UInt32;
-    } else {
-        globals.builtinType_baseTypes[ISize] = Int64;
-        globals.builtinType_baseTypes[USize] = UInt64;
-    }
+    // create void type and void-ptr type
+    g.void_type.set((Type*)VoidType.create(c));
+    Type* void_ptr = g.pointers.getPointer(g.void_type);
+    g.void_ptr_type.set(void_ptr);
+    void_ptr.setCanonicalType(g.void_ptr_type);
 }
 
 public fn void deinit(bool print_stats) {
+    Globals* g = globals;
 #if AstStatistics
-    if (print_stats) globals.stats.dump();
+    if (print_stats) g.stats.dump();
 #endif
-    globals.names_pool = nil;
-    globals.ast_count = 0;
-    globals.ast_capacity = 0;
-    stdlib.free(globals.ast_list);
-    globals.ast_list = nil;
-    globals.pointers.clear();
-    globals.string_types.clear();
-    globals.dump_buf.free();
-    stdlib.free(globals);
+    g.names_pool = nil;
+    g.ast_count = 0;
+    g.ast_capacity = 0;
+    stdlib.free(g.ast_list);
+    g.ast_list = nil;
+    g.pointers.clear();
+    g.string_types.clear();
+    g.dump_buf.free();
+    stdlib.free(g);
     globals = nil;
 }
 
@@ -232,22 +207,23 @@ public fn QualType getBuiltinQT(BuiltinKind kind) {
 }
 
 fn u32 addAST(AST* ast_) {
-    if (globals.ast_count >= globals.ast_capacity) {
-        if (globals.ast_capacity == 0) globals.ast_capacity = 16;
-        else globals.ast_capacity *= 2;
+    Globals* g = globals;
+    if (g.ast_count >= g.ast_capacity) {
+        if (g.ast_capacity == 0) g.ast_capacity = 16;
+        else g.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(globals.ast_capacity * sizeof(ast.AST*));
-        if (globals.ast_list) {
-            void* old = globals.ast_list;
-            string.memcpy(buf, old, globals.ast_count * sizeof(ast.AST*));
+        void* buf = stdlib.malloc(g.ast_capacity * sizeof(ast.AST*));
+        if (g.ast_list) {
+            void* old = g.ast_list;
+            string.memcpy(buf, old, g.ast_count * sizeof(ast.AST*));
             stdlib.free(old);
         }
-        globals.ast_list = buf;
+        g.ast_list = buf;
     }
 
-    u32 idx = globals.ast_count;
-    globals.ast_list[idx] = ast_;
-    globals.ast_count++;
+    u32 idx = g.ast_count;
+    g.ast_list[idx] = ast_;
+    g.ast_count++;
     return idx;
 }
 

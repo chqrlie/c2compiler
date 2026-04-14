@@ -45,18 +45,28 @@ public type BuiltinKind enum u8 (public const char* const name,
 }
 
 type BuiltinTypeBits struct {
-    u32 : NumTypeBits;
+    u32 : NumTypeBits;  // : 8
     BuiltinKind kind : 4;
+    BuiltinKind base_kind : 4;
+    u32 width : 8;
+    u32 size : 8;
 }
+static_assert(sizeof(BuiltinTypeBits), 4);
 
 public type BuiltinType struct @(opaque) {
     Type base;
 }
 
-fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
+fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind, u32 wordsize) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.base.init(Builtin);
+    BuiltinKind base_kind = kind;
+    if (kind == ISize) base_kind = (wordsize == 4) ? Int32 : Int64;
+    if (kind == USize) base_kind = (wordsize == 4) ? UInt32 : UInt64;
     b.base.builtinTypeBits.kind = kind;
+    b.base.builtinTypeBits.base_kind = base_kind;
+    b.base.builtinTypeBits.width = base_kind.default_width;
+    b.base.builtinTypeBits.size = base_kind.default_size;
     b.base.setCanonicalType(QualType.create(&b.base));
 #if AstStatistics
     Stats.addType(Builtin, sizeof(BuiltinType));
@@ -64,26 +74,21 @@ fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     return b;
 }
 
-// TODO: redundant?
 public fn BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind;
 }
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch
 public fn BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
-    return globals.builtinType_baseTypes[b.getKind()];
-}
-
- fn BuiltinKind BuiltinType.getBuiltinKind(const BuiltinType* b) {
-    return b.base.builtinTypeBits.kind;
+    return b.base.builtinTypeBits.base_kind;
 }
 
 public fn bool BuiltinType.isInt32(const BuiltinType* b) {
-    return b.getBuiltinKind() == Int32;
+    return b.getKind() == Int32;
 }
 
 fn bool BuiltinType.isBool(const BuiltinType* b) {
-    return b.getBuiltinKind() == Bool;
+    return b.getKind() == Bool;
 }
 
 public fn const char* BuiltinType.kind2str(const BuiltinType* b) {
@@ -115,11 +120,11 @@ public fn bool BuiltinType.isUnsigned(const BuiltinType* b) {
 }
 
 public fn u32 BuiltinType.getAlignment(const BuiltinType* b) {
-    return globals.builtinType_sizes[b.getKind()];
+    return b.base.builtinTypeBits.size;
 }
 
 public fn u32 BuiltinType.getWidth(const BuiltinType* b) {
-    return globals.builtinType_width[b.getKind()];
+    return b.base.builtinTypeBits.width;
 }
 
 fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
@@ -128,5 +133,5 @@ fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
 
 fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
-    out.print("BuiltinType [%p] %s\n", t, t.kind2str());
+    out.print("BuiltinType [%p] %s\n", t, t.getKind().name);
 }
