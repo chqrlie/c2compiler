@@ -72,6 +72,10 @@ public fn void Builder.free(Builder* b) {
     free(b);
 }
 
+fn const char* Builder.idx2name(const Builder* b, u32 name_idx) {
+    return b.astPool.idx2str(name_idx);
+}
+
 public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.comp = comp;
     b.mod = nil;
@@ -130,7 +134,7 @@ public fn Decl* Builder.actOnImport(Builder* b,
     if (b.ast.getNameIdx() == mod_name) {
         if (mod_loc) {
             // reject self imports, no error for implicit imports (eg: varargs)
-            b.diags.error(mod_loc, "cannot import own module '%s'", b.astPool.idx2str(mod_name));
+            b.diags.error(mod_loc, "cannot import own module '%s'", b.idx2name(mod_name));
         }
         return nil;
     }
@@ -139,7 +143,7 @@ public fn Decl* Builder.actOnImport(Builder* b,
     if (old) {
         if (mod_loc) {
             // reject duplicate imports, no error for implicit imports
-            b.diags.error(mod_loc, "duplicate import of module '%s'", b.astPool.idx2str(mod_name));
+            b.diags.error(mod_loc, "duplicate import of module '%s'", b.idx2name(mod_name));
             b.diags.note(old.asDecl().getLoc(), "previous import is here");
         }
         return (Decl*)old;
@@ -359,9 +363,9 @@ public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
 
     // name is Enum__<name> for now. The first letter is always capital-cased, even if not const
     string_buffer.Buf* out = string_buffer.create(128, false, 0);
-    out.add(b.astPool.idx2str(d.getNameIdx()));
+    out.add(b.idx2name(d.getNameIdx()));
     out.add("__");
-    out.add(b.astPool.idx2str(esv.getNameIdx()));
+    out.add(b.idx2name(esv.getNameIdx()));
     u32 name_idx = b.astPool.add(out.str(), out.size(), true);
     out.free();
 
@@ -693,7 +697,7 @@ fn bool Builder.actOnParamAttr(Builder* b, VarDecl* d, const Attr* a) {
         return true;
     default:
         b.diags.error(a.loc, "attribute '%s' cannot be applied to function parameters",
-                      b.astPool.idx2str(a.name));
+                      b.idx2name(a.name));
         return false;
     }
     b.diags.error(a.loc, "invalid combination of attributes");
@@ -1232,7 +1236,7 @@ public fn void Builder.insertImplicitCast(Builder* b,
 fn void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
     Decl* old = b.mod.findSymbol(name_idx);
     if (old) {
-        b.diags.error(d.getLoc(), "redefinition of '%s'", b.astPool.idx2str(name_idx));
+        b.diags.error(d.getLoc(), "redefinition of '%s'", b.idx2name(name_idx));
         b.diags.note(old.getLoc(), "previous definition is here");
     } else {
         b.mod.addSymbol(name_idx, d);
