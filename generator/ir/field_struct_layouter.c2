@@ -99,7 +99,7 @@ fn void FieldStructLayouter.finalize(FieldStructLayouter* l) {
         const FieldInit* fi = &l.inits[i];
         const ast.Expr* e = fi.expr;
         ast.QualType qt = e.getType();
-        u32 size = qt.getSize(false);
+        u32 size = qt.getSize();
         // TODO dont get from type, already set is Layout
 
         // TODO merge bit-fields and/or other CTV fields

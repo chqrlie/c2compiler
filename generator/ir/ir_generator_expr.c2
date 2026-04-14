@@ -510,15 +510,15 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
     Expr* base = a.getBase();
     Expr* index = a.getIndex();
     QualType qt = base.getType();
-    u32 base_size = qt.getSize(true);
+    u32 elem_size = qt.getElemSize();
 
     if (index.isCtv()) {
         ir.Ref base_ref;
         gen.emitExpr(&base_ref, base);
 
-        // offset = value * base_size;
+        // offset = value * elem_size;
         Value v = ast.evalExpr(index);
-        u32 offset = v.as_u32() * base_size;
+        u32 offset = v.as_u32() * elem_size;
         if (offset == 0) {
             *result = base_ref;
         } else {
@@ -533,11 +533,11 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
         ir.Ref idx_ref;
         gen.emitExpr(&idx_ref, index);
 
-        // offset = value * base_size;
-        if (base_size == 1) {
+        // offset = value * elem_size;
+        if (elem_size == 1) {
             *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, idx_ref);
         } else {
-            ir.Ref size_ref = gen.ctx.addIntegerConstant(base_size);
+            ir.Ref size_ref = gen.ctx.addIntegerConstant(elem_size);
             ir.Ref offset_ref = gen.ctx.addBinaryInstr(InstrKind.Mul, idx_ref, size_ref);
             // add base and offset
             *result = gen.ctx.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);

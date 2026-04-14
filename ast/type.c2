@@ -135,22 +135,35 @@ fn u32 Type.getAlignment(const Type* t) {
     return getWordSize();
 }
 
-fn u32 Type.getSize(const Type* t, bool deref_ptr) {
+fn u32 Type.getElemSize(const Type* t) {
+    switch (t.getKind()) {
+    case Pointer:
+        const PointerType* pt = (PointerType*)t;
+        QualType inner = pt.getInner();
+        return inner.getSize();
+    case Array:
+        const ArrayType* at =  (ArrayType*)t;
+        QualType elem = at.getElemType();
+        return elem.getSize();
+    case Alias:
+        QualType canon = t.getCanonicalType();
+        return canon.getElemSize();
+    default:
+        return 1;
+    }
+}
+
+fn u32 Type.getSize(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi =  (BuiltinType*)t;
         return bi.getAlignment();   // note: alignment is size
     case Pointer:
-        if (deref_ptr) {
-            const PointerType* pt = (PointerType*)t;
-            QualType inner = pt.getInner();
-            return inner.getSize(deref_ptr);
-        }
         break;
     case Array:
         const ArrayType* at =  (ArrayType*)t;
         QualType elem = at.getElemType();
-        return at.getSize() * elem.getSize(false);
+        return at.getSize() * elem.getSize();
     case Struct:
         const StructType* s = (StructType*)t;
         const StructTypeDecl* std = s.getDecl();
@@ -159,14 +172,14 @@ fn u32 Type.getSize(const Type* t, bool deref_ptr) {
         const EnumType * e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
-        return it.getTypeOrNil().getSize(false);
+        return it.getSize();
     case Function:
         break;
     case Void:
         return 0;
     case Alias:
         QualType canon = t.getCanonicalType();
-        return canon.getAlignment();
+        return canon.getSize();
     case Module:
         // should not happen
         return 0;

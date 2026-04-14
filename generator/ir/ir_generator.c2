@@ -415,7 +415,7 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
     ArrayType* at = qt.getArrayType();
     u32 array_size = at.getSize();  // TODO use for un-initialized stuff
     QualType et = at.getElemType();
-    u32 elem_size = et.getSize(false);
+    u32 elem_size = et.getSize();
 
     if (ile.hasDesignators()) {
         // TODO handle sparse arrays
@@ -554,7 +554,7 @@ fn void on_var_decl(void* arg, VarDecl* vd) {
 
     c.startGlobal(gen_idx);
     const Expr* ie = vd.getInit();
-    u32 size = qt.getSize(false);
+    u32 size = qt.getSize();
     if (ie) {
         gen.emitInit(ie, size);
     } else {
@@ -630,7 +630,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     }
 
     // emit alloc (LocalSlot)
-    u32 size = qt.getSize(false);
+    u32 size = qt.getSize();
     // TODO filter duplicates (0-100?) Q: filter here or in Context?
     ir.Ref size_ref = gen.ctx.addIntegerConstant(size);
     ir.Ref slot = gen.ctx.addStackSlot(align, size_ref);
@@ -712,7 +712,7 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
                 ir.Ref ref;
                 gen.emitVarDecl(&ref, d);
                 QualType qt = d.getType();
-                u32 size = qt.getSize(false);
+                u32 size = qt.getSize();
 
                 const Expr* ie = vd.getInit();
                 gen.ctx.startGlobal((u32)ref.value);
