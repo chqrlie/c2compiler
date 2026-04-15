@@ -240,7 +240,7 @@ public fn TypeRefHolder TypeRef.getHolder(const TypeRef* r) {
     if (r.hasPrefix()) h.prefix = r.refs[1];
 
     for (u32 i = 0; i < r.getNumArrays(); i++) h.arrays[i] = r.getArray(i);
-    return  h;
+    return h;
 }
 
 fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {

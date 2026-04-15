@@ -62,7 +62,7 @@ fn void strip_comments(const char* input, utils.StringBuffer* out)
                     char[256] line;
                     u32 len = cast<u32>(cp - linestart);
                     memcpy(line, linestart, len);
-                    line[len] =  0;
+                    line[len] = 0;
                     printf("%d %s", white, line);
 #endif
                     if (white) skip = true;

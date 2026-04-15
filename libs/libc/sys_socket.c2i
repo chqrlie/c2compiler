@@ -3,7 +3,7 @@ module sys_socket extern "C";
 import unistd local;
 import libc_fcntl local;
 
-const int PF_UNIX     =  1;
+const int PF_UNIX    =  1;
 
 const int AF_UNIX    =  PF_UNIX;
 const int AF_INET    =  2;

@@ -104,12 +104,12 @@ public fn void Type.dump(const Type* t) @(unused) {
 fn u32 Type.getAlignment(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi =  (BuiltinType*)t;
+        const BuiltinType* bi = (BuiltinType*)t;
         return bi.getAlignment();
     case Pointer:
         break;
     case Array:
-        const ArrayType* at =  (ArrayType*)t;
+        const ArrayType* at = (ArrayType*)t;
         QualType elem = at.getElemType();
         return elem.getAlignment();
     case Struct:
@@ -142,7 +142,7 @@ fn u32 Type.getElemSize(const Type* t) {
         QualType inner = pt.getInner();
         return inner.getSize();
     case Array:
-        const ArrayType* at =  (ArrayType*)t;
+        const ArrayType* at = (ArrayType*)t;
         QualType elem = at.getElemType();
         return elem.getSize();
     case Alias:
@@ -156,12 +156,12 @@ fn u32 Type.getElemSize(const Type* t) {
 fn u32 Type.getSize(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi =  (BuiltinType*)t;
+        const BuiltinType* bi = (BuiltinType*)t;
         return bi.getAlignment();   // note: alignment is size
     case Pointer:
         break;
     case Array:
-        const ArrayType* at =  (ArrayType*)t;
+        const ArrayType* at = (ArrayType*)t;
         QualType elem = at.getElemType();
         return at.getSize() * elem.getSize();
     case Struct:

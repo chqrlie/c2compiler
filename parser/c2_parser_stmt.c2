@@ -629,7 +629,7 @@ fn Stmt* Parser.parseLabelStmt(Parser* p) {
 fn Stmt* Parser.parseGotoStmt(Parser* p) {
     p.consumeToken();
     p.expectIdentifier();
-    u32 name =  p.tok.name_idx;
+    u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(Semicolon);

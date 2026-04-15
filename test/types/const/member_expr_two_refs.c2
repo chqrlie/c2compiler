@@ -48,7 +48,7 @@ fn void test_var_2() {
 
 // ----- const var -----
 
-const Outer[2] O =  {}
+const Outer[2] O = {}
 
 fn void test_const_var() {
     i32 a = O[1].var;

@@ -262,7 +262,7 @@ fn void Generator.on_module(void* arg, Module* m) {
                 u32 len = (u32)(cp - start);
                 u32 name_idx = gen.pool.add(start, len, true);
                 start = cp+1;
-                d =  d.get(name_idx);
+                d = d.get(name_idx);
             }
             cp++;
         }
