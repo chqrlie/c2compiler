@@ -461,6 +461,30 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u3
     }
 }
 
+fn void Generator.emitFunctionParam(Generator* gen, string_buffer.Buf* out, QualType qt, u32 name_idx, u32 arg_num) {
+    char[16] temp;
+    const char* name;
+    if (name_idx) {
+        name = gen.idx2name(name_idx);
+    } else {
+        // some compilers do not accept unnamed arguments in function definitions
+        snprintf(temp, elemsof(temp), "_arg%d", arg_num);
+        name = temp;
+    }
+    if (qt.isFunction()) {
+        FunctionType* ft = qt.getFunctionType();
+        FunctionDecl* fd = ft.getDecl();
+        if (fd.isParam()) {
+            gen.gen_member_type_func(fd, out, name);
+            return;
+        }
+        // TODO: when to we get here?
+    }
+    gen.emitTypePre(out, qt);
+    out.space();
+    out.add(name);
+}
+
 fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     FunctionDecl* fd = ftd.getDecl();
@@ -474,15 +498,9 @@ fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl*
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
-        Decl* arg = (Decl*)params[i];
         if (i != 0) out.add(", ");
-        gen.emitTypePre(out, arg.getType());
-        out.space();
-        if (arg.getNameIdx()) {
-            gen.emitName(out, arg);
-        } else {
-            out.print("_arg%d", i);
-        }
+        Decl* arg = (Decl*)params[i];
+        gen.emitFunctionParam(out, arg.getType(), arg.getNameIdx(), i);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -900,30 +918,9 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
 
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
-        Decl* argx = (Decl*)params[i];
         if (i != 0) out.add(", ");
-        char[8] temp;
-        const char* name;
-        u32 name_idx = argx.getNameIdx();
-        if (name_idx) {
-            name = gen.idx2name(name_idx);
-        } else {
-            snprintf(temp, elemsof(temp), "_arg%d", i);
-            name = temp;
-        }
-        QualType qt = argx.getType();
-        if (qt.isFunction()) {
-            FunctionType* ft = qt.getFunctionType();
-            FunctionDecl* fd2 = ft.getDecl();
-            if (fd2.isParam()) {
-                gen.gen_member_type_func(fd2, out, name);
-                continue;
-            }
-        }
-
-        gen.emitTypePre(out, qt);
-        out.space();
-        out.add(name);
+        Decl* arg = (Decl*)params[i];
+        gen.emitFunctionParam(out, arg.getType(), arg.getNameIdx(), i);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");

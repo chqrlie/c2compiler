@@ -5,6 +5,11 @@
 // @file{file1}
 module test;
 
+fn void foo() { foo1(foo); }
+fn void foo1(fn void()) { foo2(foo1); }
+fn void foo2(fn void(fn void())) { foo3(foo2); }
+fn void foo3(fn void(fn void(fn void()))) {}
+
 type Cb1 fn void(void*, fn bool(i32, i32), i32);
 type Cb2 fn bool(i32, i32);
 
@@ -30,15 +35,38 @@ fn void test2() {
     test1(nil, nil, nil, 10);
 }
 // @expect{atleast, cgen/build.c}
-typedef void (*test_Cb1)(void* _arg0,  _arg1, int _arg2);
+typedef void (*test_Cb1)(void* _arg0, bool (*_arg1)(int _arg0, int _arg1), int _arg2);
 typedef bool (*test_Cb2)(int _arg0, int _arg1);
 
 static void test_callback1(void* arg, bool (*_arg1)(int _arg0, int _arg1), int a);
 static test_Cb1 test_cb1 = test_callback1;
 static bool test_callback2(int a, int b);
 static test_Cb2 test_cb2 = test_callback2;
+static void test_foo(void);
+static void test_foo1(void (*_arg0)(void));
+static void test_foo2(void (*_arg0)(void (*_arg0)(void)));
+static void test_foo3(void (*_arg0)(void (*_arg0)(void (*_arg0)(void))));
 static void test_test1(void* arg, void (*cb)(void* arg, bool (*_arg1)(int _arg0, int _arg1), int a), bool (*inner)(int _arg0, int _arg1), int a);
 static void test_test2(void);
+
+static void test_foo(void)
+{
+   test_foo1(test_foo);
+}
+
+static void test_foo1(void (*_arg0)(void))
+{
+   test_foo2(test_foo1);
+}
+
+static void test_foo2(void (*_arg0)(void (*_arg0)(void)))
+{
+   test_foo3(test_foo2);
+}
+
+static void test_foo3(void (*_arg0)(void (*_arg0)(void (*_arg0)(void))))
+{
+}
 
 static void test_callback1(void* arg, bool (*_arg1)(int _arg0, int _arg1), int a)
 {
