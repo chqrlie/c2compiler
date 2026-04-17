@@ -28,6 +28,7 @@ public type BuiltinKind enum u8 (public const char* const name,
                                  const u8 width)
 {
     // Note: align/width is adjusted for 32-bit in globals
+    Bool        : { "bool",  true,  false, false, false, 1,  1 },
     Char        : { "char",  true,  false, true,  true,  1,  8 },
     Int8        : { "i8",    true,  true,  false, true,  1,  8 },
     Int16       : { "i16",   true,  true,  false, true,  2, 16 },
@@ -41,7 +42,6 @@ public type BuiltinKind enum u8 (public const char* const name,
     Float64     : { "f64",   false, true,  false, false, 8,  0 },
     ISize       : { "isize", false, true,  false, true,  0,  0 },
     USize       : { "usize", false, false, true,  true,  0,  0 },
-    Bool        : { "bool",  true,  false, false, false, 1,  1 },
 }
 
 type BuiltinTypeBits struct {

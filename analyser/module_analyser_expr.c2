@@ -477,7 +477,7 @@ fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
         return QualType_Invalid;
     }
 
-    if (!ma.checker.checkCast(destType, srcType, ref.getLoc(), inner.getLoc())) return QualType_Invalid;
+    if (!ma.conv_checker.checkCast(destType, srcType, ref.getLoc(), inner.getLoc())) return QualType_Invalid;
 
     return destType;
 }

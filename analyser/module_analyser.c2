@@ -44,7 +44,7 @@ const u32 MaxDepth = 8;
 
 public type Analyser struct @(opaque) {
     diagnostics.Diags* diags;
-    conv.Checker checker;
+    conv.Checker conv_checker;
     ast_context.Context* context;
     string_pool.Pool* astPool;
     ast_builder.Builder* builder;
@@ -98,7 +98,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
-    ma.checker.init(diags, builder);
+    ma.conv_checker.init(diags, builder);
     ma.context = context;
     ma.astPool = astPool;
     ma.builder = builder;
@@ -117,7 +117,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
 fn Analyser* Analyser.clone(Analyser* org) {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = org.diags;
-    ma.checker.init(org.diags, org.builder);
+    ma.conv_checker.init(org.diags, org.builder);
     ma.context = org.context;
     ma.astPool = org.astPool;
     ma.builder = org.builder;
@@ -154,7 +154,7 @@ fn const char* Analyser.getFullName(const Analyser* ma, const Decl* d) {
     return d.getFullName();
 }
 
-public fn void Analyser.check(Analyser* ma, Module* mod) {
+public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
     ma.mod = mod;
     ma.prefix_cache_name = 0;
     ma.prefix_cache_idx = 0;

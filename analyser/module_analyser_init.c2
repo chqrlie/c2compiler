@@ -66,7 +66,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
                 QualType qt = ma.analyseExpr(e_ptr, true, RHS);
                 // TODO check qt?
                 e = *e_ptr;
-                if (!ma.checker.check(expectedType, e.getType(), e_ptr, assignLoc)) return false;
+                if (!ma.conv_checker.checkAssign(expectedType, e.getType(), e_ptr, assignLoc)) return false;
             }
             return true;
         }
@@ -99,7 +99,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         }
     }
 
-    if (!ma.checker.check(expectedType, res, e_ptr, assignLoc)) return false;
+    if (!ma.conv_checker.checkAssign(expectedType, res, e_ptr, assignLoc)) return false;
 
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {

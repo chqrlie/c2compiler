@@ -479,13 +479,13 @@ fn bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn handler, v
 fn void Compiler.analyseModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     console.debug("analysing module %s", m.getName());
-    c.analyser.check(m);
+    c.analyser.checkModule(m);
 }
 
 fn void Compiler.analyseUsedModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (m.isUsed()) {
-        c.analyser.check(m);
+        c.analyser.checkModule(m);
     }
 }
 

@@ -195,7 +195,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
 
         // TODO FIX loc, will always be memberExpr, so loc should be last one in member
-        bool ok = ma.checker.check(expectedType, baseType, e_ptr, loc);
+        bool ok = ma.conv_checker.checkAssign(expectedType, baseType, e_ptr, loc);
         if (!ok) return QualType_Invalid;
 
         func_arg_index++;

@@ -17,7 +17,7 @@ module ast;
 
 import string_buffer;
 
-public type TypeKind enum u8 (const char* const name) {
+public type TypeKind enum u8 (public const char* const name) {
     Builtin   : { "Builtin" },
     Pointer   : { "Pointer" },
     Array     : { "Array" },

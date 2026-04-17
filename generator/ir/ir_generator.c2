@@ -195,6 +195,7 @@ fn const char* Generator.createStringVar(Generator* gen) {
 }
 
 const ir.Type[BuiltinKind] Ast_type2ir_type = {
+    [Bool]    = I8,   // TODO ir.Type.I1?
     [Char]    = U8,
     [Int8]    = I8,
     [Int16]   = I16,
@@ -208,7 +209,6 @@ const ir.Type[BuiltinKind] Ast_type2ir_type = {
     [Float64] = F64,
     [ISize]   = I64,  // TODO 32-bit
     [USize]   = U64,  // TODO 32-bit
-    [Bool]    = I8,    // TODO ir.Type.I1?
 }
 
 fn ir.Type builtin2irtype(BuiltinKind k) {

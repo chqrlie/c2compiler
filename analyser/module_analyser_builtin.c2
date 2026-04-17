@@ -173,7 +173,7 @@ fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     qmem.copyQuals(pt.getInner());
     QualType expectedType = ma.builder.actOnPointerType(qmem);
 
-    if (!ma.checker.check(expectedType, qptr, pptr, (*pptr).getLoc())) {
+    if (!ma.conv_checker.checkAssign(expectedType, qptr, pptr, (*pptr).getLoc())) {
         return QualType_Invalid;
     }
 
