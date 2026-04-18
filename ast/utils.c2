@@ -264,7 +264,7 @@ public fn BuiltinKind getNativeKind() {
 Color col_Stmt = Color.Bmagenta;
 Color col_Decl = Color.Bgreen;
 Color col_Expr = Color.Bmagenta;
-Color col_Attr = Color.Blue;
+Color col_Attr = Color.Bblue;
 Color col_Template = Color.Green;
 //Color col_Cast = Color.Red;
 Color col_Type = Color.Green;
