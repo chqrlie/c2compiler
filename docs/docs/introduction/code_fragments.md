@@ -82,7 +82,7 @@ enum type, only the constant is allowed (for readability and consistency). When 
 type, the prefix must be used.
 
 To prevent having to add artificial enum constants to determine the range of an enum (for int to enum
-conversion etc.), C2 adds two keywords - _enum_min_ and _enum_max_.
+conversion etc.), C2 provides a generic way to get the minimum and maximum values of an enum.
 
 ```c
 type State enum u32 {
@@ -90,9 +90,8 @@ type State enum u32 {
     Stop,
 }
 
-// enum_min/max() are compile time constant, just like sizeof() and elemsof()
-const u32 lowest = enum_min(State);
-const u32 highest = enum_max(State);
+const State lowest = State.min;
+const State highest = State.max;
 ```
 
 ### struct types

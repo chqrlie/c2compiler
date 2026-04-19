@@ -6,14 +6,6 @@ type Enum1 enum i8 {
     DD = 10,
 }
 
-const i8 A = enum_min(Enum1);
-const i8 B = enum_max(Enum1);
-const u32 F = enum_max(Enum1);
-
-static_assert(A, -2);
-static_assert(B, 10);
-static_assert(F, 10);
-
 const i8 A1 = Enum1.min;
 const i8 B1 = Enum1.max;
 const u32 F1 = Enum1.max;

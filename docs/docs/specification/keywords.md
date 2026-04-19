@@ -18,8 +18,6 @@ C2 has the following builtin types and keywords
 * `const`
 * `elemsof`
 * `enum`
-* `enum_max`
-* `enum_min`
 * `f32`
 * `f64`
 * `false`

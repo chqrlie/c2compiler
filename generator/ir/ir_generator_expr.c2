@@ -483,8 +483,6 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
     switch (bi.getKind()) {
     case Sizeof:
     case Elemsof:
-    case EnumMin:
-    case EnumMax:
     case OffsetOf:
         e.dump();
         assert(0);
@@ -492,8 +490,7 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
     case ToContainer: {
             ir.Ref ptr_ref;
             gen.emitExpr(&ptr_ref, bi.getToContainerPointer());
-            Value v = bi.getValue();
-            u32 offset = v.as_u32();
+            u32 offset = (u32)bi.getValue();
             if (offset == 0) {
                 *result = ptr_ref;
             } else {

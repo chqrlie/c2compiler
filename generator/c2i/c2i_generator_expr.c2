@@ -17,7 +17,6 @@ module c2i_generator;
 
 import ast local;
 import string_buffer;
-import value_type local;
 
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     switch (e.getKind()) {
@@ -224,12 +223,10 @@ fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, const 
         out.rparen();
         break;
     case Elemsof:
-    case EnumMin:
-    case EnumMax:
     case OffsetOf:
         // TODO: generate c2 source?
-        Value v = b.getValue();
-        out.print("%s", v.str());
+        // TODO: should be typed explicitly?
+        out.print("%d", b.getValue());
         return;
     case ToContainer:
         out.add("to_container("); // type, member, ptr

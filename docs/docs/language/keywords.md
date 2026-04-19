@@ -16,8 +16,6 @@ C2 has the following keywords:
 * `char`
 * `const`
 * `elemsof`
-* `enum_min`
-* `enum_max`
 * `enum`
 * `false`
 * `f32`

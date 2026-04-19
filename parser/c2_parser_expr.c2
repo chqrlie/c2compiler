@@ -188,8 +188,6 @@ const u8[Kind] CastExprTokenLookup = {
     [MinusMinus] = 7,
     [KW_cast] = 8,
     [KW_elemsof] = 9,
-    [KW_enum_min] = 10,
-    [KW_enum_max] = 10,
     [KW_false] = 11,
     [KW_true] = 11,
     [KW_nil] = 12,
@@ -293,8 +291,6 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 9: // KW_elemsof
         res = p.parseElemsof();
         break;
-    case 10: // KW_enum_min, KW_enum_max
-        return p.parseEnumMinMax(savedKind == KW_enum_min);
     case 11: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == KW_true);
         p.consumeToken();
@@ -690,23 +686,6 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
     return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, false);
 }
 
-// Syntax:
-//   'enum_min' '(' type-name ')'
-//   'enum_max' '(' type-name ')'
-fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-    p.expectAndConsume(LParen);
-
-    p.expectIdentifier();
-    // TODO parse as TypeRefHolder
-    Expr* expr = p.parseExpr();
-    u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(RParen);
-
-    return p.builder.actOnBuiltinExpr(loc, src_len, expr, is_min ? EnumMin : EnumMax);
-}
-
 fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
@@ -890,8 +869,6 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             case Exclaim:
             case KW_cast:
             case KW_elemsof:
-            case KW_enum_min:
-            case KW_enum_max:
             case KW_false:
             case KW_true:
             case KW_nil:

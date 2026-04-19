@@ -28,9 +28,6 @@ fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
         return ma.analyseSizeof(b);
     case Elemsof:
         return ma.analyseElemsof(b);
-    case EnumMin:
-    case EnumMax:
-        return ma.analyseEnumMinMax(b);
     case OffsetOf:
         return ma.analyseOffsetOf(b);
     case ToContainer:
@@ -86,7 +83,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
-    e.setUValue(info.size);
+    e.setValue(info.size);
     return getBuiltinQT(UInt32);
 }
 
@@ -106,41 +103,17 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
             ma.error(inner.getLoc(), "elemsof cannot be used on arrays of unknown length");
             return QualType_Invalid;
         }
-        b.setUValue(at.getSize());
+        b.setValue(at.getSize());
         return getBuiltinQT(UInt32);
     }
     const EnumType* et = qt.getEnumTypeOrNil();
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
-        b.setUValue(etd.getNumConstants());
+        b.setValue(etd.getNumConstants());
         return getBuiltinQT(UInt32);
     }
     ma.error(inner.getLoc(), "elemsof can only be used on arrays/enums");
     return QualType_Invalid;
-}
-
-fn QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
-    Expr* inner = b.getInner();
-    QualType qt = ma.analyseExpr(&inner, false, RHS);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    EnumType* et = qt.getEnumTypeOrNil();
-    if (!et) {
-        const char* kind = (b.getKind() == EnumMin) ? "enum_min" : "enum_max";
-        ma.error(inner.getLoc(), "%s can only be used on enum types", kind);
-        return QualType_Invalid;
-    }
-
-    EnumTypeDecl* etd = et.getDecl();
-    u32 num = etd.getNumConstants();
-    EnumConstantDecl** constants = etd.getConstants();
-
-    u32 index = 0;
-    if (b.getKind() == EnumMax) index = num-1;
-    // Since enum constants must be in-order return value of first/last
-    b.setValue(constants[index].getValue());
-
-    return etd.getImplType();
 }
 
 fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
@@ -253,7 +226,7 @@ fn Decl* Analyser.findMemberOffsetAux(Analyser* ma, FindMemberOffsetContext* ctx
 fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
     FindMemberOffsetContext ctx = { std, 0 }
     Decl* d = ma.findMemberOffsetAux(&ctx, member);
-    if (d) b.setUValue(ctx.base_offset);
+    if (d) b.setValue(ctx.base_offset);
     return d;
 }
 

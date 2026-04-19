@@ -6,7 +6,7 @@ type Enum enum i8 {
 }
 
 fn void test2() {
-    i32* a = &enum_min(Enum); // @error{cannot take the address of an rvalue of type 'i8'}
+    i32* a = &Enum.max; // @error{cannot take the address of an enum constant}
 }
 
 fn void test3() {

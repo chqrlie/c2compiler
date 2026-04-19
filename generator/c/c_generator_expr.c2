@@ -18,7 +18,6 @@ module c_generator;
 import ast local;
 import c_prec local;
 import string_buffer;
-import value_type local;
 
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     gen.emitExpr2(out, e, Assignment);
@@ -354,42 +353,34 @@ fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* 
     BuiltinExpr* b = (BuiltinExpr*)e;
     switch (b.getKind()) {
     case Sizeof:
-        Value v = b.getValue();
-        out.print("%s", v.str());
-/*
-        out.add("sizeof(");
-        gen.emitExpr(out, b.getInner());
-        out.rparen();
-*/
+        if (b.useLiteral()) {
+            out.add("sizeof(");
+            gen.emitExpr(out, b.getInner());
+            out.rparen();
+        } else {
+            out.print("%d", b.getValue());
+        }
         break;
     case Elemsof:
-        Value v = b.getValue();
-        out.print("%s", v.str());
-/*
-        // Note: ARRAY_SIZE looks nicer, but doesn't work for elemsof(Enum)
-        out.add("ARRAY_SIZE(");
-        gen.emitExpr(out, b.getInner());
-        out.rparen();
-*/
-        break;
-    case EnumMin:
-        Value v = b.getValue();
-        out.print("%s", v.str());
-        break;
-    case EnumMax:
-        Value v = b.getValue();
-        out.print("%s", v.str());
+        if (b.useLiteral()) {
+            // Note: ARRAY_SIZE looks nicer, but doesn't work for elemsof(Enum)
+            out.add("ARRAY_SIZE(");
+            gen.emitExpr(out, b.getInner());
+            out.rparen();
+        } else {
+            out.print("%d", b.getValue());
+        }
         break;
     case OffsetOf:
-        Value v = b.getValue();
-        out.print("%s", v.str());
-/*
-        out.add("offsetof("); // type, member
-        gen.emitExpr(out, b.getInner());
-        out.add(", ");
-        gen.emitExpr(out, b.getOffsetOfMember());
-        out.rparen();
-*/
+        if (b.useLiteral()) {
+            out.add("offsetof("); // type, member
+            gen.emitExpr(out, b.getInner());
+            out.add(", ");
+            gen.emitExpr(out, b.getOffsetOfMember());
+            out.rparen();
+        } else {
+            out.print("%d", b.getValue());
+        }
         break;
     case ToContainer:
         out.add("to_container("); // type, member, ptr

@@ -118,8 +118,6 @@ public type Kind enum u8 (public const char* const name) {
     KW_default           : { "default" },
     KW_elemsof           : { "elemsof" },
     KW_else              : { "else" },
-    KW_enum_max          : { "enum_max" },
-    KW_enum_min          : { "enum_min" },
     KW_enum              : { "enum" },
     KW_extern            : { "extern" },
     KW_fallthrough       : { "fallthrough" },

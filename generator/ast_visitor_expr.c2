@@ -149,12 +149,7 @@ fn void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {
     v.handleExpr(b.getInner());
     switch (b.getKind()) {
     case Sizeof:
-        break;
     case Elemsof:
-        break;
-    case EnumMin:
-        break;
-    case EnumMax:
         break;
     case OffsetOf:
         v.handleExpr(b.getOffsetOfMember());

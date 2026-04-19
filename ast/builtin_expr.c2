@@ -18,21 +18,21 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import value_type local;
 
 public type BuiltinExprKind enum u8 (const char* const name) {
     Sizeof      : { "sizeof" },
     Elemsof     : { "elemsof" },
-    EnumMin     : { "enum_min" },
-    EnumMax     : { "enum_max" },
     OffsetOf    : { "offsetof" },
     ToContainer : { "to_container" },
 }
 
 type BuiltinExprBits struct {
     u32 : NumExprBits;
-    u8 : 2; // make sure kind does not span an 8-bit boundary
-    BuiltinExprKind kind : 3;
+    BuiltinExprKind kind : 2;
+    // TODO: builtin expressions should be output literally in the
+    //   C generator except elemsof(enum) that cannot be expressed in C.
+    //   use_literal is tested in the C generator but not set yet.
+    bool use_literal : 1;
     u32 src_len : 32 - NumExprBits - 5; // length of () expression
 }
 
@@ -49,7 +49,7 @@ public type BuiltinExpr struct @(opaque) {
     Expr base;
     // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
-    Value value;
+    u64 value;
 
     OffsetOfData[0] offset;     // tail-allocated, only for offsetof
     ToContainerData[0] container;   // tail-allocated, only for to_container
@@ -62,7 +62,7 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u3
     e.base.base.builtinExprBits.kind = kind;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = inner;
-    e.value.setUnsigned(0);
+    e.value = 0;
 #if AstStatistics
     Stats.addExpr(Builtin, size);
 #endif
@@ -76,7 +76,7 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     e.base.base.builtinExprBits.kind = OffsetOf;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
-    e.value.setUnsigned(0);
+    e.value = 0;
     e.offset[0].member = member;
 #if AstStatistics
     Stats.addExpr(Builtin, size);
@@ -91,7 +91,7 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
     e.base.base.builtinExprBits.kind = ToContainer;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
-    e.value.setUnsigned(0);
+    e.value = 0;
     e.container[0].member = member;
     e.container[0].pointer = pointer;
 #if AstStatistics
@@ -104,8 +104,6 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case Sizeof:
     case Elemsof:
-    case EnumMin:
-    case EnumMax:
         return (Expr*)BuiltinExpr.create(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
                                          e.inner.instantiate(inst), e.getKind());
     case OffsetOf:
@@ -125,14 +123,14 @@ public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
     return e.base.base.builtinExprBits.kind;
 }
 
-public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
-
-public fn void BuiltinExpr.setValue(BuiltinExpr* e, Value value) {
-    e.value = value;
+public fn u64 BuiltinExpr.useLiteral(const BuiltinExpr* e) {
+    return e.base.base.builtinExprBits.use_literal;
 }
 
-public fn void BuiltinExpr.setUValue(BuiltinExpr* e, u64 val) {
-    e.value.setUnsigned(val);
+public fn u64 BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }
+
+public fn void BuiltinExpr.setValue(BuiltinExpr* e, u64 val) {
+    e.value = val;
 }
 
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
@@ -167,19 +165,14 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 inde
     out.color(col_Value);
     out.print(" %s", e.getKind().name);
     out.color(col_Calc);
-    out.print(" %s", e.value.str());
+    out.print(" %d", e.value);
     out.newline();
 
     e.inner.print(out, indent + 1);
 
     switch (e.getKind()) {
     case Sizeof:
-        break;
     case Elemsof:
-        break;
-    case EnumMin:
-        break;
-    case EnumMax:
         break;
     case OffsetOf:
         e.offset[0].member.print(out, indent + 1);
@@ -198,8 +191,6 @@ fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case Sizeof:
     case Elemsof:
-    case EnumMin:
-    case EnumMax:
         break;
     case OffsetOf:
         out.add(", ");
