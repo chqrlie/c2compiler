@@ -20,6 +20,7 @@ second:
         case 0:
         fourth:
             for (;;) {
+                if (x == 2) goto second;
                 if (x) continue second;
                 break third;
             }
@@ -33,7 +34,6 @@ static void test_foo(int x);
 
 static void test_foo(int x)
 {
-top:
    {
       for (;;) {
          for (;;) {
@@ -46,12 +46,11 @@ top:
    }
 second:
    while (1) {
-   third:
       {
          switch (x) {
          case 0:
-         fourth:
             for (;;) {
+               if (x == 2) goto second;
                if (x) goto continue__second;
                goto break__third;
             }

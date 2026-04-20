@@ -133,13 +133,14 @@ fn void Generator.emitStmt(Generator* gen, string_buffer.Buf* out, Stmt* s, u32 
         out.unindent();
         LabelStmt* ls = (LabelStmt*)s;
         Stmt* stmt = ls.getStmt();
-        // TODO only if used
-        out.add(gen.idx2name(ls.getNameIdx()));
-        out.add1(':');
-        if (!stmt || stmt.isDecl()) {
-            out.add1(';');
+        if (ls.hasGoto()) {
+            out.add(gen.idx2name(ls.getNameIdx()));
+            out.add1(':');
+            if (!stmt || stmt.isDecl()) {
+                out.add1(';');
+            }
+            out.newline();
         }
-        out.newline();
         if (stmt) {
             switch (stmt.getKind()) {
             case For:

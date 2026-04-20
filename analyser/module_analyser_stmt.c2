@@ -229,9 +229,10 @@ fn FlowBits Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     Label* label = ma.labels.find(name);
     if (label) {
         label.used = true;
+        label.has_goto = true;
         if (label.stmt) label.stmt.setUsed();
     } else {
-        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = false, .used = true, .stmt = nil }
+        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = false, .used = true, .has_goto = true, .stmt = nil }
         ma.labels.add(lab);
     }
     return FlowGoto;

@@ -300,6 +300,7 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
             if (!l.used && !ma.warnings.no_unused_label) {
                 ma.warn(l.loc, "unused label '%s'", ma.idx2name(l.name_idx));
             }
+            if (l.stmt && l.has_goto) l.stmt.setGoto();
         } else {
             ma.error(l.loc, "use of undeclared label '%s'", ma.idx2name(l.name_idx));
         }
