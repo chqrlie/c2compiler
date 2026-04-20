@@ -108,6 +108,7 @@ fn void Compiler.generate(Compiler* c, const char* target_name, const char* outp
                               output_dir,
                               &c.components,
                               c.sm,
+                              c.astPool,
                               &c.targetInfo,
                               c.build_info,
                              c.mainFunc,

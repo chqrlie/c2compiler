@@ -42,7 +42,7 @@ type JumpScope struct {
 
 type Generator struct {
     ir_context.Context* ctx;
-    string_pool.Pool* names;
+    const string_pool.Pool* names;
     value_maplist.List labels;
 
     JumpScope[constants.MaxScopes] scopes;
@@ -66,6 +66,7 @@ type Generator struct {
 
 fn void Generator.init(Generator* gen,
                        source_mgr.SourceMgr* sm,
+                       const string_pool.Pool* names,
                        const target_info.Info* targetInfo,
                        const build_file.Info* buildInfo,
                        const char* target,
@@ -82,6 +83,7 @@ fn void Generator.init(Generator* gen,
     }
 
     gen.ctx = ir_context.create(print_all, targetInfo, &build_info);
+    gen.names = names;
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
@@ -583,6 +585,7 @@ public fn void generate(const char* target,
                         const char* output_dir,
                         component.List* comps,
                         source_mgr.SourceMgr* sm,
+                        const string_pool.Pool* astPool,
                         const target_info.Info* targetInfo,
                         const build_file.Info* buildInfo,   // can be nil
                         const Decl* mainFunc,
@@ -597,7 +600,7 @@ public fn void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(sm, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
+    gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files
