@@ -24,7 +24,7 @@ struct IO_marker @(cname="_IO_marker") {
     int x_pos;
 }
 
-typedef u64 Offset @(cname="off_t");
+typedef i64 Offset @(cname="off_t");
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //typedef _G_fpos_t fpos_t;

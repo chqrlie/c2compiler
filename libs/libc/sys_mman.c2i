@@ -1,6 +1,6 @@
 module sys_mman extern "C";
 
-typedef u64 Offset @(cname="off_t");
+typedef i64 Offset @(cname="off_t");
 
 void* mmap(void* addr, size_t length, int prot, int flags, int fd, Offset offset);
 int munmap(void* addr, size_t length);
