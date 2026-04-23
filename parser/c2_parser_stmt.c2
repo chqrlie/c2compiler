@@ -22,6 +22,8 @@ import token local;
 import src_loc local;
 import string_list;
 
+import ctype;
+
 fn Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
     // TODO also jump to Expr part, since most entries use parseExprStmt (dont lookup again in Expr)
@@ -624,6 +626,11 @@ fn Stmt* Parser.parseExprStmt(Parser* p) {
 
 fn Stmt* Parser.parseLabelStmt(Parser* p) {
     u32 name = p.tok.name_idx;
+
+    const char* label_name = p.pool.idx2str(name);
+    if (!ctype.islower(label_name[0])) {
+        p.error("a label name must start with a lower case character");
+    }
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
     p.expectAndConsume(Colon);

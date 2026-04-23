@@ -292,7 +292,7 @@ fn void Parser.parseModule(Parser* p) {
     if (!p.tok.kind.isBuiltinType())
         p.expectIdentifier();
 
-    const char*modname = p.pool.idx2str(p.tok.name_idx);
+    const char* modname = p.pool.idx2str(p.tok.name_idx);
     if (!ctype.islower(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
