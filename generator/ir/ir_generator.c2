@@ -36,8 +36,8 @@ import c_errno local;
 import string;
 
 type JumpScope struct {
-    u32 break_block;    // 0 means invalid (assert)
-    u32 continue_block;
+    ir.BlockId break_block;    // 0 means invalid (assert)
+    ir.BlockId continue_block;
 }
 
 type Generator struct {
@@ -107,7 +107,7 @@ fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
     return gen.names.idx2str(name_idx);
 }
 
-fn void Generator.enterScope(Generator* gen, u32 break_block, u32 continue_block) {
+fn void Generator.enterScope(Generator* gen, ir.BlockId break_block, ir.BlockId continue_block) {
     assert(gen.num_scopes < elemsof(gen.scopes));
     JumpScope* s = &gen.scopes[gen.num_scopes];
     s.break_block = break_block;
