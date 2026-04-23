@@ -154,7 +154,7 @@ fn u32 Blocks.addNode(Blocks* b, const char* name) {
         node.name_off = b.last_node_name_off;
     } else {
         // TODO check if it fits in block
-        u32 len = cast<u32>(strlen(name)) + 1;
+        u32 len = (u32)strlen(name) + 1;
         u32 name_off = b.node_name_off;
         node.name_off = name_off;
         char* newname = &b.node_names[name_off];
@@ -178,7 +178,7 @@ fn u32 Blocks.addAttr(Blocks* b, const char* name) {
 
     // TODO search existing attribute names
 
-    u32 len = cast<u32>(strlen(name)) + 1;
+    u32 len = (u32)strlen(name) + 1;
     // TODO check if it fits in block
     u32 name_off = b.attr_name_off;
     attr.name_off= name_off;
@@ -188,7 +188,7 @@ fn u32 Blocks.addAttr(Blocks* b, const char* name) {
 }
 
 fn u32 Blocks.addValue(Blocks* b, const char* value) {
-    u32 len = cast<u32>(strlen(value)) + 1;
+    u32 len = (u32)strlen(value) + 1;
     if (b.data_off + len >= b.data_size) {
         printf("DATA LIMIT REACHED\n");
         exit(-1);

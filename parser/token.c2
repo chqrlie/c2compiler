@@ -112,7 +112,6 @@ public type Kind enum u8 (public const char* const name) {
     KW_assert            : { "assert" },
     KW_break             : { "break" },
     KW_case              : { "case" },
-    KW_cast              : { "cast" },
     KW_const             : { "const" },
     KW_continue          : { "continue" },
     KW_default           : { "default" },

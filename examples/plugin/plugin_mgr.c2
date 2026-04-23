@@ -49,8 +49,8 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     // TODO allow casting of u64/void* to functions (and back)
-    u64 temp = cast<u64>(symbol);
-    LoadFn load = cast<LoadFn>(temp);
+    u64 temp = (u64)symbol;
+    LoadFn load = (LoadFn)temp;
 
 
     load(123);

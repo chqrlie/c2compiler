@@ -26,7 +26,7 @@ const u32 MAX_VALUE = 128;
 const u32 MAX_TEXT = 1024;
 public const u32 MAX_DIAG = 256;
 
-const u32 CHILD_TEXT = (cast<u32>(1)<<31);
+const u32 CHILD_TEXT = (((u32)1)<<31);
 
 fn bool isNameStartChar(char ch) {
     if (ch < 0) return true;
@@ -375,8 +375,8 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         }
         t.inElement = false;
         if (haveText) {
-            i32 len = cast<i32>(t.current - start);
-            memcpy(t.msg, start, cast<u64>(len));
+            i32 len = (i32)(t.current - start);
+            memcpy(t.msg, start, (u64)len);
             t.msg[len] = 0;
 
             result.setLocation(textLoc);
@@ -602,8 +602,8 @@ fn void Tokenizer.parseValue(Tokenizer* t, Token* result, char delimiter) {
         t.current++;
     }
 
-    i32 len = cast<i32>(t.current - start);
-    memcpy(t.msg, start, cast<u64>(len));
+    i32 len = (i32)(t.current - start);
+    memcpy(t.msg, start, (u64)len);
     t.msg[len] = 0;
 
     result.setLocation(t.loc);
@@ -617,8 +617,8 @@ fn void Tokenizer.parseName(Tokenizer* t, Token* result) {
     const char* start = t.current;
     while (t.current[0] && isNameChar(t.current[0])) t.current++;
 
-    i32 len = cast<i32>(t.current - start);
-    memcpy(t.msg, start, cast<u64>(len));
+    i32 len = (i32)(t.current - start);
+    memcpy(t.msg, start, (u64)len);
     t.msg[len] = 0;
 
     result.setLocation(t.loc);

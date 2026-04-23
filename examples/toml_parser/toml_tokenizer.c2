@@ -269,7 +269,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
     const char* start = t.current;
     while (t.current[0] && t.current[0] != '"') t.current++;
 
-    u32 len = cast<u32>(t.current - start);
+    u32 len = (u32)(t.current - start);
     // assert(len < MaxText);
     memcpy(t.text, start, len);
     t.text[len] = 0;
@@ -305,7 +305,7 @@ fn void Tokenizer.parseMultiText(Tokenizer* t, Token* result) {
         t.current++;
     }
 
-    u32 len = cast<u32>(t.current - start);
+    u32 len = (u32)(t.current - start);
     // assert(len < MaxText);
     memcpy(t.text, start, len);
     t.text[len] = 0;
@@ -319,7 +319,7 @@ fn void Tokenizer.parseNumber(Tokenizer* t, Token* result) {
     // handle hexadecimal/ocal/binary number
     // handle '_', like 1_000_000
 
-    u32 number = cast<u32>(atoi(t.current));
+    u32 number = (u32)atoi(t.current);
     result.kind = TokenKind.Number;
     result.number = number;
     while (t.current[0] && isdigit(t.current[0])) {
@@ -338,9 +338,9 @@ fn bool isKeyChar(u8 c) {
 
 fn void Tokenizer.parseKey(Tokenizer* t, Token* result) {
     const char* start = t.current;
-    while (t.current[0] && isKeyChar(cast<u8>(t.current[0]))) t.current++;
+    while (t.current[0] && isKeyChar((u8)t.current[0])) t.current++;
 
-    u32 len = cast<u32>(t.current - start);
+    u32 len = (u32)(t.current - start);
     // assert(len < MaxText);
     memcpy(t.text, start, len);
     t.text[len] = 0;

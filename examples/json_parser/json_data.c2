@@ -112,7 +112,7 @@ fn u32 Node.next(const Node* n) {
 }
 
 fn NodeKind Node.kind(const Node* n) {
-    return cast<NodeKind>(n.next_kind >> 30);
+    return (NodeKind)(n.next_kind >> 30);
 }
 
 fn bool Node.has_child(const Node* n) {
@@ -161,7 +161,7 @@ fn void NodeBuffer.resize(NodeBuffer* b, u32 cap2) {
     char* data2 = malloc(b.cap * sizeof(Node));
     memcpy(data2, b.data, b.cur * sizeof(Node));
     free(b.data);
-    b.data = cast<Node*>(data2);
+    b.data = (Node*)data2;
 }
 
 fn u32 NodeBuffer.add(NodeBuffer* b, NodeKind kind, u32 name_idx, u32 value_idx) {
@@ -169,7 +169,7 @@ fn u32 NodeBuffer.add(NodeBuffer* b, NodeKind kind, u32 name_idx, u32 value_idx)
 
     u32 idx = b.cur;
     Node* n = &b.data[idx];
-    n.next_kind = cast<u32>(kind << 30);
+    n.next_kind = (u32)(kind << 30);
     n.name_idx = name_idx;
     n.value_idx = value_idx;
     b.cur++;
@@ -396,7 +396,7 @@ fn u32 find_nested_child(const Data* data, u32 idx, const char* key) {
             if (*cp == '.') break;
             cp++;
         }
-        u32 len = cast<u32>(cp - start);
+        u32 len = (u32)(cp - start);
         memcpy(node_name, start, len);
         node_name[len] = 0;
 

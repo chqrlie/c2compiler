@@ -120,8 +120,8 @@ fn bool Parser.parse(Parser* p, const char* input, char* diagMsg, Blocks* blocks
     p.errorMsg[0] = 0;
 
     p.blocks = blocks;
-    memset(cast<void*>(p.parents), 0, sizeof(Node*)*MaxDepth);
-    memset(cast<void*>(p.lastChild), 0, sizeof(Node*)*MaxDepth);
+    memset((void*)p.parents, 0, sizeof(Node*)*MaxDepth);
+    memset((void*)p.lastChild, 0, sizeof(Node*)*MaxDepth);
     p.numParents = 0;
     p.topParent = nil;
 
@@ -174,7 +174,7 @@ fn u32 getRawValue(u32 raw) @(inline) {
 }
 
 fn ValueType getRawType(u32 raw) @(inline) {
-    return cast<ValueType>((raw >> ValueTypeOffset) & 0x3);
+    return (ValueType)((raw >> ValueTypeOffset) & 0x3);
 }
 
 fn u32 addType(u32 raw, ValueType t) @(inline) {
@@ -419,7 +419,7 @@ public fn bool Reader.parse(Reader* r, const char* filename) {
         return false;
     }
     Parser parser;
-    bool status = parser.parse(cast<const char*>(file.data()), r.message, r.blocks);
+    bool status = parser.parse((const char*)file.data(), r.message, r.blocks);
     file.close();
 
 #if DEBUG_NODES
@@ -440,13 +440,13 @@ fn const Node* Reader.findNode(const Reader* r, const char* key) {
     while (1) {
         switch (*cp) {
         case 0:
-            len = cast<u32>(cp - start);
+            len = (u32)(cp - start);
             memcpy(name, start, len);
             name[len] = 0;
             node = r.blocks.findNode(name, node);
             return node;
         case '.':
-            len = cast<u32>(cp - start);
+            len = (u32)(cp - start);
             memcpy(name, start, len);
             name[len] = 0;
             start = cp + 1;
@@ -701,7 +701,7 @@ fn u32 Blocks.addNode(Blocks* b, const char* name, NodeKind k) {
         if (nameOffset != 0) {
             node.nameOffset = nameOffset;
         } else {
-            u32 len = cast<u32>(strlen(name)) + 1;
+            u32 len = (u32)(strlen(name)) + 1;
             nameOffset = b.namesOffset;
             node.nameOffset = nameOffset;
             char* newname = &b.names[nameOffset];
@@ -718,7 +718,7 @@ fn u32 Blocks.addNode(Blocks* b, const char* name, NodeKind k) {
 fn u32 Blocks.addValue(Blocks* b, const char* value) {
     if (value[0] == 0) return 0;
     u32 off = b.valuesOffset;
-    u32 len = cast<u32>(strlen(value)) + 1;
+    u32 len = (u32)(strlen(value)) + 1;
     memcpy(&b.values[off], value, len);
     b.valuesOffset += len;
     return off;
@@ -754,7 +754,7 @@ fn u32 addKind(u32 value, NodeKind k) @(inline) {
 }
 
 fn NodeKind getKind(u32 value) @(inline) {
-    return cast<NodeKind>(value >> NodeKindOffset);
+    return (NodeKind)(value >> NodeKindOffset);
 }
 
 fn u32 getValue(u32 value) @(inline) {

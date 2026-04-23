@@ -171,7 +171,6 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
 }
 
 const u8[Kind] CastExprTokenLookup = {
-    //[Comma] = Prec.Comma,
     [Identifier] = 1,
     [IntegerLiteral] = 2,
     [FloatLiteral] = 3,
@@ -186,28 +185,27 @@ const u8[Kind] CastExprTokenLookup = {
     [Amp] = 7,
     [PlusPlus] = 7,
     [MinusMinus] = 7,
-    [KW_cast] = 8,
-    [KW_elemsof] = 9,
-    [KW_false] = 11,
-    [KW_true] = 11,
-    [KW_nil] = 12,
-    [KW_offsetof] = 13,
-    [KW_sizeof] = 14,
-    [KW_to_container] = 15,
-    [KW_bool] = 16,
-    [KW_char] = 16,
-    [KW_i8] = 16,
-    [KW_i16] = 16,
-    [KW_i32] = 16,
-    [KW_i64] = 16,
-    [KW_u8] = 16,
-    [KW_u16] = 16,
-    [KW_u32] = 16,
-    [KW_u64] = 16,
-    [KW_isize] = 16,
-    [KW_usize] = 16,
-    [KW_f32] = 16,
-    [KW_f64] = 16,
+    [KW_elemsof] = 8,
+    [KW_false] = 9,
+    [KW_true] = 9,
+    [KW_nil] = 10,
+    [KW_offsetof] = 11,
+    [KW_sizeof] = 12,
+    [KW_to_container] = 13,
+    [KW_bool] = 14,
+    [KW_char] = 14,
+    [KW_i8] = 14,
+    [KW_i16] = 14,
+    [KW_i32] = 14,
+    [KW_i64] = 14,
+    [KW_u8] = 14,
+    [KW_u16] = 14,
+    [KW_u32] = 14,
+    [KW_u64] = 14,
+    [KW_isize] = 14,
+    [KW_usize] = 14,
+    [KW_f32] = 14,
+    [KW_f64] = 14,
 }
 
 // Note: tried lookup table, was slower..
@@ -285,28 +283,25 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         res = p.parseCastExpr(false, is_addrof_op);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, res);
-    case 8: // KW_cast
-        res = p.parseExplicitCastExpr();
-        break;
-    case 9: // KW_elemsof
+    case 8: // KW_elemsof
         res = p.parseElemsof();
         break;
-    case 11: // KW_false, KW_true
+    case 9: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == KW_true);
         p.consumeToken();
         break;
-    case 12: // KW_nil
+    case 10: // KW_nil
         res = p.builder.actOnNilExpr(p.tok.loc);
         p.consumeToken();
         break;
-    case 13: // KW_offsetof
+    case 11: // KW_offsetof
         return p.parseOffsetOfExpr();
-    case 14: // KW_sizeof
+    case 12: // KW_sizeof
         return p.parseSizeof();
-    case 15: // KW_to_container
+    case 13: // KW_to_container
         res = p.parseToContainerExpr();
         break;
-    case 16: // builtin type
+    case 14: // builtin type
         if (p.peekToken(1) == Dot) {
             p.addImplicitImport(p.tok.name_idx, false);
             res = p.parsePureMemberExpr();
@@ -667,25 +662,6 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
     return p.builder.actOnArrayDesignatedInit(loc, expr1, expr2, initValue, kind);
 }
 
-fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-
-    p.expectAndConsume(Less);
-    TypeRefHolder ref.init();
-    p.parseTypeSpecifier(&ref);
-    p.expectAndConsume(Greater);
-
-    if (ref.isArray()) p.error("array types are not allowed here");
-
-    p.expectAndConsume(LParen);
-    Expr* expr = p.parseExpr();
-    u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(RParen);
-
-    return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, false);
-}
-
 fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
@@ -867,7 +843,6 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             case StringLiteral:
             case Tilde:
             case Exclaim:
-            case KW_cast:
             case KW_elemsof:
             case KW_false:
             case KW_true:

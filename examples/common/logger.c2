@@ -46,7 +46,7 @@ fn const char* level2str(Level lvl) {
 fn u64 current_time() {
    Timeval tv;
    gettimeofday(&tv, nil);
-   u64 tv64 = cast<u64>(tv.tv_sec);
+   u64 tv64 = (u64)tv.tv_sec;
    tv64 *= 1000000;
    tv64 += tv.tv_usec;
    return tv64;
@@ -162,6 +162,6 @@ fn void Log.internal(Log* log, Level level, const char* color_, const char* form
     if (log.base.useColor) cp += sprintf(cp, "%s", color.Normal);
     *cp++ = '\n';
     *cp = 0;
-    log.base.write(buffer, cast<u32>(cp - buffer));
+    log.base.write(buffer, (u32)(cp - buffer));
 }
 

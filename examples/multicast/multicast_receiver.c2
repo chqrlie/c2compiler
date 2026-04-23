@@ -76,7 +76,7 @@ fn void Receiver.open_socket(Receiver* s) {
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(s.port);
-    if (bind(s.fd, cast<Sockaddr*>(&addr), sizeof(addr))) {
+    if (bind(s.fd, (Sockaddr*)&addr, sizeof(addr))) {
         fprintf(stderr, "bind: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);
     }
@@ -97,7 +97,7 @@ fn void on_data(i32 fd, void* arg, u16 flags) {
 
     char[64] msgbuf;
     u32 addrlen = sizeof(r.addr);
-    isize recv_bytes = recvfrom(r.fd, msgbuf, sizeof(msgbuf), 0, cast<Sockaddr*>(&r.addr), &addrlen);
+    isize recv_bytes = recvfrom(r.fd, msgbuf, sizeof(msgbuf), 0, (Sockaddr*)&r.addr, &addrlen);
     if (recv_bytes < 0) {
         perror("recvfrom");
         exit(1);

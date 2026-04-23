@@ -24,11 +24,11 @@ fn void test(const char* input) {
     u8[64] decoded;
     memset(encoded, 0, sizeof(encoded));
     memset(decoded, 0, sizeof(decoded));
-    base64.encode(cast<u8*>(input), cast<u32>(strlen(input)), encoded);
-    base64.decode(encoded, cast<u32>(strlen(cast<char*>(encoded))), decoded);
+    base64.encode((u8*)input, (u32)strlen(input), encoded);
+    base64.decode(encoded, (u32)strlen((char*)encoded), decoded);
     printf("[%s]\n", input);
-    printf("   encoded: %s\n", cast<char*>(encoded));
-    printf("   decoded: %s\n", cast<char*>(decoded));
+    printf("   encoded: %s\n", (char*)encoded);
+    printf("   decoded: %s\n", (char*)decoded);
 }
 
 public fn i32 main() {

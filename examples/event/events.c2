@@ -26,7 +26,7 @@ import libc_fcntl local;
 public fn u64 current_time() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
-    u64 now64 = cast<u64>(tv.tv_sec);
+    u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
     return now64;
@@ -121,7 +121,7 @@ fn void Base.writeCmd(Base* base, Cmd* cmd) {
 }
 
 fn void handlePipe(i32 fd, void* arg, u16 flags) {
-    Base* base = cast<Base*>(arg);
+    Base* base = (Base*)arg;
     Cmd cmd;
     i64 numread = read(base.read_pipe, &cmd, sizeof(Cmd));
     // TODO assert numread
@@ -166,7 +166,7 @@ fn void Base.internal_loop(Base* base) {
         // Round delay to ms
         delay += 500;
         delay /= 1000;
-        timeout_ms = cast<i32>(delay);
+        timeout_ms = (i32)delay;
         //timeout_ms = (delay + 500) / 1000;     // causes assert in c2c
     }
     if (base.eventsDirty) {

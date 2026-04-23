@@ -66,12 +66,12 @@ fn void Sender.open_socket(Sender* s) {
         exit(EXIT_FAILURE);
     }
 
-    if (bind(s.fd, cast<Sockaddr*>(&addr), sizeof(addr))) {
+    if (bind(s.fd, (Sockaddr*)&addr, sizeof(addr))) {
         fprintf(stderr, "bind: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);
     }
 
-    if (connect(s.fd, cast<Sockaddr*>(&addr), sizeof(addr)) < 0) {
+    if (connect(s.fd, (Sockaddr*)&addr, sizeof(addr)) < 0) {
         fprintf(stderr, "connect: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);
     }

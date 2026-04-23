@@ -42,7 +42,7 @@ fn void strip_comments(const char* input, utils.StringBuffer* out)
         if (*cp == NEWLINE) {
             cp++;
             if (!skip) {
-                out.add2(linestart, cast<u32>(cp - linestart));
+                out.add2(linestart, (u32)(cp - linestart));
                 outlines++;
             }
             linestart = cp;
@@ -60,7 +60,7 @@ fn void strip_comments(const char* input, utils.StringBuffer* out)
                     while (*cp != NEWLINE && *cp != 0) cp++;
 #if 0
                     char[256] line;
-                    u32 len = cast<u32>(cp - linestart);
+                    u32 len = (u32)(cp - linestart);
                     memcpy(line, linestart, len);
                     line[len] = 0;
                     printf("%d %s", white, line);
@@ -101,7 +101,7 @@ public fn i32 main(i32 argc, char** argv) {
     file_utils.Writer outfile;
     const char* outname = "out.c";
     printf("written %s\n", outname);
-    if (!outfile.write(outname, cast<const u8*>(buffer.data()), buffer.size())) {
+    if (!outfile.write(outname, (const u8*)buffer.data(), buffer.size())) {
         printf("error writing file: %s\n", outfile.getError());
     }
 

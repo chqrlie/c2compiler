@@ -28,7 +28,7 @@ const char[] Cache_suffix = ".cache";
 fn u64 current_time() {
     sys_time.Timeval tv;
     sys_time.gettimeofday(&tv, nil);
-    u64 now64 = cast<u64>(tv.tv_sec);
+    u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
     return now64;
@@ -64,7 +64,7 @@ public fn i32 main(i32 argc, char** argv) {
             return 0;
         }
 
-        if (!parser.parse(cast<const char*>(file.data()))) {
+        if (!parser.parse((const char*)file.data())) {
             fprintf(stderr, "error parsing %s: %s\n", filename, parser.getDiag());
             return -1;
         }

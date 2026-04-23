@@ -54,7 +54,7 @@ public fn bool Reader.open(Reader* file, const char* filename) {
         return false;
     }
 
-    file.size = cast<u32>(statbuf.st_size);
+    file.size = (u32)statbuf.st_size;
 
     if (file.size == 0) {
         file.region = &empty;
@@ -82,11 +82,11 @@ public fn bool Reader.isOpen(const Reader* file) {
 }
 
 public fn const u8* Reader.data(Reader* file) {
-    return cast<u8*>(file.region);
+    return (u8*)file.region;
 }
 
 public fn const char* Reader.char_data(Reader* file) {
-    return cast<char*>(file.region);
+    return (char*)file.region;
 }
 
 public fn bool Reader.isEmpty(const Reader* file) {

@@ -60,7 +60,7 @@ public fn void StringBuffer.clear(StringBuffer* buf)
 
 public fn void StringBuffer.add(StringBuffer* buf, const char* text)
 {
-    u32 len = cast<u32>(strlen(text));
+    u32 len = (u32)strlen(text);
     buf.add2(text, len);
 }
 

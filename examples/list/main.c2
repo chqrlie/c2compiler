@@ -60,7 +60,7 @@ fn void check(Element* all, Module* top) {
     todo.init();
     done.init();
 
-    i32 max_depth = cast<i32>(all.size());
+    i32 max_depth = (i32)all.size();
     top.list.remove();
     todo.addFront(&top.list);
     top.depth = 0;

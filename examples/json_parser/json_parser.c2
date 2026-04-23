@@ -203,7 +203,7 @@ fn void JParser.parseArray(JParser* p, u32 parent_idx) {
 
 fn u32 JParser.addName(JParser* p, u32 entry_idx, const char* name) {
     if (!p.inArray || entry_idx >= elemsof(p.name_cache)) {
-        return p.data.addName(name, cast<u32>(strlen(name)));
+        return p.data.addName(name, (u32)strlen(name));
     }
     u32 name_idx = 0;
     u32 cache_idx = p.name_cache[entry_idx];
@@ -211,7 +211,7 @@ fn u32 JParser.addName(JParser* p, u32 entry_idx, const char* name) {
         const char* cached = &p.data.names.data[cache_idx];
         if (strcmp(cached, name) == 0) return cache_idx;
     }
-    name_idx = p.data.addName(name, cast<u32>(strlen(name)));
+    name_idx = p.data.addName(name, (u32)strlen(name));
     p.name_cache[entry_idx] = name_idx;
     return name_idx;
 }
@@ -301,7 +301,7 @@ fn u32 JParser.parseValue(JParser* p) {
         break;
     }
     p.consumeToken();
-    return p.data.addValue(value, cast<u32>(strlen(value)));
+    return p.data.addValue(value, (u32)strlen(value));
 }
 
 
@@ -456,7 +456,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
     }
 out:
     *out = 0;
-    u32 len = cast<u32>(out - t.msg);
+    u32 len = (u32)(out - t.msg);
     result.setKind(TokenKind.Text);
     result.setData(t.msg);
     result.setLocation(t.loc);
@@ -472,7 +472,7 @@ fn void Tokenizer.parseNumber(Tokenizer* t, Token* result) {
         t.current++;
         while (t.current[0] >= '0' && t.current[0] <= '9') t.current++;
     }
-    u32 len = cast<u32>(t.current - start);
+    u32 len = (u32)(t.current - start);
     memcpy(t.msg, start, len);
     t.msg[len] = 0;
     result.setKind(TokenKind.Text);
