@@ -20,7 +20,7 @@ import ir local;
 import ir_context;
 import value_type local;
 
-fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
+fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s, u32 label_name) {
     ir_context.Context* c = gen.ctx;
     SwitchStmt* sw = (SwitchStmt*)s;
 
@@ -52,6 +52,8 @@ fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
     }
 
     BlockId join_blk = c.createBlock(BlockKind.SwitchJoin);
+
+    if (label_name) gen.labels.add2(label_name, join_blk, 0);
 
     ir.Ref ref;
     gen.emitExpr(&ref, cond);

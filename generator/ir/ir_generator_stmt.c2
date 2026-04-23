@@ -42,48 +42,29 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         gen.emitIfStmt(s);
         return true;
     case While:
-        gen.emitWhileStmt(s);
+        gen.emitWhileStmt(s, 0);
         return true;
     case For:
-        gen.emitForStmt(s);
+        gen.emitForStmt(s, 0);
         return true;
     case Switch:
-        gen.emitSwitchStmt(s);
+        gen.emitSwitchStmt(s, 0);
         return true;
     case Break:
-        assert(gen.num_scopes);
-        gen.ctx.addJmpInstr(gen.scopes[gen.num_scopes-1].break_block);
+        gen.emitBreakStmt((BreakStmt*)s);
         return false;
     case Continue:
-        assert(gen.num_scopes);
-        gen.ctx.addJmpInstr(gen.scopes[gen.num_scopes-1].continue_block);
+        gen.emitContinueStmt((ContinueStmt*)s);
         return false;
     case Fallthrough:
         // nothing to be done
         return false;
     case Label:
-        const LabelStmt* l = (LabelStmt*)s;
-        ir_context.Context* c = gen.ctx;
-
-        if (l.isUsed()) {
-            // look up in label-table
-            BlockId label_blk = gen.getLabelBlock(l.getNameIdx());
-
-            if (!c.isBlockTerminated()) c.addJmpInstr(label_blk);
-            c.endBlock();
-            c.startBlock(label_blk);
-
-            gen.name_buf.clear();
-            gen.name_buf.add(gen.idx2name(l.getNameIdx()));
-            c.addComment(gen.name_buf.data());
-        }
-        const Stmt* ls = l.getStmt();
-        if (ls) return gen.emitStmt(ls);
-        return true;
+        return gen.emitLabelStmt((LabelStmt*)s);
     case Goto:
         const GotoStmt* g = (GotoStmt*)s;
 
-        BlockId label_blk = gen.getLabelBlock(g.getNameIdx());
+        BlockId label_blk = gen.getLabelBlockGoto(g.getNameIdx());
         gen.ctx.addJmpInstr(label_blk);
         return false;
     case Compound:
@@ -112,6 +93,63 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     }
     s.dump();
     assert(0); // TODO
+    return true;
+}
+
+fn void Generator.emitBreakStmt(Generator* gen, const BreakStmt* b) {
+    BlockId dest;
+    if (b.hasName()) {
+        dest = gen.labels.getBreak(b.getName());
+    } else {
+        assert(gen.num_scopes);
+        dest = gen.scopes[gen.num_scopes-1].break_block;
+    }
+    gen.ctx.addJmpInstr(dest);
+}
+
+fn void Generator.emitContinueStmt(Generator* gen, const ContinueStmt* c) {
+    BlockId dest;
+    if (c.hasName()) {
+        dest = gen.labels.getContinue(c.getName());
+    } else {
+        assert(gen.num_scopes);
+        dest = gen.scopes[gen.num_scopes-1].continue_block;
+    }
+    gen.ctx.addJmpInstr(dest);
+}
+
+fn bool Generator.emitLabelStmt(Generator* gen, const LabelStmt* l) {
+    ir_context.Context* c = gen.ctx;
+
+    u32 name_idx = l.getNameIdx();
+    if (l.hasGoto()) {
+        // look up in label-table
+        BlockId label_blk = gen.getLabelBlockGoto(name_idx);
+
+        if (!c.isBlockTerminated()) c.addJmpInstr(label_blk);
+        c.endBlock();
+        c.startBlock(label_blk);
+
+        gen.name_buf.clear();
+        gen.name_buf.add(gen.idx2name(name_idx));
+        c.addComment(gen.name_buf.data());
+    }
+    const Stmt* ls = l.getStmt();
+    if (!ls) return true;
+
+    switch (ls.getKind()) {
+    case For:
+        gen.emitForStmt(ls, name_idx);
+        break;
+    case While:
+        gen.emitWhileStmt(ls, name_idx);
+        break;
+    case Switch:
+        gen.emitSwitchStmt(ls, name_idx);
+        break;
+    default:
+        return gen.emitStmt(ls);
+    }
     return true;
 }
 
@@ -177,7 +215,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     c.startBlock(join_blk);
 }
 
-fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
+fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s, u32 label_name) {
     ir_context.Context* c = gen.ctx;
     const WhileStmt* w = (WhileStmt*)s;
 
@@ -185,6 +223,8 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     BlockId cond_blk = c.createBlock(BlockKind.WhileCond);
     BlockId body_blk = c.createBlock(BlockKind.WhileBody);
     BlockId join_blk = c.createBlock(BlockKind.WhileJoin);
+
+    if (label_name) gen.labels.add2(label_name, join_blk, cond_blk);
 
     assert(!c.isBlockTerminated());
     c.addJmpInstr(cond_blk);
@@ -223,7 +263,7 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     c.startBlock(join_blk);
 }
 
-fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
+fn void Generator.emitForStmt(Generator* gen, const Stmt* s, u32 label_name) {
     ir_context.Context* c = gen.ctx;
     const ForStmt* f = (ForStmt*)s;
 
@@ -235,6 +275,8 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
     BlockId body_blk = c.createBlock(BlockKind.ForBody);
     BlockId cont_blk = c.createBlock(BlockKind.ForCont);
     BlockId join_blk = c.createBlock(BlockKind.ForJoin);
+
+    if (label_name) gen.labels.add2(label_name, join_blk, cont_blk);
 
     assert(!c.isBlockTerminated());
     c.addJmpInstr(cond_blk);

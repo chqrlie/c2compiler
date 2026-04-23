@@ -198,7 +198,6 @@ executable c2c
     common/dsm_sorter.c2
     common/manifest_writer.c2
     common/target_info.c2
-    common/value_maplist.c2
     common/file/copy.c2
 
     parser/c2_parser.c2
@@ -287,6 +286,7 @@ executable c2c
     generator/ir/ir_generator_stmt.c2
     generator/ir/ir_generator_switch.c2
     generator/ir/ir_generator_locals.c2
+    generator/ir/label_map.c2
     generator/ir/ref_list.c2
 
     ir/block.c2

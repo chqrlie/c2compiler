@@ -29,7 +29,7 @@ import source_mgr;
 import string_buffer;
 import string_pool;
 import target_info;
-import value_maplist;
+import label_map;
 import value_type local;
 
 import c_errno local;
@@ -43,7 +43,7 @@ type JumpScope struct {
 type Generator struct {
     ir_context.Context* ctx;
     const string_pool.Pool* names;
-    value_maplist.List labels;
+    label_map.Map labels;
 
     JumpScope[constants.MaxScopes] scopes;
     u32 num_scopes;
@@ -732,8 +732,8 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
     }
 }
 
-fn BlockId Generator.getLabelBlock(Generator* gen, u32 label_idx) {
-    BlockId b_id = gen.labels.get(label_idx);
+fn BlockId Generator.getLabelBlockGoto(Generator* gen, u32 label_idx) {
+    BlockId b_id = gen.labels.getGoto(label_idx);
     if (!b_id) {
         b_id = gen.ctx.createBlock(BlockKind.Label);
         gen.labels.add(label_idx, b_id);
