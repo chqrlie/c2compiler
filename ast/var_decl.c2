@@ -316,6 +316,7 @@ public fn bool VarDecl.hasInitCall(const VarDecl* d) {
 }
 
 public fn void VarDecl.setAttrWeak(VarDecl* d) {
+    d.base.declBits.has_attr = 1;
     d.base.varDeclBits.attr_weak = 1;
 }
 
@@ -328,6 +329,7 @@ fn AutoAttr VarDecl.getAutoAttr(const VarDecl* d) {
 }
 
 public fn void VarDecl.setAttrAutoFile(VarDecl* d) {
+    d.base.declBits.has_attr = 1;
     d.base.varDeclBits.auto_attr = File;
 }
 
@@ -336,6 +338,7 @@ public fn bool VarDecl.hasAttrAutoFile(const VarDecl* d) {
 }
 
 public fn void VarDecl.setAttrAutoLine(VarDecl* d) {
+    d.base.declBits.has_attr = 1;
     d.base.varDeclBits.auto_attr = Line;
 }
 
@@ -344,6 +347,7 @@ public fn bool VarDecl.hasAttrAutoLine(const VarDecl* d) {
 }
 
 public fn void VarDecl.setAttrAutoFunc(VarDecl* d) {
+    d.base.declBits.has_attr = 1;
     d.base.varDeclBits.auto_attr = Func;
 }
 
@@ -356,6 +360,7 @@ public fn bool VarDecl.hasAutoAttr(const VarDecl* d) {
 }
 
 public fn void VarDecl.setFormatAttr(VarDecl* d, FormatAttr kind) {
+    d.base.declBits.has_attr = 1;
     d.base.varDeclBits.format_attr = kind;
 }
 

@@ -1,0 +1,9 @@
+module test;
+
+type Foo struct {
+    i32 a;
+    struct x @(unused) { // @error{expected '{'}
+        i32 b;
+    }
+}
+

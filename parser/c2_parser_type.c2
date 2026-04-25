@@ -113,13 +113,11 @@ fn void Parser.checkMemberName(Parser* p) {
 fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
     p.expectAndConsume(LBrace);
 
-    while (1) {
+    while (p.tok.kind != RBrace) {
         //Syntax:
         // struct_member ::= type_qualifier type_specifier.
         // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
         // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
-
-        if (p.tok.kind == RBrace) break;
 
         if (p.tok.kind == KW_union || p.tok.kind == KW_struct) {
             bool is_struct = p.tok.kind == KW_struct;
@@ -150,6 +148,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             continue;
         }
 
+        Decl* d = nil;
         if (p.tok.kind == KW_fn) {
             p.consumeToken(); // fn
 
@@ -165,13 +164,10 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                                                    params.size(),
                                                    is_variadic,
                                                    StructMember);
-            // TODO attributes?
-            //u32 num_attr = p.parseOptionalAttributes();
-            //p.applyAttributes((Decl*)fd, num_attr);
             params.free();
 
             TypeRefHolder ref.init();
-            ref.setFunction((Decl*)fd);
+            ref.setFunction(fd);
             if (p.tok.kind == LSquare) {
                 p.error("arrays are not allowed for untyped function type members");
             }
@@ -184,13 +180,16 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             p.consumeToken();
 
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, nil);
-            members.add(member.asDecl());
+            d = (Decl*)member;
+            members.add(d);
 
             goto semi_colon;
         }
+
         TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref);
 
+        bool multiple_decls = false;
         for (;;) {
             u32 name = 0;
             SrcLoc loc;
@@ -211,14 +210,22 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 bitfield = p.parseExpr();
             }
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
-            members.add(member.asDecl());
-            if (p.tok.kind != Comma)
-                break;
+            d = (Decl*)member;
+            members.add(d);
+            if (p.tok.kind != Comma) break;
+            multiple_decls = true;
             p.consumeToken();
             if (ref.isPointer() || ref.isArray())
                 p.error("pointer and array members must be defined separately");
         }
+
 semi_colon:
+        if (p.tok.kind == At) {
+            if (multiple_decls) p.error("attributes cannot be to applied to multiple declarations");
+            u32 num_attr = p.parseOptionalAttributes();
+            p.applyAttributes(d, num_attr);
+        }
+
         p.expectAndConsume(Semicolon);
     }
 

@@ -1,0 +1,6 @@
+module test;
+
+type Foo struct {
+    i32 a, b @(unused); // @error{attributes cannot be to applied to multiple declarations}
+}
+

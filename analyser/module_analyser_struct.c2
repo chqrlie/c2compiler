@@ -123,7 +123,8 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             }
 
             member.setChecked();
-        } else if (member.isStructType()) {   // (anonymous) sub-structs
+        } else {  // (anonymous) sub-structs
+            assert(member.isStructType());
             StructTypeDecl* sub = (StructTypeDecl*)member;
             // Note: if parent is packed, so are sub-structs
             if (is_packed) sub.setPacked();
@@ -160,13 +161,21 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
         return;
     }
 
-    v.asDecl().setType(res);
+    Decl* d = (Decl*)v;
+    d.setType(res);
 
     if (ma.usedPublic) res.setTypeUsedPublic();
 
-    // TODO check attributes
-
-    // TODO check initValue
+    if (d.hasAttr()) {
+        // TODO need generic way to get all attributes (dont want to check all invididually)
+        if (v.hasAttrWeak()) {
+            ma.error(d.getLoc(), "attribute 'weak' cannot be applied to struct members");
+        }
+        if (d.isExported()) {
+            ma.error(d.getLoc(), "attribute 'export' cannot be applied to struct members");
+        }
+        // Note: we dont check auto-args or other attributes here yet
+    }
 }
 
 fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* names) {

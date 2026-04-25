@@ -159,7 +159,7 @@ fn void Checker.checkStructMembers(Checker* c, Decl* d) {
         if (member.isStructType()) {
             c.checkStructMembers(member);
         } else {
-            if (!member.isUsed() && !c.warnings.no_unused_variable) {
+            if (!member.isUsed() && !member.hasAttrUnused() && !c.warnings.no_unused_variable) {
                 c.diags.warn(member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", c.getName(member));
             }
         }

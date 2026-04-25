@@ -539,6 +539,7 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         fd.setAttrInline();
         break;
     case Weak:
+        // TODO move this check to analyser
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         fd.setAttrWeak();
         break;
@@ -655,6 +656,7 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         b.storeAttr(d, a);
         break;
     case Weak:
+        // TODO move this check to analyser
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         vd.setAttrWeak();
         break;
