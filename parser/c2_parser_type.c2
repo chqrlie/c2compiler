@@ -182,6 +182,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, nil);
             d = (Decl*)member;
             members.add(d);
+            p.applyAttributes(d, p.parseOptionalAttributes());
 
             goto semi_colon;
         }
@@ -212,6 +213,14 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
             d = (Decl*)member;
             members.add(d);
+            SrcLoc attr_loc = 0;
+            if (p.tok.kind == At) {
+                attr_loc = p.tok.loc;
+                p.applyAttributes(d, p.parseOptionalAttributes());
+            }
+            if (attr_loc && (multiple_decls || p.tok.kind == Comma)) {
+                p.error("attributes cannot be to applied to multiple declarations");
+            }
             if (p.tok.kind != Comma) break;
             multiple_decls = true;
             p.consumeToken();
@@ -219,13 +228,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 p.error("pointer and array members must be defined separately");
         }
 
-semi_colon:
-        if (p.tok.kind == At) {
-            if (multiple_decls) p.error("attributes cannot be to applied to multiple declarations");
-            u32 num_attr = p.parseOptionalAttributes();
-            p.applyAttributes(d, num_attr);
-        }
-
+    semi_colon:
         p.expectAndConsume(Semicolon);
     }
 
