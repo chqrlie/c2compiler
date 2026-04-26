@@ -15,33 +15,21 @@
 
 module ast;
 
-type FunII fn i32 (i32 a);
-type FunIF fn i32 (f32 a);
-type FunID fn i32 (f64 a);
-type FunLL fn i64 (i64 a);
-type FunLF fn i64 (f32 a);
-type FunLD fn i64 (f64 a);
-type FunFF fn f32 (f32 a);
-type FunDD fn f64 (f64 a);
-type FunFFF fn f32 (f32 a, f32 b);
-type FunDDD fn f64 (f64 a, f64 b);
-type FunFFFF fn f32 (f32 a, f32 b, f32 c);
-type FunDDDD fn f64 (f64 a, f64 b, f64 c);
 
 type FunctionDispatcher union @(unused) {
     void* address;
-    FunII funII;
-    FunIF funIF;
-    FunID funID;
-    FunLL funLL;
-    FunLF funLF;
-    FunLD funLD;
-    FunFF funFF;
-    FunDD funDD;
-    FunFFF funFFF;
-    FunDDD funDDD;
-    FunFFFF funFFFF;
-    FunDDDD funDDDD;
+    fn i32 (i32 a) funII;
+    fn i32 (f32 a) funIF;
+    fn i32 (f64 a) funID;
+    fn i64 (i64 a) funLL;
+    fn i64 (f32 a) funLF;
+    fn i64 (f64 a) funLD;
+    fn f32 (f32 a) funFF;
+    fn f64 (f64 a) funDD;
+    fn f32 (f32 a, f32 b) funFFF;
+    fn f64 (f64 a, f64 b) funDDD;
+    fn f32 (f32 a, f32 b, f32 c) funFFFF;
+    fn f64 (f64 a, f64 b, f64 c) funDDDD;
 }
 
 type FunctionSignature enum u8 {
