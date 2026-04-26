@@ -59,12 +59,6 @@ public fn bool Info.registerAttr(Info* info,
     return info.register_attr(info.fn_arg, name, func, arg);
 }
 
-public type LoadFn fn void*(const char* options, bool console_timing, bool console_debug);
-public type UnloadFn fn void(void* arg);
-public type InitFn fn void(void* arg, plugin_info.Info* info);
-public type PostParseFn fn void(void* arg);
-public type PostAnalysisFn fn void(void* arg);
-
 /*
     Allowed actions:
     init            add generated sources (shell_cmd plugin)
@@ -73,11 +67,11 @@ public type PostAnalysisFn fn void(void* arg);
     post analysis   generate files outside project (refs, deps)
 */
 public type Plugin struct @(unused) {
-    LoadFn load;
-    UnloadFn unload;
-    InitFn init;
-    PostParseFn post_parse;
-    PostAnalysisFn post_analysis;
+    fn void*(const char* options, bool console_timing, bool console_debug) load;
+    fn void(void* arg) unload;
+    fn void(void* arg, plugin_info.Info* info) init;
+    fn void(void* arg) post_parse;
+    fn void(void* arg) post_analysis;
     const char* name;
 }
 
