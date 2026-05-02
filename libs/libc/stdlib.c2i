@@ -9,7 +9,7 @@ struct Div_t @(cname="div_t") {
     int rem;
 }
 
-struct Ldiv_t @(cname="Ldiv_t") {
+struct Ldiv_t @(cname="ldiv_t") {
     long quot;
     long rem;
 }

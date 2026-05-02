@@ -18,11 +18,13 @@ const u8 SEEK_HOLE = 4;  // Seek to next hole.
 #endif
 
 // from libio.h
+/*
 struct IO_marker @(cname="_IO_marker") {
     IO_marker* next;
     FILE* sbuf;
     int x_pos;
 }
+*/
 
 typedef i64 Offset @(cname="off_t");
 
