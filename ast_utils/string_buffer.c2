@@ -173,17 +173,17 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     // NOTE: no growing
     va_list args;
     va_start(args, format);
-    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
+    i32 len = vsnprintf(tmp, countof(tmp), format, args);
     va_end(args);
-    assert(len < elemsof(tmp));
+    assert(len < countof(tmp));
     buf.add2(tmp, (u32)len);
 }
 
 public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
     char[4096] tmp;
     // NOTE: no growing
-    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
-    assert(len < elemsof(tmp));
+    i32 len = vsnprintf(tmp, countof(tmp), format, args);
+    assert(len < countof(tmp));
     buf.add2(tmp, (u32)len);
 }
 

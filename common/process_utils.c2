@@ -47,7 +47,7 @@ fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn
     char[256] msg;
     va_list args;
     va_start(args, format);
-    i32 res = vsnprintf(msg, elemsof(msg), format, args);
+    i32 res = vsnprintf(msg, countof(msg), format, args);
     va_end(args);
     if (res >= 0) {
         usize len = (usize)res;
@@ -99,7 +99,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
 
         // redirect output to logfile
         char[file_utils.Max_path] filename;
-        file_utils.make_path(filename, elemsof(filename), path, logfile);
+        file_utils.make_path(filename, countof(filename), path, logfile);
         close(STDOUT_FILENO);
         i32 fdout = open(filename, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
@@ -125,7 +125,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         }
 
         char[file_utils.Max_path] self;
-        if (!find_bin(self, elemsof(self), cmd)) {
+        if (!find_bin(self, countof(self), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
@@ -134,7 +134,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         u32 argc = 0;
         argv[argc++] = self;   // should be (char*)cmd
         if (args && *args) {
-            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
+            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, countof(argbuf));
         }
         argv[argc] = nil;
 
@@ -298,7 +298,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         }
 
         char[file_utils.Max_path] self;
-        if (!find_bin(self, elemsof(self), cmd)) {
+        if (!find_bin(self, countof(self), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
@@ -307,7 +307,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         u32 argc = 0;
         argv[argc++] = self;   // should be (char*)cmd
         if (args && *args) {
-            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
+            argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, countof(argbuf));
         }
         argv[argc] = nil;
 

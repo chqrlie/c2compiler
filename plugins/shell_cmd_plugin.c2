@@ -161,7 +161,7 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     output[0] = '\0';
     // TODO use timeout
     console.debug("shell_cmd: running %s", cmd.cmd);
-    i32 res = process_utils.run2(cmd.path, cmd_str, args, output, elemsof(output));
+    i32 res = process_utils.run2(cmd.path, cmd_str, args, output, countof(output));
     if (res != 0) {
         console.error("shell_cmd: error running cmd '%s'", cmd.cmd);
         return false;

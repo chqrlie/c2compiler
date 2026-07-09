@@ -154,7 +154,7 @@ public fn void Tree.free(Tree* t) {
 fn void Tree.init_zones(Tree* t) {
     t.free_zones.init();
     t.used_zones.init();
-    for (u32 i=0; i<elemsof(t.zones); i++) {
+    for (u32 i = 0; i < countof(t.zones); i++) {
         t.free_zones.addTail(&t.zones[i].list);
     }
 }

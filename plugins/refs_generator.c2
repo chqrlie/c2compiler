@@ -259,7 +259,7 @@ public fn void generate(source_mgr.SourceMgr* sm, string_pool.Pool* astPool, con
     }
 
     char[file_utils.Max_path] outfile;
-    file_utils.make_path(outfile, elemsof(outfile), output_dir, filename);
+    file_utils.make_path(outfile, countof(outfile), output_dir, filename);
     gen.refs.write(outfile);
 
     gen.free();

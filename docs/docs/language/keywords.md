@@ -13,7 +13,7 @@ C2 has the following keywords:
 * `cast`
 * `char`
 * `const`
-* `elemsof`
+* `countof`
 * `enum`
 * `false`
 * `f32`

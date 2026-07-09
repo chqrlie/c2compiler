@@ -357,7 +357,7 @@ fn void Compiler.build(Compiler* c,
     string.pstrcpy(info.target_name, elemsof(info.target_name), c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
-    if (!file_utils.make_path(info.output_dir, elemsof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
+    if (!file_utils.make_path(info.output_dir, countof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
     ||  file_utils.create_path(info.output_dir)) {
         console.error("cannot create directory %s: %s", info.output_dir, string.strerror(errno));
         stdlib.exit(-1);
@@ -433,7 +433,7 @@ fn bool Compiler.parseMainComponent(Compiler* c) {
         c.parser.parse(file_id, false, false);
     }
     if (c.opts.trace_calls) {
-        i32 file_id = c.sm.addResource("generator/c2_trace.c2", C2_trace, elemsof(C2_trace) - 1);
+        i32 file_id = c.sm.addResource("generator/c2_trace.c2", C2_trace, countof(C2_trace) - 1);
         if (file_id == -1) return false;   // note: error already printed
         console.debug("parsing %s", c.sm.getFileName(file_id));
         c.parser.parse(file_id, false, false);
@@ -506,7 +506,7 @@ fn void Compiler.removeFeature(Compiler* c, const char* str) {
 
 fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {
     char[32] tmp;
-    stdio.snprintf(tmp, elemsof(tmp), "%s_%s", prefix, tail);
+    stdio.snprintf(tmp, countof(tmp), "%s_%s", prefix, tail);
     for (usize i = 0; tmp[i]; i++) {
         u8 ch = (u8)tmp[i];
         tmp[i] = (ch == '-') ? '_' : (char)ctype.toupper(ch);

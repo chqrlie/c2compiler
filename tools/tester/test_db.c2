@@ -123,7 +123,7 @@ public fn void Db.init(Db* db,
     db.recipe = string_buffer.create(4096, false, 2);
 
     if (kind == C2) { // only for single file test
-        file_utils.make_path(db.current_file, elemsof(db.current_file), cwd, filename);
+        file_utils.make_path(db.current_file, countof(db.current_file), cwd, filename);
     }
 }
 
@@ -335,14 +335,14 @@ fn bool Db.parseFile(Db* db) {
     }
     db.cur++;
 
-    if (!db.readUntil(db.current_file, elemsof(db.current_file), db.cur, '}', "filename"))
+    if (!db.readUntil(db.current_file, countof(db.current_file), db.cur, '}', "filename"))
         return false;
     if (db.current_file[0] == 0) {
         db.errorMsg.add("expected filename");
         return false;
     }
     if (!endsWith(db.current_file, ".c2"))
-        append(db.current_file, elemsof(db.current_file), ".c2");
+        append(db.current_file, countof(db.current_file), ".c2");
     db.recipe.print("    %s\n", db.current_file);
     db.line_offset = db.line_nr;
     db.skipLine();
@@ -386,7 +386,7 @@ fn bool Db.parseExpect(Db* db) {
     while (*db.cur == ' ') db.cur++;
 
     char[128] filename;
-    if (!db.readUntil(filename, elemsof(filename), db.cur, '}', "filename"))
+    if (!db.readUntil(filename, countof(filename), db.cur, '}', "filename"))
         return false;
     if (filename[0] == 0) {
         db.errorMsg.add("expected filename");
@@ -479,7 +479,7 @@ fn void Db.error(Db* db, const char* format @(printf_format), ...) {
     char[1024] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, elemsof(msg), format, args);
+    vsnprintf(msg, countof(msg), format, args);
     va_end(args);
     color_print2(db.output, colError, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;
@@ -506,7 +506,7 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
         return;
     }
     char[128] msg;
-    if (!db.readUntil(msg, elemsof(msg), cp, '}', "message"))
+    if (!db.readUntil(msg, countof(msg), cp, '}', "message"))
         return;
 
     u32 line_nr = db.line_nr - db.line_offset;
@@ -553,7 +553,7 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     if (strstart(cp, "// @", &cp)) {
         if (strstart(cp, "warnings{", &cp)) {
             char[128] name;
-            if (!db.readUntil(name, elemsof(name), cp, '}', "list"))
+            if (!db.readUntil(name, countof(name), cp, '}', "list"))
                 return;
             db.recipe.print("    $warnings %s\n", name);
         } else if (strstart(cp, "target{", &cp)) {
@@ -561,17 +561,17 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
                 db.error("keyword 'target' only allowed in .c2 files");
                 return;
             }
-            if (!db.readUntil(db.target, elemsof(db.target), cp, '}', "target"))
+            if (!db.readUntil(db.target, countof(db.target), cp, '}', "target"))
                 return;
         } else if (strstart(cp, "file{", &cp)) {
             if (db.kind == C2) {
                 db.error("invalid @file tag in .c2 test");
                 return;
             }
-            if (!db.readUntil(db.current_file, elemsof(db.current_file), cp, '}', "filename"))
+            if (!db.readUntil(db.current_file, countof(db.current_file), cp, '}', "filename"))
                 return;
             if (!endsWith(db.current_file, ".c2"))
-                append(db.current_file, elemsof(db.current_file), ".c2");
+                append(db.current_file, countof(db.current_file), ".c2");
 
             db.recipe.print("  %s\n", db.current_file);
             db.file_start = end + 1;
@@ -583,7 +583,7 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
                 return;
             }
             char[128] name;
-            if (!db.readUntil(name, elemsof(name), cp, '}', "filename"))
+            if (!db.readUntil(name, countof(name), cp, '}', "filename"))
                 return;
             db.currentExpect = expect_file.create(name, ATLEAST);
             // TODO check for name duplicates
@@ -595,7 +595,7 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
                 return;
             }
             char[128] args;
-            if (!db.readUntil(args, elemsof(args), cp, '}', "argument"))
+            if (!db.readUntil(args, countof(args), cp, '}', "argument"))
                 return;
             db.recipe.print("  $ansi-c %s\n", args);
         } else if (strstart(cp, "skip", &cp)) {
@@ -865,7 +865,7 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 
 fn void Db.checkExpectedFiles(Db* db) {
     char[file_utils.Max_path] basedir;
-    file_utils.make_path(basedir, elemsof(basedir), db.tmp_dir, "output/test/");
+    file_utils.make_path(basedir, countof(basedir), db.tmp_dir, "output/test/");
     for (u32 i=0; i<db.expectedCount; ++i) {
         ExpectFile* e = db.expectedFiles[i];
         if (!e.check(db.output, basedir)) db.hasErrors = true;

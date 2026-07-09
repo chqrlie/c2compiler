@@ -98,7 +98,7 @@ public fn i32 main(i32 argc, const char** argv)
     const char* refsfile = constants.refs_filename;
     char[file_utils.Max_path] refsname;
     if (opts.target) {
-        file_utils.make_path3(refsname, elemsof(refsname),
+        file_utils.make_path3(refsname, countof(refsname),
                               constants.output_dir, opts.target, constants.refs_filename);
         refsfile = refsname;
     } else {
