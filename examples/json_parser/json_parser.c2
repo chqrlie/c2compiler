@@ -204,7 +204,7 @@ fn void JParser.parseArray(JParser* p, u32 parent_idx) {
 }
 
 fn u32 JParser.addName(JParser* p, u32 entry_idx, const char* name) {
-    if (!p.inArray || entry_idx >= elemsof(p.name_cache)) {
+    if (!p.inArray || entry_idx >= countof(p.name_cache)) {
         return p.data.addName(name, (u32)strlen(name));
     }
     u32 name_idx = 0;
