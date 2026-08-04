@@ -690,12 +690,12 @@ fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, con
         // TODO should accept multiple issues on the same line
         const char* match = iter.getMsg();
         if (iter.getFound()) {
-            color_print2(db.output, colError, "%s:%d: duplicate %s: %s",
+            color_print2(db.output, colError, "%s:%d: duplicate %s: '%s'",
                          show_filename, linenr, ip.getName(), msg);
             db.hasErrors = true;
         } else
         if (strcmp(match, msg) != 0) {
-            color_print2(db.output, colError, "%s:%d: wrong %s: %s",
+            color_print2(db.output, colError, "%s:%d: wrong %s: '%s'",
                          show_filename, linenr, ip.getName(), msg);
             color_print2(db.output, colError, "     expected: %s", match);
             db.hasErrors = true;
@@ -704,7 +704,7 @@ fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, con
         return;
     }
     if (ip != db.notes) {   // ignore unexpected notes
-        color_print2(db.output, colError, "%s:%d: unexpected %s: %s",
+        color_print2(db.output, colError, "%s:%d: unexpected %s: '%s'",
                      show_filename, linenr, ip.getName(), msg);
         db.hasErrors = true;
     }
