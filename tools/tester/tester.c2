@@ -262,12 +262,10 @@ fn void Tester.run_test(Tester* t, Test* test) {
         t.num_skipped++;
         color_print2(buf, colSkip, "%s SKIPPED", test.filename);
     } else {
-        if (!db.haveErrors()) {
-            db.testFile();
-            db.checkIssues(db.errors);
-            db.checkIssues(db.warnings);
-            db.checkIssues(db.notes);
-        }
+        db.testFile();
+        db.checkIssues(db.errors);
+        db.checkIssues(db.warnings);
+        db.checkIssues(db.notes);
         if (db.haveErrors()) {
             print = true;
             test.failed = true;
