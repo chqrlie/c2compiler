@@ -43,6 +43,7 @@ public type Info struct {
     u32 linkerscript;
 
     string_list.List lib_dirs;
+    string_list.List lib_dirs_bin;
     string_list.List plugin_dirs;
 
     Plugin* plugins; // can be nil
@@ -114,6 +115,10 @@ public fn const string_list.List* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;
 }
 
+public fn const string_list.List* Info.getLibDirsBin(const Info* info) {
+    return &info.lib_dirs_bin;
+}
+
 public fn const string_list.List* Info.getPluginDirs(const Info* info) {
     return &info.plugin_dirs;
 }
@@ -128,6 +133,7 @@ public fn u32 Info.getNumPlugins(const Info* info) {
 
 public fn void Info.free(Info* info) {
     info.lib_dirs.free();
+    info.lib_dirs_bin.free();
     info.plugin_dirs.free();
     stdlib.free(info);
 }

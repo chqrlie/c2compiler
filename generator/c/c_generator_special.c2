@@ -43,6 +43,7 @@ fn void Generator.createMakefile(Generator* gen,
     const char* ldflags = "";
     const char* ldflags2 = "";
     const char* asmflags = "";
+    const string_list.List* libdir_bin = nil;
 
     if (gen.targetInfo.sys == FreeBSD || gen.targetInfo.sys == OpenBSD) {
         cc = "clang";
@@ -54,6 +55,7 @@ fn void Generator.createMakefile(Generator* gen,
         if (info.getLinkerFlags()) ldflags = info.getLinkerFlags();
         if (info.getLdFlags2()) ldflags2 = info.getLdFlags2();
         if (info.getAsmFlags()) asmflags = info.getAsmFlags();
+        libdir_bin = info.getLibDirsBin();
     }
 
     out.print("CC?=%s\n", cc);
@@ -73,6 +75,7 @@ fn void Generator.createMakefile(Generator* gen,
 
     out.print("ASMFLAGS=%s\n", asmflags ? asmflags : "");
     if (ldflags) out.print("LDFLAGS+=%s\n", ldflags);
+
     if (ldflags2) out.print("LDFLAGS2+=%s\n", ldflags2);
     out.newline();
 
@@ -133,7 +136,15 @@ fn void Generator.createMakefile(Generator* gen,
             out.print("\t\t$(CC) $(ASMFLAGS) -o %s.o -c ../../../%s\n", filename, filename);
         }
 
-        out.print("\t\t$(CC) $(LDFLAGS) -o ../%s $(objects)", target_name);
+        out.add("\t\t$(CC) $(LDFLAGS)");
+
+        if (libdir_bin) {
+            for (u32 i = 0; i < libdir_bin.length(); i++) {
+                out.print(" -L%s", libdir_bin.get(i));
+            }
+        }
+
+        out.print(" -o ../%s $(objects)", target_name);
 
         // TODO solve in Makefile, just add to asm_objects (also fixed for Static/Dynamic libs then)
         for (u32 i=0; i<asm_files.length(); i++) {
@@ -157,20 +168,12 @@ fn void Generator.createMakefile(Generator* gen,
                 if (c.getNameIdx() == libc_name) { // special case for static libc
                     out.add(" --static");
                 } else {
-                    // Can be in recipe (=local path) or system library (=somewhere else)
-                    // Note: for static system libraries, the location differs
-                    // Linux: /lib/x86_64-linux-gnu/libfoo.a
-                    if (c.isForeign()) {
-                        // Assumed to be in system path
-                        out.print(" /lib/%s/", triplet);
-                        if (linkname) {
-                            out.print("lib%s.a", linkname);
-                        } else {
-                            out.print("lib%s.a", c.getName());
-                        }
-                    } else {
-                        out.print(" %s/lib%s.a", c.getPath(), c.getName());
+                    const char* binpath = c.getBinPath();
+                    out.add(" -L");
+                    if (binpath[0] != '/') {    // add ../../.. to make relative from project-dir
+                        out.add("../../../");
                     }
+                    out.print("%s -l%s", binpath, c.getName());
                 }
             } else if (c.getKind() == ExternalDynamicLib) {
                 if (c.getNameIdx() == libc_name) continue;  // libc is loaded by default
@@ -183,7 +186,7 @@ fn void Generator.createMakefile(Generator* gen,
                 if (linkname) out.print(" -l%s", linkname); // libc has no linkname
             }
         }
-        out.add(" $(LDFLAGS2)\n");
+        out.add(" $(LDFLAGS2)");
         out.newline();
         break;
     case StaticLibrary:

@@ -74,6 +74,14 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
         iter.next();
     }
 
+    dirs = parser.findNode("libdir_bin");
+    iter = parser.getNodeChildIter(dirs);
+    while (!iter.done()) {
+        const char* dir = iter.getValue();
+        info.lib_dirs_bin.add(expandField(info, dir));
+        iter.next();
+    }
+
     dirs = parser.findNode("plugindir");
     iter = parser.getNodeChildIter(dirs);
     while (!iter.done()) {
@@ -122,6 +130,7 @@ public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const ch
     info.pool = pool;
     info.filename = filename;
     info.lib_dirs.init(pool);
+    info.lib_dirs_bin.init(pool);
     info.plugin_dirs.init(pool);
 
     i32 file_id = sm.loadFile(filename, 0);

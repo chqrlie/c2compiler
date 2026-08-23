@@ -44,9 +44,10 @@ public type Kind enum u8 (const char* const name) {
 }
 
 public type Component struct @(opaque) {
-    u32 name_idx;   // into auxPool
-    u32 dirname_idx;   // into auxPool
-    u32 linkname;   // into auxPool
+    u32 name_idx;    // into auxPool
+    u32 dirname_idx; // into auxPool, of dir with manifest
+    u32 bindir_idx;  // into auxPool, of dir with libx.a
+    u32 linkname;    // into auxPool
     Kind kind;
     bool is_foreign;        // only for external
     bool available_static;  // only for external
@@ -99,6 +100,18 @@ public fn void Component.setPath(Component* c, u32 dirname) {
 
 public fn const char* Component.getPath(const Component* c) {
     return c.auxPool.idx2str(c.dirname_idx);
+}
+
+public fn u32 Component.getPathIdx(const Component* c) {
+    return c.dirname_idx;
+}
+
+public fn void Component.setBinPath(Component* c, u32 path) {
+    c.bindir_idx = path;
+}
+
+public fn const char* Component.getBinPath(const Component* c) {
+    return c.auxPool.idx2str(c.bindir_idx);
 }
 
 public fn void Component.setForeign(Component* c, bool is_foreign) {

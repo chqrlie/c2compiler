@@ -145,7 +145,8 @@ type Compiler struct {
     // used to parse external components
     module_list.List parse_queue;
 
-    string_list.List libdirs;
+    string_list.List libdirs;       // search paths for lib/lib.c2i
+    string_list.List libdirs_bin;   // search paths for .so /.a files
     component.Component* current;
 }
 
@@ -224,6 +225,7 @@ fn void Compiler.build(Compiler* c,
     c.components.init();
     c.is_image = target.getKind() == Image;
     c.libdirs.init(c.auxPool);
+    c.libdirs_bin.init(c.auxPool);
 
     const char* target_str = opts.target_triple;
 
@@ -243,6 +245,10 @@ fn void Compiler.build(Compiler* c,
         const string_list.List* dirs = c.build_info.getLibDirs();
         for (u32 i=0; i<dirs.length(); i++) {
             c.libdirs.add(dirs.get_idx(i));
+        }
+        dirs = c.build_info.getLibDirsBin();
+        for (u32 i=0; i<dirs.length(); i++) {
+            c.libdirs_bin.add(dirs.get_idx(i));
         }
         target_str = c.build_info.getTarget();
     } else {
@@ -417,6 +423,7 @@ fn void Compiler.free(Compiler* c) {
     c.astPool.free();
     c.context.free();
     c.libdirs.free();
+    c.libdirs_bin.free();
 }
 
 fn bool Compiler.parseMainComponent(Compiler* c) {

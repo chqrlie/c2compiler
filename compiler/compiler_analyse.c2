@@ -18,12 +18,15 @@ module compiler;
 import ast;
 import component;
 import console;
+import file_utils;
 import module_list;
 import module_sorter;
 import string_list;
 import unused_checker;
 import utils;
 import warning_flags;
+
+import stdio;
 
 fn bool Compiler.analyse(Compiler* c) {
     u64 analysis_start = utils.now();
@@ -218,11 +221,45 @@ fn void Compiler.analyse_component(Compiler* c, component.Component* comp) {
     if (comp.isExternal()) {
         comp.visitModules(Compiler.analyseUsedModule, c);
 
+        if (comp.getKind() == ExternalStaticLib) c.findStaticLib(comp);
+
         if (c.opts.print_lib_ast) comp.print(true);
     } else {
         comp.visitModules(Compiler.analyseModule, c);
     }
 }
+
+fn void Compiler.findStaticLib(Compiler* c, component.Component* comp) {
+    // TODO special case for libc/libm?
+    // search lib<name>.a file, store location
+    // Search paths:
+    // - build-file.libdir_bin if given
+    // - libdir (same as .c2i file)
+    // - system-path
+
+    char[file_utils.Max_path] filename;
+    stdio.sprintf(filename, "lib%s.a", comp.getName());
+
+    char[file_utils.Max_path] fullname;
+
+    // build-file
+    // TODO
+
+    // libdir
+    if (file_utils.make_path(fullname, elemsof(fullname), comp.getPath(), filename) &&
+        file_utils.is_file(fullname)) {
+        console.debug("found %s in %s", comp.getName(), comp.getPath());
+        comp.setBinPath(comp.getPathIdx());
+        return;
+    }
+
+    // system-path
+    // TODO
+
+    // not found
+    c.diags.error(0, "static library '%s' cannot be found", comp.getName());
+}
+
 
 fn void Compiler.checkMain(Compiler* c) {
     c.mainComp.visitModules(Compiler.findTopModule, c);
