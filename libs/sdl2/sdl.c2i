@@ -412,6 +412,7 @@ int Event.poll(Event* event) @(cname="SDL_PollEvent");
 int pushEvent(Event* event)  @(cname="SDL_PushEvent");
 int registerEvents(int numevents) @(cname="SDL_RegisterEvents");
 int waitEventTimeout(Event* event, int timeout_ms) @(cname="SDL_WaitEventTimeout");
+int waitEvent(Event* event) @(cname="SDL_WaitEvent");
 
 // ------ From SDL_keycode.h ------
 
