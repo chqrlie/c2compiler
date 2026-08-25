@@ -24,6 +24,7 @@ The currently supported attributes are:
 * __packed__ (type)
 * __printf_format__ (parameter)
 * __pure__ (fn)
+* __scanf_format__ (parameter)
 * __section__ (fn, var), requires a string argument
 * __unused__ (type, fn, var)
 * __unused_params__ (fn)
@@ -72,29 +73,46 @@ The path is relative from the project root. The data will be 0-terminatated.
 
 ### Printf_format
 
-Printf_format is the C2 equivalent of C:
-```__attribute__((format=(printf, 1, 2)));``` and is used like:
+__printf_format__ is C2's equivalent of C's
+```__attribute__((format(printf, fmt_index, first_to_check)))```. Where C needs
+you to count parameter positions (and keep that count in sync as the signature
+changes), C2's attribute is simply placed directly on the parameter that holds
+the format string:
 
 ```c
 fn void log(const char* format @(printf_format), ...) {
- // ..
+    // ..
 }
-
 ```
 
-Where the argument points to the (1-based) index of the format argument.
-
-Any call to this function can than have its format checked and possibly give errors like:
+Any call to this function then has its format string checked against the
+variadic arguments passed to it, giving errors like:
 
 ```c
 fn void test() {
-    log("%s", 10);  // error: "format '%s' expects a string argument"
-              ^
+    log("%s", 10);  // error: format '%s' expects a string argument
 }
-
 ```
 
-See also [Printf specifiers](../language/printf_specifiers/)
+See also [Printf specifiers](printf_specifiers.md).
+
+### Scanf_format
+
+__scanf_format__ works exactly like __printf_format__, but checks its
+variadic arguments the way `scanf`-style functions expect: as pointers to
+write into, rather than values to format.
+
+```c
+fn i32 my_scanf(const char* format @(scanf_format), ...) {
+    // ..
+}
+
+fn void test(i32* value) {
+    my_scanf("%d", value);   // OK
+    my_scanf("%d", *value);  // error: conversion '%d' expects an integer
+                              // pointer argument
+}
+```
 
 
 ### Opaque pointers
@@ -168,20 +186,21 @@ struct stat {
 
 ### Auto-arguments
 
-There are two attributes for function parameters: *auto_file* and *auto_line*.
-These are special is that you define them with a function parameter and that causes
-them to be _auto-filled_ when a call to that function is made and are called *auto-arguments*.
-*Auto-arguments* are part of the work to avoid using macros to do \_\_FILE\_\_, \_\_LINE\_\_ and
-\_\_FUNC\_\_.
+There are three attributes for function parameters: *auto_file*, *auto_line* and
+*auto_func*. What's special about them is that a parameter carrying one of these
+attributes gets _auto-filled_ at every call site, instead of the caller having to
+pass it explicitly — hence *auto-arguments*. They exist so C2 code never needs
+macros to get at `__FILE__`, `__LINE__` and `__func__`.
 
 Example:
 ```c
-fn void log(const char* file @(auto_file), u32 line @(auto_line), const char* fmt, ...) {
+fn void log(const char* file @(auto_file), u32 line @(auto_line),
+            const char* func @(auto_func), const char* fmt, ...) {
     // ...
 }
 
 fn void test() {
-    log("%p %d", nil, 10);  // <- file + line parameters are auto filled
+    log("%p %d", nil, 10);  // <- file, line and func parameters are auto filled
 }
 ```
 
@@ -189,9 +208,10 @@ fn void test() {
 
 - Auto-arguments come after the self-pointer for type-functions
 - Auto-arguments come before other arguments
-- The type for _auto\_file_ needs to be _const char*_
+- The type for _auto\_file_ and _auto\_func_ needs to be _const char*_
 - The type for _auto\_line_ needs to be _u32_
 - The filename that is generated is *project relative* (no more /home/bas/project_x/..)
+- _auto\_func_ is filled with the name of the calling function
 - Auto-arguments cannot be used with _pure_ functions
 - Auto-arguments can be used with _template_ functions
 - Auto-arguments can be used in the type-definition of Function type

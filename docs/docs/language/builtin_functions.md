@@ -1,14 +1,17 @@
 
 ## Builtin functions
 
-C2 has the following built-in functions:
+C2 has the following built-ins:
 
-* sizeof
-* elemsof
-* offsetof
+* `sizeof`
+* `elemsof`
+* `offsetof`
+* `to_container`
+* `assert`
+* `cast<T>(..)`
 
-### sizeof ###
-`sizeof` is the same as in C, it returns a 'u32' with the size of the type/variable.
+### sizeof
+`sizeof` is the same as in C: it returns a `u32` with the size of the type/variable.
 
 ```c
 u32 size = sizeof(void*);
@@ -17,7 +20,7 @@ u32 size = sizeof(void*);
 C2 does not allow the use of *[ ]* inside a sizeof expression, since this introduces
 ambiguity between _arrays_ and _subscript expressions_.
 
-### elemsof ###
+### elemsof
 For array types, C2 introduces a new operator, namely `elemsof`. This returns the number
 of elements in an array or the number of constants in an enum and avoids C macros like:
 ```c
@@ -38,7 +41,7 @@ type Colors enum u8 { Red, Green, Blue }
 const u32 Count = elemsof(Colors); // will be 3
 
 ```
-Note that this also works for [incremental arrays](variables/#incremental-arrays).
+Note that this also works for [incrementally declared arrays](variables.md#incrementally-declared-arrays).
 
 The `elemsof` function can also be used on Enum types, to return the number of elements
 in the Enum.
@@ -111,7 +114,7 @@ fn void test1() {
 ```
 
 But this doesn't use the macro preprocessor. Asserts are enabled by default, but can be disabled
-in the [recipe](../build_system/recipe_file/) with the *$disable-asserts* option. Note that they are always parsed, to avoid getting
+in the [recipe](../build_system/recipe_file.md) with the *$disable-asserts* option. Note that they are always parsed, to avoid getting
 errors when you do re-enable them after some time.
 
 ### cast
@@ -128,6 +131,6 @@ Please note that in C (and C2), the cast is a *unary* operator.
 
    // old style
    i32 c = (i32)b;
-   Foo8 g = (Foo*)bar;
+   Foo* g = (Foo*)bar;
 ```
 

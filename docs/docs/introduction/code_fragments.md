@@ -1,7 +1,7 @@
 
-This section just shows some code fragments to give you a feel of the language.
-As you will see, most code *inside* function bodies is almost identical to C, but
-code *outside* differs a bit.
+This section shows a handful of code fragments to give a feel for the language. As
+you'll see, code *inside* function bodies is almost identical to C, while code
+*outside* function bodies differs a bit more.
 
 ### `if` statement
 ```c
@@ -67,7 +67,7 @@ fn void demo_enum(Height h) {
     switch (h) {
         case Low ... High:  // case range
             break;
-        default:    // warning: default label in switch which covers all enumeration value
+        default:    // error: default label in switch which covers all enumeration values
             break;
     }
 }

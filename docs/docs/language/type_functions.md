@@ -66,13 +66,15 @@ fn void example() {
 }
 ```
 
-* The following is OK, as type-functions implicitly dereference the object on which they are called:
+* Calling through a pointer works the same way as calling through a value — the
+  compiler inserts whichever of `&`/`*` is needed to match the type-function's
+  declared receiver, per the [Auto conversions](#auto-conversions) table below:
 ```c
-    Type* t = nil;
-    t.init();
+    Type* t = get_type();
+    t.init();   // fine, whether Type.init takes 'Type*' or 'Type'
 ```
 
-for more examples, see the tests in _c2compiler/test/Functions/struct_functions/_
+for more examples, see the tests in _c2compiler/test/functions/struct_functions/_
 
 
 ### Auto conversions

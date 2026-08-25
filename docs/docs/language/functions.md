@@ -28,26 +28,44 @@ fn void test(i32 a = 10, i32 b = 20) {}
 ```
 
 ### Named arguments
-Named arguments can be used when calling a function where many arguments are the same type,
-and re-ordering arguments would not cause a compilation error. For example:
+When a function takes several arguments of the same type, a positional call site
+gets easy to misread — it's not obvious which `bool` is which:
 
 ```c
 fn void foo(bool a, bool b, bool c, bool d) { .. }
-
 
 fn void bar() {
     foo(true, false, true, false);
 }
 ```
 
-In these cases it can be handy to name calling arguments:
-    foo(a: true, b: false, c: true, d: false);
+Naming the arguments at the call site makes this self-documenting:
+
+```c
+foo(a: true, b: false, c: true, d: false);
 ```
 
-The *order* of the arguments must still be correct.
+Named arguments still have to appear in the same order they were declared in —
+this isn't a way to reorder a call, it's a label the compiler cross-checks
+against the parameter at that position, so a typo'd or misplaced name is a
+compile error rather than a silently-swapped value:
 
-C2 allows combining __named__ arguments with __default__ arguments as long as there is
-no ambiguity.
+```c
+foo(b: false, a: true, c: true, d: false);
+// error: unexpected named argument 'b'
+// note: expected argument 'a' instead
+```
+
+Combined with __default arguments__, naming also lets a call skip straight to a
+later parameter without repeating the defaults in between:
+
+```c
+fn void connect(const char* host, i32 port = 80, i32 timeout = 30) { .. }
+
+fn void test() {
+    connect("example.com", timeout: 5);  // port keeps its default of 80
+}
+```
 
 
 ### Function pointer arguments

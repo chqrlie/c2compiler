@@ -1,27 +1,47 @@
 ## Plugins
 
-The C2 compiler is more than a tool to convert c2 code into binaries. It aims to speed up
-development and help developers get things done.
+The C2 compiler is more than a tool for turning `.c2` code into binaries — it aims
+to speed up development and take care of the busywork around it.
 
-For example:
-
-As such in projects using Make/CMake/Ninja, every project wastes time configuring the build
-system  to insert a GIT version into the code, so that every build automatically contains
-the version. The C2 compiler now has a plugin call _git_version_ that inserts the git version
-into a (generated) module named _git_version_. It can be used as a normal symbol, so:
+A good example: in a typical Make/CMake/Ninja project, embedding the git version
+into a binary means wiring up a small custom build step yourself, every single
+time. c2c instead ships a plugin, __git_version__, that generates a module named
+`git_version` containing the current git version. Once the plugin is enabled, that
+module can be imported and used like any other:
 
 ```c
 module main;
 
-import stdio;
+import stdio as io;
 import git_version;
 
-fn i32 main(i32 argc, char** argv) {
-    io.printf("Git version: %s\n", git_version.describe);
+public fn i32 main(i32 argc, char** argv) {
+    io.printf("Git version: %s\n", git_version.Describe);
     return 0;
 }
 ```
 
-The required plugins are specified in the _recipe.txt_ file or in the _build-file_.
-Since both may be auto-generated, duplicate plugins are filtered out.
+A plugin is enabled per-target with a `$plugin` line in `recipe.txt` (see
+[Recipe file](../build_system/recipe_file.md)):
 
+```
+executable main
+    $plugin git_version []
+    main.c2
+end
+```
+
+Plugins can also be listed in a *build-file*; since both a recipe and a
+build-file might request the same plugin, duplicates are filtered out
+automatically.
+
+Besides __git_version__, c2c bundles a few other plugins:
+
+* __deps_generator__ - writes out a dependency graph for the build (used by
+  external tooling)
+* __refs_generator__ - writes out a cross-reference database, used by
+  [c2tags](../build_system/intro.md) and c2rename to jump to / rename symbols
+* __unit_test_plugin__ - wires up the [unit test framework](attributes.md#unit-test-framework-)
+* __shell_cmd_plugin__ - runs a configured shell command at build time and
+  exposes its result as a generated module, similar to __git_version__ but for
+  arbitrary commands

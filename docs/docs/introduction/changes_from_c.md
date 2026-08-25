@@ -1,71 +1,71 @@
 
-C2 is an _evolution_ of C: this page summarizes the
-_changes_ made and the design philosophy behind it.
-
+C2 is an _evolution_ of C: this page summarizes the _changes_ it makes and the
+design philosophy behind each one.
 
 ### Language changes
 
-* no Header files
+* No header files
 
-    _consequence_: import statement and modules
+    _consequence_: an import statement, and modules
 
-* no forward declarations
+* No forward declarations
 
-    _philosophy_: define types in a single place, better development speed
+    _philosophy_: define each thing in exactly one place, for faster development
 
     _consequence_: requires a multi-pass compiler
 
-* member access always through dot-operator '`.`' , not sometimes '`->`'
+* Member access is always through the dot operator (`.`), never `->`
 
-    _philosophy_: remove clutter/reduce change effort
+    _philosophy_: remove clutter, and one less thing to get wrong when refactoring
 
-* Unified type definitions
+* Unified syntax for type definitions
 
 * All global variables are initialized by default
 
-* [Standardized attribute syntax](../language/attributes)
+* [Standardized attribute syntax](../language/attributes.md)
 
-* better external library control
+* Better control over external libraries
 
-* [Improved operator precedence](../language/operators)
+* [Improved operator precedence](../language/operators.md)
 
-* [Only explicit fallthrough in switch cases](../language/switch_statement/#auto-fallthrough)
+* [Only explicit fallthrough in switch cases](../language/switch_statement.md#auto-fallthrough)
 
-* [no arrays as function arguments](../language/functions.md)
+* [No arrays as function arguments](../language/functions.md)
 
-* removed `do` .. `while`, since it's not needed without macros and error prone
+* `do` .. `while` removed, since without macros it isn't needed and is error-prone
 
 
-### New Features
-While C2 introduces some *NEW* features, these do not break the C philosophy and are
-mainly *Syntax cleanup*, *syntactic-sugar* or remove some C anti-patterns:
+### New features
+C2 also introduces a handful of genuinely new features. None of them break with the
+spirit of C — they're mostly syntax cleanup, syntactic sugar, or the removal of a
+C anti-pattern:
 
-* [BitOffsets](../language/bitoffsets)
+* [Bit offsets](../language/bit_offsets.md)
 
-* [Type-functions](../language/type_functions.md)
+* [Type functions](../language/type_functions.md)
 
-* [Modules](../language/modules)
+* [Modules](../language/modules.md)
 
-* [Internal build-system](../build_system/intro)
+* [Built-in build system](../build_system/intro.md)
 
-* [Incremental arrays](../language/variables/#incremental-arrays)
+* [Incremental arrays](../language/variables.md#incrementally-declared-arrays)
 
-* [Switch statement on strings](../language/switch_statement/#string-switch-statement)
+* [Switch statement on strings](../language/switch_statement.md#string-switch-statement)
 
-* [Auto-arguments](../language/attributes/#auto-arguments)
+* [Auto-arguments](../language/attributes.md#auto-arguments)
 
-* [Multi-condition case statements](../language/switch_statement/#multi-condition-case-statements)
+* [Multi-condition case statements](../language/switch_statement.md#multi-condition-case-statements)
 
-* [Sane printf format specifiers](../language/printf_specifiers)
+* [Sane printf format specifiers](../language/printf_specifiers.md)
 
-* [Compiler Plugins](../language/plugins.md)
+* [Compiler plugins](../language/plugins.md)
 
 * [Raw strings](../language/raw_strings.md)
 
-* [init calls](../language/init_calls.md)
+* [Init calls](../language/init_calls.md)
 
-* [init list assignment](../language/init_list.md)
+* [Init-list assignment](../language/init_list.md)
 
-* More tooling integration like dependency and refs file generation
+* More tooling integration, such as generated dependency and cross-reference files
 
 

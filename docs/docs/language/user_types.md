@@ -78,9 +78,11 @@ fn void test() {
 
 ### Incremental Enums
 
-Just like [incremental arrays](variables/#incremental-arrays) C2 allows enums to be
-incremental. This can be used when the software has a lot of compile-time configurations.
-The additional enum constants can even be added from separate files (from the same module).
+Just like [incrementally declared arrays](variables.md#incrementally-declared-arrays),
+C2 allows enums to be incremental. This is handy when a piece of software has a lot of
+compile-time configuration, since constants can be contributed from wherever the
+matching feature is implemented. The additional enum constants can even be added
+from separate files (of the same module).
 
 The syntax looks like:
 
@@ -92,7 +94,10 @@ Colors += Green;
 Colors += Blue;
 ```
 
-Enums must always have at least one constant.
+An enum declared with `{ + }` starts out with no constants, and gets them added
+one at a time with `EnumName += Constant;` — but every incremental enum must end
+up with at least one constant; one declared as `{ + }` and never extended is an
+error.
 
 
 ### Enum-associated values
@@ -153,7 +158,7 @@ Structs are defined like so:
 ```c
 type Person struct {
     u8 age;
-    char* name;
+    const char* name;
 }
 ```
 
@@ -161,9 +166,9 @@ A struct's members may be accessed using dot notation:
 ```c
 Person p;
 p.age = 21;
-p.name - "John Doe";
+p.name = "John Doe";
 
-io.printf("%s is %d years old.", p.age, p.name);
+io.printf("%s is %d years old.\n", p.name, p.age);
 ```
 
 ### Bitfields
@@ -188,7 +193,8 @@ type State enum u8 { A, B, C }
 type Foo struct {
     State a : 2;    // ok
     State b : 3;    // ok
-    State c : 1;    // error, need 2 bits
+    State c : 1;    // error: bit-field 'c' has insufficient bits for enum
+                    // 'State' (need 2 bits)
 }
 ```
 
@@ -220,11 +226,12 @@ type Integral union {
 Unions, unlike structs, may only have one active member at a given time. See below:
 ```c
 Integral i;
-i.as_u8 = 40; // Setting the active member to as_u8
+i.as_u8 = 40;    // sets the active member to as_u8
 
-i.as_u32 = 500; // Changing the active member to as_u16
+i.as_u32 = 500;  // changes the active member to as_u32
 
-io.printf("%d", i.as_u8); // Undefined behaviour: as_u8 is not the active member, so this will probably print garbage.
+io.printf("%d\n", i.as_u8); // undefined behaviour: as_u8 is not the active
+                             // member, so this will probably print garbage
 ```
 
 Note that unions only take up as much space as their largest member, so `sizeof(Integral)` is equivalent to `sizeof(u64)`.
@@ -233,7 +240,7 @@ C2 also features (anonymous) sub-structs/unions:
 ```c
 type Person struct {
     u8 age;
-    char* name;
+    const char* name;
     union {
         i32 employee_nr;
         u32 other_nr;
@@ -242,7 +249,11 @@ type Person struct {
         bool b;
         Callback cb;
     }
+}
 ```
+
+The anonymous union's members (`employee_nr`, `other_nr`) are reached directly
+as `p.employee_nr`; the named one needs its name too, as `p.subname.b`.
 
 
 ## Alias types
@@ -274,7 +285,7 @@ type Callback fn i32(i32, void*);
 A usage example is given below:
 ```c
 // in some function body
-Callback cb = my_callback
+Callback cb = my_callback;
 cb(10, nil);
 ```
 

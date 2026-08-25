@@ -1,6 +1,7 @@
 # Loops + Flow control
 
-C2 has the same loop constructs as C, namely: for, while and do..while.
+C2 keeps C's `for`, `while` and `if` — `do`..`while` is the one loop construct
+C2 removes (see below).
 
 ## For
 
@@ -20,24 +21,32 @@ while (i<10) i++;
 while (Point* p = get_point()) { .. }
 ```
 
-Note that C2 does allow a declaration to be used as condition (see example above)
-
+C2 allows a variable declaration to be used directly as the condition, as shown
+in the second example: the loop runs as long as the initializing expression
+(`get_point()`) doesn't evaluate to zero/`nil`, and `p` is in scope for the loop
+body. The same is allowed for `if`, further below.
 
 ## Do-while
 
-Do-while statements have been removed from C2, since they were very error prone
-and often only used for macro expansions.
-
+`do`..`while` has been removed from C2: it was error-prone (the body always runs
+at least once, easy to forget), and its main real-world use — expanding to a
+single statement inside a macro — doesn't apply in a language without macros.
 
 ## If
 
-If statements are exactly the same as C.
+If statements work just like in C, with or without braces:
 
 ```c
 if (x < 10 && y >= 10 && ptr != nil) { .. }
 ```
 
-It can be used with and without braces just like in C.
+Just like `while`, the condition of an `if` can also be a variable declaration:
+
+```c
+if (Point* p = get_point()) {
+    // p is only in scope inside this if (and any else)
+}
+```
 
 ## Label / Goto
 
@@ -68,4 +77,4 @@ Note that these labels can also be used for regular goto statements.
 
 ## Switch statement
 
-For the *switch* statement see the dedicated page [Switch Statements](../language/switch_statement)
+For the *switch* statement, see the dedicated page [Switch statement](switch_statement.md).

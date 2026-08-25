@@ -1,5 +1,5 @@
 
-Enough philosophy, let's talk code, let's talk Hello world!
+Enough philosophy — let's talk code. Let's talk Hello World!
 
 `hello.c2`
 ```c
@@ -13,8 +13,7 @@ public fn i32 main(i32 argc, char** argv) {
 }
 ```
 
-Spot the __six__ differences from C:
-Scroll down for the answer
+Spot the __six__ differences from C. Scroll down for the answer.
 
 .
 
@@ -34,10 +33,10 @@ Scroll down for the answer
 
 Here they are:
 
-1. __module__ keyword, see [modules](../language/modules.md)
-2. __import__ replaced #include, see [Import](../language/modules.md#import)
-3. __fn__ keyword precedes all functions
-4. __i32__ instead of int. In C2 you always specify the size
-5. __char** argv__ instead of __char* argv[]__. Types are continuous and arrays are not allowed as argument
-6. __io.printf__, symbols are inside modules.
+1. the __module__ keyword — see [modules](../language/modules.md)
+2. __import__ replaces `#include` — see [importing modules](../language/modules.md#importing-modules)
+3. the __fn__ keyword precedes every function
+4. __i32__ instead of `int` — in C2 you always spell out the size
+5. `char** argv` instead of `char* argv[]` — array types aren't allowed as function arguments, only pointers
+6. __io.printf__ — symbols live inside modules, and are reached through them
 

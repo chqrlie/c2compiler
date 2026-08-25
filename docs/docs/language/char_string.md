@@ -1,25 +1,30 @@
 # Strings and Characters
 
-C2 has string and character like C and are very similar.
+Strings and characters in C2 work much like they do in C.
 
 ## Character literals
 
-Character literals are used like this:
+Character literals are written like this:
 
 ```c
 char c = 'a';
+char nul = '\0';
 ```
-
 
 ## String literals
 
-String literals are used like this:
+String literals are written like this:
 
 ```c
-char* s = "the quick brown fox\n";
+const char* s = "the quick brown fox\n";
 ```
 
-Multi-part strings are also supported:
+Note the `const`: a string literal's characters live in read-only memory, so it
+can only be pointed to by a `const char*` (or stored in a `const char[]`) — never
+by a plain, mutable `char*`.
+
+Adjacent string literals are automatically concatenated, so a long string can be
+split across several lines:
 
 ```c
 const char[] Multi = "the"
@@ -28,12 +33,13 @@ const char[] Multi = "the"
     " fox\n";
 ```
 
-No backspaces are required after each line.
+No trailing backslashes are needed to join the lines, unlike in a C macro. For
+embedding large blocks of text or code verbatim, see [raw strings](raw_strings.md).
 
+## Escape sequences
 
-## Escape sequences:
-
-C2 defines a number of *escape sequences* on a character or string literal:
+C2 supports the same escape sequences as C, inside both character and string
+literals:
 
 * `\"`
 * `\'`
@@ -46,6 +52,8 @@ C2 defines a number of *escape sequences* on a character or string literal:
 * `\r` - carriage return
 * `\t` - tab
 * `\v` - vertical tab
-* `\xXX` - where XX is a hexadecimal number (eg. \x12)
-* `\ooo` - where ooo is an octal number (eg. \177)
-
+* `\xXX` - a byte given as a hexadecimal number (eg. `\x12`)
+* `\ooo` - a byte given as an octal number (eg. `\177`)
+* `\u` plus exactly 4 hex digits - a Unicode code point, encoded into the
+  literal as UTF-8
+* `\u{` ... `}` - the same, but with a braced, variable-length hex code point

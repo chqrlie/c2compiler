@@ -1,9 +1,9 @@
 # Modules
 
-Like many other modern languages, C2 utilises the concept of __modules__. Modules are
-used to create logical groups of functions, types and variables. Each `.c2` file must
-begin with the __module__ keyword, specifying which module it belongs to. A module can
-consist of several files, for example:
+Like many modern languages, C2 organizes code around __modules__ rather than files.
+A module groups related functions, types and variables under a single name. Every
+`.c2` file must start with a `module` declaration naming the module it belongs to.
+A single module can span several files:
 
 `file1.c2`
 ```c
@@ -26,27 +26,32 @@ module bar;
 // ..
 ```
 
-`file1.c2` and `file2.c2` belong to the same module, `foo`, while `file3.c2` belongs to
-the module `bar`.
+`file1.c2` and `file2.c2` both belong to module `foo`, while `file3.c2` belongs to
+module `bar`. The compiler determines this purely from the `module` declaration —
+file names and directory layout are irrelevant to where a declaration lives.
 
-Modules allow the developer to split functionality into several files without
-sacrificing speed or introducing extra complexity.
+Splitting a module across multiple files lets you organize a large amount of
+functionality without paying any runtime cost or adding artificial complexity: from
+the compiler's point of view, all files of a module are simply concatenated into one
+translation unit.
 
-Modules only add a single layer of namespacing, so they are not nested like in some
-languages (eg. Java). Nested namespaces aren't necessary - just look at C - it went by
-with only the global layer. In the case of very big codebases, longer module names are
-advised (eg. *network\_utils*).
+Modules add exactly one layer of namespacing; they are not nested like packages in
+some other languages (eg. Java). Nested namespaces turn out not to be necessary — C
+managed for decades with only a single global namespace. For large codebases, prefer
+descriptive, longer module names instead (eg. `network_utils`) to keep names
+meaningful without nesting.
 
 ## Importing modules
-For a file to use declarations from another module, it must `import` the said module.
-The `import` keyword has a file scope. Therefore, if `file1.c2` imports module `stdio`,
-`file2.c2` still cannot use `stdio`'s symbols, unless it imports `stdio` as well.
+To use declarations from another module, a file must `import` it. `import` has
+**file scope**: it only affects the file it appears in. If `file1.c2` imports
+`stdio`, `file2.c2` of the same module still cannot use `stdio`'s symbols unless it
+imports `stdio` itself.
 
 `file1.c2`
 ```c
 module foo;
 
-//import file and storage
+// file and storage imported here
 import file;
 import storage;
 // ..
@@ -56,28 +61,59 @@ import storage;
 ```c
 module foo;
 
-//file and net imported, but not storage
+// file and net imported here, but not storage
 import file;
 import net;
 // ..
 ```
 
-### Named imports
-When importing a module with a long name, C2 allows aliasing the module name (in the
-current file only), like this:
+So `file1.c2` can use symbols from `file` and `storage`, while `file2.c2` can only
+use symbols from `file` and `net` — even though both files belong to module `foo`.
+
+A module cannot import itself; `import foo;` inside a file of module `foo` is
+rejected with `cannot import own module 'foo'` (own-module symbols are always
+visible without an import). Importing the same module twice in one file is also
+an error: `duplicate import of module 'x'`.
+
+### Named imports (aliasing)
+A module with a long or generic name can be given a shorter, file-local alias with
+`as`:
 
 ```c
 module foo;
 
-import extended_filesystems_io as fs;
+import extended_filesystem_io as fs;
 ```
-External symbols can now use the shorter `fs` alias. Even after aliasing, using the full name of the module is still allowed!
+
+External symbols are now reached through the `fs` alias. Aliasing is purely a
+convenience for the importing file — it does not rename or affect the module
+anywhere else.
+
+The alias name must be different from the module's own name (`import foo as foo;`
+is rejected as redundant), and, like other module names, must start with a
+lowercase letter. Two imports in the same file can never resolve to the same local
+name; whichever imports second is rejected with `duplicate import name 'x'`,
+whether the clash comes from two aliases, an alias matching another module's real
+name, or vice versa.
+
+Once a module has been aliased, only the alias may be used to qualify its symbols
+in that file — falling back to the original module name is an error:
+
+```c
+import stdio as io;
+
+fn void test() {
+    io.puts("hello");     // OK
+    stdio.puts("hello");  // error: module 'stdio' is imported with alias 'io'
+}
+```
 
 ### Local imports
-When using many external symbols, the constant prefixing can be cumbersome. C2
-allows using the external symbols of a module directly (without any prefix) when the
-import statement is followed by the keyword `local`. This may also be used with
-aliasing (the __as__ keyword), making the prefix completely optional.
+When a file uses many symbols from the same module, prefixing every use can get
+tedious. Following the import with the `local` keyword makes all of that module's
+external symbols usable **without** a prefix. This combines with aliasing, making
+the prefix entirely optional:
+
 ```c
 import networking as net local;
 import filesystem local;
@@ -91,14 +127,61 @@ net.connect();
 networking.connect();
 connect();
 ```
-The symbols of both `networking` and `filesystem` can be used without prefixing. If a symbol
-can be resolved unambiguously (for the current module and set of imports), the module
-prefix is optional. So if both `networking` and `filesystem` have a function called `open()`,
-it will still have to be prefixed, since C2 does not allow usage of ambiguous symbols.
 
-The result of __modules__ and the __import .. (as ..) (local)__ is that there is no
-need to constantly prefix the definitions of the module anymore. In C it's common
-for a library to prefix all symbols to avoid name clashes, for example:
+Symbols from both `networking` and `filesystem` are now reachable unprefixed. An
+unprefixed name only resolves this way when it is unambiguous across the current
+module and its set of imports: if both `networking` and `filesystem` declared an
+`open()` function, calling `open()` unprefixed would fail with `symbol 'open' is
+ambiguous` and both call sites would need their module prefix restored.
+
+### Import lists
+`local` is an all-or-nothing tool — it exposes *every* symbol of a module
+unprefixed, which increases the chance of an accidental clash as a module grows.
+When only a handful of symbols are needed unprefixed, list them explicitly in
+braces after the import:
+
+```c
+import stdio { printf }
+
+public fn i32 main() {
+    printf("Hello world!\n");
+    return 0;
+}
+```
+
+Here only `printf` becomes usable unprefixed. The module is still imported
+normally otherwise, so any public symbol of `stdio` — listed or not — remains
+reachable with the regular `stdio.xxx` prefix. List several symbols by separating
+them with commas, and give any of them its own local alias with `as`:
+
+```c
+import stdio { printf, fprintf as fp }
+```
+
+An unknown or non-public symbol in the list is a compile error (`module 'stdio' has
+no symbol 'xxx'` / `symbol 'x' is not public`), and the same ambiguity rule as
+`local` imports applies once a listed symbol is used unprefixed alongside other
+imports.
+
+Writing `*` instead of a symbol list imports every symbol unprefixed — exactly
+equivalent to `local`:
+
+```c
+import stdio { * }
+// Equivalent to:
+import stdio local;
+```
+
+As with any import, each name — the import itself, or an individual entry in its
+list — must actually be used somewhere in the file, otherwise the compiler warns
+about it (eg. `unused import 'stdio'`, or `unused import 'stdio.scanf'` for one
+unused entry in an otherwise-used list).
+
+### Why this matters
+The combination of __modules__ and `import .. (as ..) (local | { .. })` means C2
+code never has to constantly re-prefix the same declarations, while still letting
+each file choose how verbose it wants to be. In C, libraries commonly prefix every
+symbol themselves to avoid clashes, e.g.:
 
 `networking.h`
 ```c
@@ -111,7 +194,7 @@ struct net_data {
 };
 ```
 
-In C2 this would simply be:
+In C2 this is simply:
 ```c
 module networking;
 
@@ -124,21 +207,19 @@ public type NetData struct {
 }
 
 ```
-Developers can then choose the appropriate prefix they want to use in their code using
+Callers then pick whichever prefix suits them — the module's own name, a shorter
+alias (`import networking as net;`), or no prefix at all (`local` or an import
+list) — without the module itself needing to know or care.
 
-`import networking as ..`
-
-So `file1.c2` can use external symbols from `file` and `storage`, while `file2.c2`
-can only use symbols from `file` and `net`.
-
-One advantage of not using C-style header-file includes is that filenames will never
-appear in the code. This means renaming/moving the files of modules requires
-**NO** change to other code whatsoever, even if said code uses the module itself! How convenient!
+One further advantage over C-style header includes: filenames never appear in the
+code. Renaming or moving the files that make up a module requires **no** change to
+any code that imports it, since imports refer to the module name, not a path.
 
 ## Symbol visibility
 
-All files of the same module have access to all the declarations in the module. Other
-modules can only use declarations specified as `public`.
+All files belonging to the same module see every declaration in that module,
+public or not. Files in *other* modules can only see declarations explicitly
+marked `public`.
 
 `file.c2`
 ```c
@@ -149,11 +230,12 @@ public fn void init() { .. }
 fn void open() { .. }
 ```
 
-In this example, the other modules can use the `init()` function after importing foo, but
-only files in the `foo` module can use `open()`, as it isn't specified as `public`.
+Other modules can call `init()` once they import `foo`, but only files within
+module `foo` itself can call `open()`, since it isn't `public`.
 
 ## Symbol resolution
-To access symbols contained in other modules, dot notation is used:
+Symbols from an imported module are normally reached with dot notation:
+`module.symbol`.
 
 ```c
 module foo;
@@ -167,7 +249,15 @@ fn void test() {
     open();
 }
 ```
-Global symbols __must__ have unique names within their module, whether `public` or not. This ensures that
-`module.symbol` is unique. In the example above, all three modules contain a `test` symbol, but no clash
-occurs, as the module which the symbol comes from is always specified.
 
+Global symbol names __must__ be unique within their own module, whether `public`
+or not — this guarantees `module.symbol` always names exactly one declaration. In
+the example above, `one`, `two` and `foo` itself can each declare a `test` symbol
+without clashing, because the module prefix (or the enclosing module, for `open`)
+always disambiguates which one is meant.
+
+When `local` or an import list makes a symbol reachable unprefixed, this
+uniqueness guarantee only holds per module — so an unprefixed reference is
+accepted only if exactly one visible import list, `local` import, or the current
+module contributes that name; see [Local imports](#local-imports) for what happens
+when more than one does.
