@@ -86,6 +86,8 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
         if (!p.is_interface) p.error("undefined structs are only allowed in interface files");
         if (!p.builder.hasOpaqueAttr()) p.error("undefined structs must have the opaque attribute");
         p.consumeToken();
+    } else {
+        p.expectError(LBrace);
     }
     StructTypeDecl* d = p.builder.actOnStructType(name,
                                                   loc,

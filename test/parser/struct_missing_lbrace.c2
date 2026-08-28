@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct // @error{expected '{'}
+    u32 x;
+}
+
