@@ -475,7 +475,7 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
         }
         idx = p.pool.add(tmp, len, true);
     }
-    return p.builder.actOnStringLiteral(loc, src_len, idx, len);
+    return p.builder.actOnStringLiteral(loc, src_len, idx, len, true);
 }
 
 fn Expr* Parser.parseParenExpr(Parser* p) {

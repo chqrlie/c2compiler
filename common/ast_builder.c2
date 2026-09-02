@@ -1095,8 +1095,8 @@ public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u32 src_len, u8
     return (Expr*)CharLiteral.create(b.context, loc, src_len, value, radix);
 }
 
-public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 src_len, u32 value, u32 len) {
-    return (Expr*)StringLiteral.create(b.context, loc, src_len, value, len);
+public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull) {
+    return (Expr*)StringLiteral.create(b.context, loc, src_len, value, len, addnull);
 }
 
 public fn Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {

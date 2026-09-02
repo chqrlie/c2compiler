@@ -761,8 +761,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         u32 len = reader.data_size();
         //TODO: check input for weird chars if string
         u32 value = ma.astPool.add(reader.data(), len, false);
-        if (!is_char) len--;
-        Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len);
+        Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len, is_char);
 
         // Note: VarDecl already needed to allocate extra space during creation! (parser checks embed attr for this)
         v.setInit(init);

@@ -30,7 +30,7 @@ public type StringLiteral struct @(opaque) {
     u32 len; // Note: no cost on 64-bit systems because of padding
 }
 
-public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len) {
+public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull=true) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.base.init(StringLiteral, loc, 0, 1, 0, LValue);
     e.base.base.stringLiteralBits.src_len = src_len;
@@ -39,7 +39,7 @@ public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc
 #if AstStatistics
     Stats.addExpr(StringLiteral, sizeof(StringLiteral));
 #endif
-    e.base.setType(getStringType(len + 1));
+    e.base.setType(getStringType(len + addnull));
     return e;
 }
 

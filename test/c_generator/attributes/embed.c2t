@@ -1,0 +1,27 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{text}
+module text;
+// @file{file1}
+module file1;
+
+const char[] Text @(embed="text.c2");
+const u8[] Binary @(embed="text.c2");
+
+static_assert(14, elemsof(Text));
+static_assert(13, elemsof(Binary));
+static_assert(14, sizeof(Text));
+static_assert(13, sizeof(Binary));
+
+public fn i32 main(i32 argc, const i8** argv)
+{
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static const char file1_Text[14] = "module text;\n";
+static const char file1_Binary[13] = "module text;\n";
+

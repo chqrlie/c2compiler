@@ -646,7 +646,7 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
     const char* new_format_text = out.data();
     if (string.strcmp(format_text, new_format_text)) {
         u32 len = out.size();
-        *new_format_ptr = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len);
+        *new_format_ptr = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len, true);
         ma.builder.insertImplicitCast(ArrayToPointerDecay, new_format_ptr, format.getType());
     }
     out.free();

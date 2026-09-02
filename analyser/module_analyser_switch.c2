@@ -188,7 +188,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         u32 casestr_len = casestr.size();
         u32 casestr_idx = ma.astPool.add(casestr.data(), casestr_len, false);
         casestr.free();
-        Expr* casestr_expr = ma.builder.actOnStringLiteral(0, 0, casestr_idx, casestr_len);
+        Expr* casestr_expr = ma.builder.actOnStringLiteral(0, 0, casestr_idx, casestr_len, true);
 
         u32 c2_strswitch_idx = ma.astPool.addStr("c2_strswitch", true);
         u32 c2_helper_idx = ma.astPool.addStr("c2_helper", true);

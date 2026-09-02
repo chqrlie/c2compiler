@@ -574,7 +574,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
         buf.deinit();
         SrcLoc eloc = inner.getStartLoc();
         SrcLoc eloc_end = inner.getEndLoc();
-        args[0] = ma.builder.actOnStringLiteral(eloc, eloc_end - eloc, msg_idx, msg_len);
+        args[0] = ma.builder.actOnStringLiteral(eloc, eloc_end - eloc, msg_idx, msg_len, true);
 
         // create call expression `c2_assert.c2_assert_fail("expression...", ...)
         Expr** callp = a.getCall2();

@@ -98,7 +98,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
             if (vd.hasAttrAutoFile()) {
                 u32 len = (u32)strlen(loc.filename);
                 u32 value = ma.astPool.add(loc.filename, len, true);
-                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
+                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len, true);
                 args.add(arg);
             }
             if (vd.hasAttrAutoLine()) {
@@ -109,7 +109,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
                 const char* func_name = ma.getFullName(ma.curFunction.asDecl());
                 u32 len = (u32)strlen(func_name);
                 u32 value = ma.astPool.add(func_name, len, true);
-                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
+                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len, true);
                 args.add(arg);
             }
             func_arg_index++;
