@@ -60,6 +60,6 @@ fn void StaticAssert.print(const StaticAssert* d, Buf* out, u32 indent) {
     out.color(col_Decl);
     out.add("StaticAssert\n");
     d.lhs.print(out, indent + 1);
-    d.rhs.print(out, indent + 1);
+    if (d.rhs) d.rhs.print(out, indent + 1);
 }
 

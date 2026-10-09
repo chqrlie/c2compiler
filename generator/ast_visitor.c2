@@ -42,7 +42,7 @@ public fn void Visitor.free(Visitor* v) {
 // only used by plugins
 public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) @(unused) {
     v.handleExpr(a.getLHS());
-    v.handleExpr(a.getRHS());
+    if (Expr* rhs = a.getRHS()) v.handleExpr(rhs);
 }
 
 public fn void Visitor.handle(Visitor* v, Decl* d) {
